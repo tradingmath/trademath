@@ -1,0 +1,1003 @@
+<title>TradeMath</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap">
+
+<style>
+/* ────────────────────────────────────────────────────────────
+   Dark-first terminal palette · Accent: trading amber
+   Two tabs: Calculator + Journal
+   ──────────────────────────────────────────────────────────── */
+:root {
+  --bg:         #080c14;
+  --surface:    #0f1623;
+  --card:       #141d2e;
+  --border:     #1e2d45;
+  --accent:     #f0a030;
+  --accent-dim: rgba(240,160,48,.12);
+  --green:      #22c55e;
+  --green-dim:  rgba(34,197,94,.12);
+  --red:        #ef4444;
+  --red-dim:    rgba(239,68,68,.12);
+  --fg:         #e2e8f0;
+  --fg2:        #94a3b8;
+  --fg3:        #475569;
+  --mono:       'JetBrains Mono', 'Courier New', monospace;
+  --sans:       'Inter', system-ui, sans-serif;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg:#f1f5f9; --surface:#fff; --card:#f8fafc; --border:#e2e8f0;
+    --accent:#c27a00; --accent-dim:rgba(194,122,0,.10);
+    --green:#16a34a; --green-dim:rgba(22,163,74,.10);
+    --red:#dc2626;   --red-dim:rgba(220,38,38,.10);
+    --fg:#0f172a; --fg2:#475569; --fg3:#94a3b8;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg:#f1f5f9; --surface:#fff; --card:#f8fafc; --border:#e2e8f0;
+  --accent:#c27a00; --accent-dim:rgba(194,122,0,.10);
+  --green:#16a34a; --green-dim:rgba(22,163,74,.10);
+  --red:#dc2626;   --red-dim:rgba(220,38,38,.10);
+  --fg:#0f172a; --fg2:#475569; --fg3:#94a3b8;
+  color-scheme: light;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 40px;
+  min-height: 100%;
+}
+body::before {
+  content:""; position:fixed; inset:0 0 auto;
+  height:env(safe-area-inset-top,0px); background:var(--surface); z-index:21;
+}
+
+/* ── Header ── */
+.header {
+  position:sticky; top:env(safe-area-inset-top,0px);
+  background:var(--surface); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 0; z-index:20;
+}
+.logo { font-family:var(--mono); font-size:17px; font-weight:600; color:var(--accent); letter-spacing:-.4px; }
+.logo em { color:var(--fg2); font-style:normal; font-weight:400; }
+.hdr-right { display:flex; gap:8px; align-items:center; }
+.theme-btn {
+  background:none; border:1px solid var(--border); color:var(--fg2);
+  padding:5px 11px; border-radius:6px; cursor:pointer; font-size:12px;
+  font-family:var(--sans); transition:border-color .15s,color .15s;
+}
+.theme-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+/* ── Tab nav ── */
+.tabs {
+  display:flex; gap:0; border-bottom:1px solid var(--border);
+  margin-top:16px; padding:0;
+}
+.tab-btn {
+  background:none; border:none; border-bottom:2px solid transparent;
+  color:var(--fg2); font-family:var(--sans); font-size:13px; font-weight:500;
+  padding:10px 18px; cursor:pointer; transition:color .15s, border-color .15s;
+  margin-bottom:-1px;
+}
+.tab-btn:hover { color:var(--fg); }
+.tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+/* ── Market chips ── */
+.mkt-bar { padding:16px 0 0; overflow-x:auto; scrollbar-width:none; }
+.mkt-bar::-webkit-scrollbar { display:none; }
+.chips { display:flex; gap:8px; min-width:max-content; padding-bottom:2px; }
+.chip {
+  padding:6px 14px; border-radius:20px; border:1px solid var(--border);
+  background:var(--surface); color:var(--fg2); font-size:12px; font-weight:500;
+  cursor:pointer; white-space:nowrap; transition:border-color .15s,color .15s,background .15s;
+}
+.chip:hover { border-color:var(--accent); color:var(--accent); }
+.chip.active { background:var(--accent-dim); border-color:var(--accent); color:var(--accent); }
+
+/* ── Calc grid ── */
+.main { display:grid; grid-template-columns:1fr 1fr; gap:20px; padding-top:20px; align-items:start; }
+@media(max-width:680px){ .main{grid-template-columns:1fr;gap:14px;} }
+
+/* ── Panel ── */
+.panel { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; }
+.p-title { font-size:10px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--fg3); margin-bottom:16px; }
+
+/* ── Form ── */
+.field { display:flex; flex-direction:column; gap:5px; margin-bottom:14px; }
+.field:last-child { margin-bottom:0; }
+.field label { font-size:12px; color:var(--fg2); font-weight:500; display:flex; align-items:center; gap:6px; }
+.field input, .field select, .field textarea {
+  background:var(--card); border:1px solid var(--border); border-radius:8px;
+  padding:10px 12px; color:var(--fg); font-family:var(--mono); font-size:14px;
+  outline:none; transition:border-color .15s; width:100%;
+}
+.field select { font-family:var(--sans); }
+.field textarea { font-family:var(--sans); font-size:13px; resize:vertical; min-height:60px; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color:var(--accent); }
+.field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+.field-row .field { margin-bottom:0; }
+.field-row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:14px; }
+.field-row3 .field { margin-bottom:0; }
+
+.dir-badge { font-size:10px; font-weight:600; font-family:var(--mono); letter-spacing:.05em; padding:2px 8px; border-radius:4px; }
+.dir-badge.long  { background:var(--green-dim); color:var(--green); }
+.dir-badge.short { background:var(--red-dim);   color:var(--red);   }
+
+.custom-box { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:14px; margin-top:14px; }
+.custom-box .p-title { margin-bottom:10px; }
+
+/* ── Calc results ── */
+.r-empty { color:var(--fg3); font-size:13px; text-align:center; padding:48px 0; line-height:1.8; }
+.r-empty strong { display:block; font-size:15px; color:var(--fg2); margin-bottom:4px; }
+
+.tiles { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+.tile { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:13px 14px; }
+.tile.hi { border-color:var(--accent); background:var(--accent-dim); }
+.tile-lbl { font-size:10px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--fg3); margin-bottom:5px; }
+.tile.hi .tile-lbl { color:var(--accent); opacity:.75; }
+.tile-val { font-family:var(--mono); font-size:20px; font-weight:600; color:var(--fg); font-variant-numeric:tabular-nums; line-height:1.15; }
+.tile.hi .tile-val { color:var(--accent); }
+.tile-sub { font-size:11px; color:var(--fg3); font-family:var(--mono); margin-top:3px; font-variant-numeric:tabular-nums; }
+
+.warn-box { border-radius:8px; padding:10px 12px; font-size:12px; margin-bottom:14px; background:var(--red-dim); border:1px solid rgba(239,68,68,.3); color:var(--red); line-height:1.5; }
+
+.tgt-label { font-size:10px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--fg3); margin-bottom:8px; }
+.tgt-head,.tgt-row { display:grid; grid-template-columns:46px 1fr auto auto; gap:8px; align-items:center; }
+.tgt-head { padding-bottom:7px; border-bottom:1px solid var(--border); margin-bottom:2px; }
+.th { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--fg3); }
+.th:last-child,.th:nth-child(3) { text-align:right; }
+.tgt-row { padding:9px 0; border-bottom:1px solid var(--border); }
+.tgt-row:last-child { border-bottom:none; }
+.rr-pill { font-family:var(--mono); font-size:11px; font-weight:600; padding:3px 6px; border-radius:4px; background:var(--card); border:1px solid var(--border); color:var(--fg2); text-align:center; }
+.tp-px { font-family:var(--mono); font-size:13px; color:var(--fg); font-variant-numeric:tabular-nums; }
+.v-pos { font-family:var(--mono); font-size:13px; font-weight:600; color:var(--green); font-variant-numeric:tabular-nums; text-align:right; }
+.v-dim { font-family:var(--mono); font-size:12px; color:var(--fg3); font-variant-numeric:tabular-nums; text-align:right; }
+.v-dim.pos { color:var(--green); }
+.v-dim.neg { color:var(--red); }
+
+/* ── Journal ── */
+#tab-journal { padding-top:20px; }
+
+.jnl-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:10px; }
+.jnl-title { font-size:16px; font-weight:600; color:var(--fg); }
+
+.btn {
+  padding:8px 16px; border-radius:8px; font-size:13px; font-weight:500;
+  cursor:pointer; border:none; font-family:var(--sans); transition:opacity .15s;
+}
+.btn:hover { opacity:.85; }
+.btn-primary { background:var(--accent); color:#000; }
+.btn-ghost { background:none; border:1px solid var(--border); color:var(--fg2); }
+.btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
+.btn-sm { padding:5px 12px; font-size:12px; }
+.btn-danger { background:var(--red-dim); border:1px solid rgba(239,68,68,.3); color:var(--red); }
+
+/* Stats row */
+.stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:20px; }
+@media(max-width:600px){ .stats-row{grid-template-columns:repeat(2,1fr);} }
+.stat-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px; }
+.stat-card-lbl { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--fg3); margin-bottom:4px; }
+.stat-card-val { font-family:var(--mono); font-size:18px; font-weight:600; font-variant-numeric:tabular-nums; }
+.stat-card-val.pos { color:var(--green); }
+.stat-card-val.neg { color:var(--red); }
+.stat-card-val.acc { color:var(--accent); }
+
+/* Add trade form */
+.add-form-wrap { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:20px; }
+.add-form-wrap .p-title { margin-bottom:14px; }
+
+/* Trade table */
+.tbl-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; min-width:700px; }
+thead th {
+  font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.07em;
+  color:var(--fg3); padding:8px 10px; text-align:left; border-bottom:1px solid var(--border);
+  white-space:nowrap;
+}
+tbody tr { border-bottom:1px solid var(--border); transition:background .1s; }
+tbody tr:last-child { border-bottom:none; }
+tbody tr:hover { background:var(--card); }
+tbody td { padding:10px 10px; font-size:13px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.td-mono { font-family:var(--mono); }
+.td-pos  { font-family:var(--mono); color:var(--green); font-weight:600; }
+.td-neg  { font-family:var(--mono); color:var(--red); font-weight:600; }
+.td-muted{ color:var(--fg3); font-size:12px; }
+.badge { display:inline-flex; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; font-family:var(--mono); }
+.badge.long  { background:var(--green-dim); color:var(--green); }
+.badge.short { background:var(--red-dim);   color:var(--red);   }
+.badge.win   { background:var(--green-dim); color:var(--green); }
+.badge.loss  { background:var(--red-dim);   color:var(--red);   }
+.badge.open  { background:var(--accent-dim);color:var(--accent);}
+
+.del-btn { background:none; border:none; color:var(--fg3); cursor:pointer; font-size:15px; padding:2px 6px; border-radius:4px; transition:color .1s; }
+.del-btn:hover { color:var(--red); }
+
+.empty-state { text-align:center; padding:48px 0; color:var(--fg3); font-size:13px; }
+.empty-state strong { display:block; font-size:15px; color:var(--fg2); margin-bottom:4px; }
+
+.filter-row { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center; }
+.filter-select {
+  background:var(--surface); border:1px solid var(--border); border-radius:8px;
+  color:var(--fg); font-family:var(--sans); font-size:12px; padding:6px 10px;
+  outline:none; cursor:pointer;
+}
+.filter-select:focus { border-color:var(--accent); }
+
+hr { border:none; border-top:1px solid var(--border); margin:14px 0; }
+.note { font-size:11px; color:var(--fg3); text-align:center; padding:24px 0 4px; }
+</style>
+
+<!-- ════════════════ HTML ════════════════ -->
+
+<header class="header">
+  <div class="logo">TradeMath <em>/ Calculator + Journal</em></div>
+  <div class="hdr-right">
+    <button class="theme-btn" id="themeBtn">☀ Light</button>
+  </div>
+</header>
+
+<!-- Tab nav -->
+<div class="tabs">
+  <button class="tab-btn active" data-tab="calc">📐 Calculator</button>
+  <button class="tab-btn" data-tab="journal">📒 Journal</button>
+</div>
+
+<!-- ══ TAB: CALCULATOR ══ -->
+<div id="tab-calc">
+  <div class="mkt-bar">
+    <div class="chips">
+      <button class="chip active" data-mkt="equity">NSE Equity</button>
+      <button class="chip" data-mkt="nifty">Nifty F&amp;O</button>
+      <button class="chip" data-mkt="bnf">BankNifty F&amp;O</button>
+      <button class="chip" data-mkt="gold">MCX Gold Mini</button>
+      <button class="chip" data-mkt="crude">MCX Crude</button>
+      <button class="chip" data-mkt="btc">BTC Perp</button>
+      <button class="chip" data-mkt="custom">Custom</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="panel">
+      <div class="p-title">Trade Setup</div>
+      <div class="field-row">
+        <div class="field">
+          <label for="i_entry">Entry Price <span id="curr1" style="color:var(--fg3)">(₹)</span></label>
+          <input type="number" id="i_entry" value="500" step="any" min="0" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="i_sl">
+            Stop Loss <span id="curr2" style="color:var(--fg3)">(₹)</span>
+            <span id="dir_badge" class="dir-badge long">▲ LONG</span>
+          </label>
+          <input type="number" id="i_sl" value="495" step="any" min="0" autocomplete="off">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="i_cap">Capital (₹)</label>
+          <input type="number" id="i_cap" value="100000" step="1" min="1" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="i_rsk">Risk % of Capital</label>
+          <input type="number" id="i_rsk" value="1" step="0.1" min="0.01" max="100" autocomplete="off">
+        </div>
+      </div>
+      <div class="field" id="usdrow" hidden>
+        <label for="i_usd">USD / INR Rate</label>
+        <input type="number" id="i_usd" value="84" step="0.5" min="1" autocomplete="off">
+      </div>
+      <div class="custom-box" id="custombox" hidden>
+        <div class="p-title">Market Config</div>
+        <div class="field-row">
+          <div class="field"><label for="c_mult">Price Multiplier / Lot</label><input type="number" id="c_mult" value="1" step="any" min="0.0001" autocomplete="off"></div>
+          <div class="field"><label for="c_lev">Leverage (×)</label><input type="number" id="c_lev" value="5" step="1" min="1" autocomplete="off"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="c_fee">Fees % (round trip)</label><input type="number" id="c_fee" value="0.05" step="0.01" min="0" autocomplete="off"></div>
+          <div class="field"><label for="c_lots">Use Lots? (0=no 1=yes)</label><input type="number" id="c_lots" value="0" min="0" max="1" step="1" autocomplete="off"></div>
+        </div>
+      </div>
+      <!-- Log to journal button -->
+      <hr>
+      <button class="btn btn-ghost btn-sm" id="logTradeBtn" style="width:100%;margin-top:4px">+ Log This Trade to Journal</button>
+    </div>
+
+    <div class="panel">
+      <div class="p-title">Position Size &amp; Targets</div>
+      <div id="r_empty" class="r-empty"><strong>Enter entry &amp; stop-loss above</strong>Results appear here instantly</div>
+      <div id="r_content" hidden>
+        <div id="r_warn" class="warn-box" hidden></div>
+        <div class="tiles">
+          <div class="tile hi">
+            <div class="tile-lbl" id="t0lbl">Position (Qty)</div>
+            <div class="tile-val" id="t0val">—</div>
+            <div class="tile-sub" id="t0sub"></div>
+          </div>
+          <div class="tile">
+            <div class="tile-lbl">Margin Required</div>
+            <div class="tile-val" id="t1val">—</div>
+            <div class="tile-sub" id="t1sub"></div>
+          </div>
+          <div class="tile">
+            <div class="tile-lbl">Max Risk (₹)</div>
+            <div class="tile-val" id="t2val">—</div>
+            <div class="tile-sub" id="t2sub"></div>
+          </div>
+          <div class="tile">
+            <div class="tile-lbl">SL Distance</div>
+            <div class="tile-val" id="t3val">—</div>
+            <div class="tile-sub" id="t3sub"></div>
+          </div>
+        </div>
+        <div class="tgt-label">Risk : Reward Targets</div>
+        <div class="tgt-head">
+          <div class="th">R:R</div>
+          <div class="th">Target Price</div>
+          <div class="th" style="text-align:right">Gross P&amp;L</div>
+          <div class="th" style="text-align:right">Net (−fees)</div>
+        </div>
+        <div id="tgt_body"></div>
+      </div>
+    </div>
+  </div>
+  <p class="note">For position sizing only — not investment advice. Verify margin with your broker.</p>
+</div>
+
+<!-- ══ TAB: JOURNAL ══ -->
+<div id="tab-journal" hidden>
+
+  <div class="jnl-top">
+    <div class="jnl-title">Trade Journal</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" id="exportBtn">↓ Export CSV</button>
+      <button class="btn btn-ghost btn-sm" id="importBtn">↑ Import Zerodha CSV</button>
+      <input type="file" id="csvFileInput" accept=".csv" hidden>
+      <button class="btn btn-primary btn-sm" id="showAddBtn">+ Add Trade</button>
+    </div>
+  </div>
+
+  <!-- Import preview panel -->
+  <div class="add-form-wrap" id="importPanel" hidden>
+    <div class="p-title">Zerodha CSV Import Preview</div>
+    <div id="importInfo" style="font-size:13px;color:var(--fg2);margin-bottom:12px;"></div>
+    <div class="tbl-wrap" style="max-height:260px;overflow-y:auto;margin-bottom:14px;">
+      <table id="importPreviewTable" style="min-width:560px;">
+        <thead><tr>
+          <th>Date</th><th>Symbol</th><th>Dir</th><th>Entry</th><th>Exit</th><th>Qty</th><th>Est. P&L</th>
+        </tr></thead>
+        <tbody id="importPreviewBody"></tbody>
+      </table>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <button class="btn btn-primary" id="confirmImportBtn">Import All Trades</button>
+      <button class="btn btn-ghost" id="cancelImportBtn">Cancel</button>
+      <span id="importWarn" style="font-size:12px;color:var(--fg3);"></span>
+    </div>
+  </div>
+
+  <!-- Summary stats -->
+  <div class="stats-row" id="statsRow">
+    <div class="stat-card"><div class="stat-card-lbl">Total Trades</div><div class="stat-card-val acc" id="st_trades">0</div></div>
+    <div class="stat-card"><div class="stat-card-lbl">Win Rate</div><div class="stat-card-val acc" id="st_wr">—</div></div>
+    <div class="stat-card"><div class="stat-card-lbl">Net P&amp;L (₹)</div><div class="stat-card-val" id="st_pnl">₹0</div></div>
+    <div class="stat-card"><div class="stat-card-lbl">Avg R:R (closed)</div><div class="stat-card-val acc" id="st_rr">—</div></div>
+  </div>
+
+  <!-- Add / edit form -->
+  <div class="add-form-wrap" id="addForm" hidden>
+    <div class="p-title" id="formTitle">New Trade</div>
+    <div class="field-row3">
+      <div class="field">
+        <label for="j_date">Date</label>
+        <input type="date" id="j_date" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="j_market">Market</label>
+        <select id="j_market">
+          <option>NSE Equity</option>
+          <option>Nifty F&O</option>
+          <option>BankNifty F&O</option>
+          <option>MCX Gold</option>
+          <option>MCX Crude</option>
+          <option>BTC Perp</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="j_dir">Direction</label>
+        <select id="j_dir">
+          <option value="LONG">▲ LONG</option>
+          <option value="SHORT">▼ SHORT</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row3">
+      <div class="field"><label for="j_entry">Entry Price</label><input type="number" id="j_entry" step="any" min="0" autocomplete="off" placeholder="0.00"></div>
+      <div class="field"><label for="j_sl">Stop Loss</label><input type="number" id="j_sl" step="any" min="0" autocomplete="off" placeholder="0.00"></div>
+      <div class="field"><label for="j_target">Target Price</label><input type="number" id="j_target" step="any" min="0" autocomplete="off" placeholder="0.00"></div>
+    </div>
+    <div class="field-row3">
+      <div class="field"><label for="j_qty">Qty / Lots</label><input type="number" id="j_qty" step="any" min="0" autocomplete="off" placeholder="0"></div>
+      <div class="field"><label for="j_exit">Exit Price (leave blank if open)</label><input type="number" id="j_exit" step="any" min="0" autocomplete="off" placeholder="—"></div>
+      <div class="field"><label for="j_fees">Fees (₹)</label><input type="number" id="j_fees" step="any" min="0" autocomplete="off" placeholder="0"></div>
+    </div>
+    <div class="field">
+      <label for="j_notes">Notes / Reason for entry</label>
+      <textarea id="j_notes" placeholder="e.g. EMA5 breakout, volume surge on 5m candle…"></textarea>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-primary" id="saveTradeBtn">Save Trade</button>
+      <button class="btn btn-ghost" id="cancelAddBtn">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-row">
+    <select class="filter-select" id="flt_market">
+      <option value="">All Markets</option>
+      <option>NSE Equity</option>
+      <option>Nifty F&O</option>
+      <option>BankNifty F&O</option>
+      <option>MCX Gold</option>
+      <option>MCX Crude</option>
+      <option>BTC Perp</option>
+      <option>Other</option>
+    </select>
+    <select class="filter-select" id="flt_dir">
+      <option value="">All Directions</option>
+      <option value="LONG">Long only</option>
+      <option value="SHORT">Short only</option>
+    </select>
+    <select class="filter-select" id="flt_result">
+      <option value="">All Results</option>
+      <option value="win">Wins</option>
+      <option value="loss">Losses</option>
+      <option value="open">Open</option>
+    </select>
+  </div>
+
+  <!-- Table -->
+  <div class="tbl-wrap">
+    <table id="jnl_table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Market</th>
+          <th>Dir</th>
+          <th>Entry</th>
+          <th>SL</th>
+          <th>Target</th>
+          <th>Exit</th>
+          <th>Qty</th>
+          <th>Gross P&L</th>
+          <th>Fees</th>
+          <th>Net P&L</th>
+          <th>R:R</th>
+          <th>Result</th>
+          <th>Notes</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="jnl_body"></tbody>
+    </table>
+    <div class="empty-state" id="jnl_empty"><strong>No trades yet</strong>Click "+ Add Trade" to log your first trade</div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ══════════════ CALCULATOR ══════════════ */
+
+const MKT = {
+  equity: {cur:"₹",mult:1,    lev:5,  fix:null, fee:0.05,dec:2,lots:false,usd:false},
+  nifty:  {cur:"₹",mult:25,   lev:null,fix:75000,fee:0.02,dec:2,lots:true, usd:false},
+  bnf:    {cur:"₹",mult:15,   lev:null,fix:55000,fee:0.02,dec:2,lots:true, usd:false},
+  gold:   {cur:"₹",mult:10,   lev:null,fix:16000,fee:0.02,dec:0,lots:true, usd:false},
+  crude:  {cur:"₹",mult:100,  lev:null,fix:25000,fee:0.02,dec:0,lots:true, usd:false},
+  btc:    {cur:"$",mult:0.001,lev:150, fix:null, fee:0.04,dec:0,lots:true, usd:true },
+  custom: {cur:"₹",mult:1,    lev:5,   fix:null, fee:0.05,dec:2,lots:false,usd:false},
+};
+
+let activeMkt = "equity";
+let lastCalc  = null; // store last calc result for "log to journal"
+
+const $  = id => document.getElementById(id);
+const comma = n => Math.abs(n).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+function fmtINR(n){
+  const a=Math.abs(n),s=n<0?"−":"";
+  if(a>=1e7) return s+"₹"+(a/1e7).toFixed(2)+"Cr";
+  if(a>=1e5) return s+"₹"+(a/1e5).toFixed(2)+"L";
+  if(a>=1000) return s+"₹"+comma(n);
+  return s+"₹"+a.toFixed(2);
+}
+function fmtP(n,dec){return Math.abs(n).toFixed(dec).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
+
+function getInputs(){
+  return {
+    entry:parseFloat($("i_entry").value)||0,
+    sl:   parseFloat($("i_sl").value)||0,
+    cap:  parseFloat($("i_cap").value)||100000,
+    rsk:  parseFloat($("i_rsk").value)||1,
+    usd:  parseFloat($("i_usd").value)||84,
+  };
+}
+function getMC(){
+  if(activeMkt!=="custom") return{...MKT[activeMkt]};
+  return{...MKT.custom,
+    mult:parseFloat($("c_mult").value)||1,
+    lev: parseFloat($("c_lev").value)||5,
+    fee: parseFloat($("c_fee").value)||0.05,
+    lots:parseInt($("c_lots").value)===1,
+  };
+}
+
+function calc(){
+  const {entry,sl,cap,rsk,usd}=getInputs();
+  const m=getMC();
+  if(!entry||!sl||entry===sl||entry<=0||sl<=0){showEmpty();return;}
+  const isLong=sl<entry;
+  const slDist=Math.abs(entry-sl);
+  const slPct=(slDist/entry)*100;
+  const riskINR=cap*rsk/100;
+  const rate=m.usd?usd:1;
+  const slUnitINR=slDist*m.mult*rate;
+  if(slUnitINR<=0){showEmpty();return;}
+  const units=Math.max(1,Math.floor(riskINR/slUnitINR));
+  const posValINR=entry*m.mult*rate;
+  const marginPU=m.fix!==null?m.fix:posValINR/m.lev;
+  const totalMgn=units*marginPU;
+  const mgnPct=(totalMgn/cap)*100;
+  const actualRisk=units*slUnitINR;
+  const actualRiskPct=(actualRisk/cap)*100;
+  const RRS=[1,1.5,2,3];
+  const targets=RRS.map(rr=>{
+    const tp=isLong?entry+slDist*rr:entry-slDist*rr;
+    const tpINR=tp*m.mult*rate;
+    const gross=(slDist*rr*m.mult*rate)*units;
+    const fees=(posValINR+tpINR)*(m.fee/100)*units;
+    return{rr,tp,gross,net:gross-fees};
+  });
+  lastCalc={entry,sl,cap,rsk,isLong,units,actualRisk,targets,m,market:activeMkt};
+
+  $("r_empty").hidden=true;
+  $("r_content").hidden=false;
+  const db=$("dir_badge");
+  db.className="dir-badge "+(isLong?"long":"short");
+  db.textContent=isLong?"▲ LONG":"▼ SHORT";
+  const warns=[];
+  if(totalMgn>cap) warns.push("⚠ Margin ("+fmtINR(totalMgn)+") exceeds capital.");
+  if(actualRiskPct>5) warns.push("⚠ Risk is "+actualRiskPct.toFixed(1)+"% of capital.");
+  const wb=$("r_warn");
+  if(warns.length){wb.innerHTML=warns.join("<br>");wb.hidden=false;}else{wb.hidden=true;}
+  const uw=m.lots?(units===1?"lot":"lots"):(units===1?"share":"shares");
+  $("t0lbl").textContent=m.lots?"Position (Lots)":"Position (Qty)";
+  $("t0val").textContent=comma(units);
+  $("t0sub").textContent=units+" "+uw+" · risk "+fmtINR(actualRisk);
+  $("t1val").textContent=fmtINR(totalMgn);
+  $("t1sub").textContent=mgnPct.toFixed(1)+"% of capital";
+  $("t2val").textContent=fmtINR(actualRisk);
+  $("t2sub").textContent=actualRiskPct.toFixed(2)+"% · budget "+fmtINR(riskINR);
+  $("t3val").textContent=fmtP(slDist,m.dec);
+  $("t3sub").textContent=slPct.toFixed(2)+"% from entry";
+  const sym=m.usd?"$":"₹";
+  $("tgt_body").innerHTML=targets.map(t=>`
+    <div class="tgt-row">
+      <div class="rr-pill">1:${t.rr}</div>
+      <div class="tp-px">${m.cur}${fmtP(t.tp,m.dec)}</div>
+      <div class="v-pos">${sym}${fmtP(t.gross,0)}</div>
+      <div class="v-dim ${t.net>=0?"pos":"neg"}">${t.net<0?"−":""}${sym}${fmtP(Math.abs(t.net),0)}</div>
+    </div>`).join("");
+}
+
+function showEmpty(){$("r_empty").hidden=false;$("r_content").hidden=true;lastCalc=null;}
+
+document.querySelectorAll(".chip").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    document.querySelectorAll(".chip").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    activeMkt=btn.dataset.mkt;
+    const m=MKT[activeMkt]||MKT.custom;
+    $("usdrow").hidden=!m.usd;
+    $("custombox").hidden=activeMkt!=="custom";
+    $("curr1").textContent="("+m.cur+")";
+    $("curr2").textContent="("+m.cur+")";
+    calc();
+  });
+});
+["i_entry","i_sl","i_cap","i_rsk","i_usd","c_mult","c_lev","c_fee","c_lots"]
+  .forEach(id=>{const el=$(id);if(el)el.addEventListener("input",calc);});
+
+/* ══════════════ JOURNAL ══════════════ */
+
+let trades = [];
+let editId  = null;
+
+function loadTrades(){
+  try{ trades=JSON.parse(localStorage.getItem("tm_trades")||"[]"); }
+  catch(e){ trades=[]; }
+}
+function saveTrades(){
+  try{ localStorage.setItem("tm_trades",JSON.stringify(trades)); }catch(e){}
+}
+
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+function pnlForTrade(t){
+  if(!t.exit) return null;
+  const dir=t.dir==="LONG"?1:-1;
+  return dir*(t.exit-t.entry)*t.qty - (t.fees||0);
+}
+
+function rrActual(t){
+  if(!t.exit||!t.sl||!t.entry) return null;
+  const slDist=Math.abs(t.entry-t.sl);
+  if(!slDist) return null;
+  const dir=t.dir==="LONG"?1:-1;
+  return ((t.exit-t.entry)*dir)/slDist;
+}
+
+function renderStats(){
+  const closed=trades.filter(t=>t.exit);
+  const wins=closed.filter(t=>pnlForTrade(t)>0);
+  const totalPnl=closed.reduce((s,t)=>s+(pnlForTrade(t)||0),0);
+  const rrs=closed.map(rrActual).filter(r=>r!==null);
+  const avgRR=rrs.length?rrs.reduce((a,b)=>a+b,0)/rrs.length:null;
+  $("st_trades").textContent=trades.length;
+  $("st_wr").textContent=closed.length?Math.round(wins.length/closed.length*100)+"%":"—";
+  const pnlEl=$("st_pnl");
+  pnlEl.textContent=fmtINR(totalPnl);
+  pnlEl.className="stat-card-val "+(totalPnl>0?"pos":totalPnl<0?"neg":"acc");
+  $("st_rr").textContent=avgRR!==null?avgRR.toFixed(2):"—";
+}
+
+function renderTable(){
+  const mf=$("flt_market").value;
+  const df=$("flt_dir").value;
+  const rf=$("flt_result").value;
+  const filtered=trades.filter(t=>{
+    if(mf&&t.market!==mf) return false;
+    if(df&&t.dir!==df) return false;
+    if(rf==="win"){ const p=pnlForTrade(t); return p!==null&&p>0; }
+    if(rf==="loss"){ const p=pnlForTrade(t); return p!==null&&p<=0; }
+    if(rf==="open") return !t.exit;
+    return true;
+  }).slice().reverse();
+  $("jnl_empty").hidden=filtered.length>0;
+  $("jnl_table").style.display=filtered.length?"":"none";
+  $("jnl_body").innerHTML=filtered.map(t=>{
+    const pnl=pnlForTrade(t);
+    const rr=rrActual(t);
+    const isWin=pnl!==null&&pnl>0;
+    const resultBadge=!t.exit
+      ?`<span class="badge open">OPEN</span>`
+      :(isWin?`<span class="badge win">WIN</span>`:`<span class="badge loss">LOSS</span>`);
+    const pnlStr=pnl!==null
+      ?`<span class="${pnl>0?"td-pos":"td-neg"}">${pnl>=0?"":"-"}${fmtINR(Math.abs(pnl))}</span>`
+      :`<span class="td-muted">—</span>`;
+    return `<tr>
+      <td class="td-muted">${t.date||"—"}</td>
+      <td>${t.market||"—"}</td>
+      <td><span class="badge ${t.dir.toLowerCase()}">${t.dir==="LONG"?"▲":"▼"} ${t.dir}</span></td>
+      <td class="td-mono">${t.entry||"—"}</td>
+      <td class="td-mono">${t.sl||"—"}</td>
+      <td class="td-mono">${t.target||"—"}</td>
+      <td class="td-mono">${t.exit||"—"}</td>
+      <td class="td-mono">${t.qty||"—"}</td>
+      <td class="td-mono">${pnl!==null?(pnl>=0?"":"-")+fmtINR(Math.abs((t.exit-t.entry)*(t.dir==="LONG"?1:-1)*t.qty)):"—"}</td>
+      <td class="td-mono td-muted">${t.fees?fmtINR(t.fees):"₹0"}</td>
+      <td>${pnlStr}</td>
+      <td class="td-mono td-muted">${rr!==null?rr.toFixed(2):"—"}</td>
+      <td>${resultBadge}</td>
+      <td style="max-width:140px;white-space:normal;font-size:12px;color:var(--fg3)">${t.notes||""}</td>
+      <td><button class="del-btn" data-id="${t.id}" title="Delete">✕</button></td>
+    </tr>`;
+  }).join("");
+
+  $("jnl_body").querySelectorAll(".del-btn").forEach(b=>{
+    b.addEventListener("click",()=>{
+      trades=trades.filter(t=>t.id!==b.dataset.id);
+      saveTrades(); renderTable(); renderStats();
+    });
+  });
+}
+
+function refreshJournal(){ renderStats(); renderTable(); }
+
+// Add form
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+$("showAddBtn").addEventListener("click",()=>{
+  editId=null;
+  $("formTitle").textContent="New Trade";
+  $("j_date").value=todayStr();
+  $("j_exit").value="";
+  $("j_notes").value="";
+  $("j_entry").value=""; $("j_sl").value=""; $("j_target").value=""; $("j_qty").value=""; $("j_fees").value="";
+  $("addForm").hidden=false;
+  $("addForm").scrollIntoView({behavior:"smooth",block:"nearest"});
+});
+
+$("logTradeBtn").addEventListener("click",()=>{
+  // Switch to journal tab and pre-fill form
+  switchTab("journal");
+  if(!lastCalc){ $("showAddBtn").click(); return; }
+  const lc=lastCalc;
+  const mktMap={equity:"NSE Equity",nifty:"Nifty F&O",bnf:"BankNifty F&O",gold:"MCX Gold",crude:"MCX Crude",btc:"BTC Perp",custom:"Other"};
+  editId=null;
+  $("formTitle").textContent="Log Trade";
+  $("j_date").value=todayStr();
+  $("j_market").value=mktMap[lc.market]||"Other";
+  $("j_dir").value=lc.isLong?"LONG":"SHORT";
+  $("j_entry").value=lc.entry;
+  $("j_sl").value=lc.sl;
+  $("j_target").value=lc.targets[2].tp.toFixed(lc.m.dec); // 1:2 target
+  $("j_qty").value=lc.units;
+  $("j_exit").value="";
+  $("j_fees").value="";
+  $("j_notes").value="";
+  $("addForm").hidden=false;
+  $("addForm").scrollIntoView({behavior:"smooth",block:"nearest"});
+});
+
+$("cancelAddBtn").addEventListener("click",()=>{ $("addForm").hidden=true; editId=null; });
+
+$("saveTradeBtn").addEventListener("click",()=>{
+  const t={
+    id: editId||uid(),
+    date:$("j_date").value,
+    market:$("j_market").value,
+    dir:$("j_dir").value,
+    entry:parseFloat($("j_entry").value)||null,
+    sl:parseFloat($("j_sl").value)||null,
+    target:parseFloat($("j_target").value)||null,
+    exit:parseFloat($("j_exit").value)||null,
+    qty:parseFloat($("j_qty").value)||null,
+    fees:parseFloat($("j_fees").value)||0,
+    notes:$("j_notes").value.trim(),
+  };
+  if(!t.entry||!t.qty){ alert("Entry price and Qty are required."); return; }
+  if(editId){ trades=trades.map(x=>x.id===editId?t:x); }
+  else { trades.push(t); }
+  saveTrades(); $("addForm").hidden=true; editId=null;
+  refreshJournal();
+});
+
+// Filters
+["flt_market","flt_dir","flt_result"].forEach(id=>{ $(id).addEventListener("change",renderTable); });
+
+// Export CSV
+$("exportBtn").addEventListener("click",()=>{
+  const cols=["date","market","dir","entry","sl","target","exit","qty","fees","pnl","rr","notes"];
+  const rows=trades.map(t=>{
+    const pnl=pnlForTrade(t);
+    const rr=rrActual(t);
+    return [t.date,t.market,t.dir,t.entry,t.sl,t.target,t.exit,t.qty,t.fees,
+      pnl!==null?pnl.toFixed(2):"",rr!==null?rr.toFixed(2):"",'"'+(t.notes||"").replace(/"/g,'""')+'"'].join(",");
+  });
+  const csv=[cols.join(","),...rows].join("\n");
+  const a=document.createElement("a");
+  a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);
+  a.download="trademath_journal.csv";
+  a.click();
+});
+
+/* ══════════════ ZERODHA CSV IMPORT ══════════════ */
+
+let importedTrades = [];
+
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+  // Detect delimiter
+  const delim = lines[0].includes('\t') ? '\t' : ',';
+  const parseRow = line => {
+    const cols = []; let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { inQ = !inQ; }
+      else if (c === delim && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else { cur += c; }
+    }
+    cols.push(cur.trim());
+    return cols;
+  };
+  const headers = parseRow(lines[0]).map(h => h.toLowerCase().replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_'));
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const vals = parseRow(lines[i]);
+    const obj = {};
+    headers.forEach((h, idx) => { obj[h] = (vals[idx] || '').trim(); });
+    rows.push(obj);
+  }
+  return rows;
+}
+
+function detectCol(headers, ...patterns) {
+  for (const p of patterns) {
+    const found = headers.find(h => h.includes(p));
+    if (found) return found;
+  }
+  return null;
+}
+
+function parseZerodhaDate(str) {
+  if (!str) return '';
+  // Formats: YYYY-MM-DD, DD-MM-YYYY, DD/MM/YYYY, DD MMM YYYY
+  str = str.replace(/\s+/g,' ').trim();
+  let m;
+  if ((m = str.match(/^(\d{4})-(\d{2})-(\d{2})/))) return m[1]+'-'+m[2]+'-'+m[3];
+  if ((m = str.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})/))) return m[3]+'-'+m[2]+'-'+m[1];
+  const months={jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12'};
+  if ((m = str.match(/^(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})/))) {
+    const mo = months[m[2].toLowerCase().slice(0,3)] || '01';
+    return m[3]+'-'+mo+'-'+m[1].padStart(2,'0');
+  }
+  return str.slice(0,10);
+}
+
+function processZerodhaRows(rows) {
+  if (!rows.length) return [];
+  const headers = Object.keys(rows[0]);
+
+  const colDate   = detectCol(headers,'trade_date','date','order_exec','time');
+  const colSym    = detectCol(headers,'symbol','scrip','instrument','trading_symbol');
+  const colType   = detectCol(headers,'trade_type','type','buy_sell','side','order_type');
+  const colQty    = detectCol(headers,'quantity','qty','shares');
+  const colPrice  = detectCol(headers,'price','gross_price','trade_price','rate','avg_price');
+  const colExch   = detectCol(headers,'exchange','exch','segment');
+
+  if (!colSym || !colType || !colQty || !colPrice) return null; // can't parse
+
+  // Build list of transactions
+  const txns = rows.map(r => ({
+    date:   parseZerodhaDate(r[colDate] || ''),
+    symbol: (r[colSym] || '').toUpperCase(),
+    type:   (r[colType] || '').toLowerCase().includes('buy') ? 'buy' : 'sell',
+    qty:    parseFloat(r[colQty]) || 0,
+    price:  parseFloat(r[colPrice]) || 0,
+    exch:   (r[colExch] || '').toUpperCase(),
+  })).filter(t => t.qty > 0 && t.price > 0 && t.symbol);
+
+  // Group by symbol + date, match BUY→SELL (FIFO)
+  const byKey = {};
+  txns.forEach(t => {
+    const key = t.symbol + '|' + t.date;
+    if (!byKey[key]) byKey[key] = { buys: [], sells: [], symbol: t.symbol, date: t.date, exch: t.exch };
+    byKey[key][t.type === 'buy' ? 'buys' : 'sells'].push(t);
+  });
+
+  const result = [];
+  Object.values(byKey).forEach(g => {
+    const buys  = [...g.buys];
+    const sells = [...g.sells];
+
+    // Match buy→sell pairs
+    while (buys.length && sells.length) {
+      const b = buys.shift(), s = sells.shift();
+      const qty = Math.min(b.qty, s.qty);
+      result.push({ date:b.date, symbol:g.symbol, dir:'LONG', entry:b.price, exit:s.price, qty, exch:g.exch });
+    }
+    // Remaining sells → SHORT (intraday short or unmatched)
+    sells.forEach(s => result.push({ date:s.date, symbol:g.symbol, dir:'SHORT', entry:s.price, exit:null, qty:s.qty, exch:g.exch }));
+    // Remaining buys → open LONG
+    buys.forEach(b => result.push({ date:b.date, symbol:g.symbol, dir:'LONG', entry:b.price, exit:null, qty:b.qty, exch:g.exch }));
+  });
+
+  return result.sort((a,b) => a.date > b.date ? -1 : 1);
+}
+
+function guessMarket(symbol, exch) {
+  const s = symbol.toUpperCase(), e = (exch||'').toUpperCase();
+  if (e.includes('MCX') || s.includes('GOLD')) return 'MCX Gold';
+  if (s.includes('CRUDE')) return 'MCX Crude';
+  if (s.includes('NIFTY') || s.includes('NIFTYBANK') || s.includes('BANKNIFTY')) return 'Nifty F&O';
+  if (e.includes('NFO') || e.includes('BFO')) return 'Nifty F&O';
+  return 'NSE Equity';
+}
+
+$("importBtn").addEventListener("click", () => $("csvFileInput").click());
+
+$("csvFileInput").addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  e.target.value = '';
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const rows = parseCSV(ev.target.result);
+    const parsed = processZerodhaRows(rows);
+    if (!parsed || !parsed.length) {
+      $("importInfo").textContent = "Could not parse this CSV. Make sure it is a Zerodha Tradebook export.";
+      $("importPreviewBody").innerHTML = '';
+      importedTrades = [];
+      $("importPanel").hidden = false;
+      return;
+    }
+    importedTrades = parsed;
+    $("importInfo").textContent = `Found ${parsed.length} trade(s) in ${file.name}. Review below and click Import.`;
+    $("importWarn").textContent = parsed.filter(t=>!t.exit).length + ' open (no exit yet) — P&L shown only for closed trades.';
+    $("importPreviewBody").innerHTML = parsed.map(t => {
+      const pnl = t.exit ? ((t.dir==='LONG'?1:-1)*(t.exit-t.entry)*t.qty) : null;
+      const pnlStr = pnl !== null
+        ? `<span style="color:${pnl>=0?'var(--green)':'var(--red)'};">${pnl>=0?'+':''}₹${Math.abs(pnl).toFixed(0)}</span>`
+        : '<span style="color:var(--fg3)">Open</span>';
+      return `<tr>
+        <td class="td-muted">${t.date}</td>
+        <td style="font-weight:500">${t.symbol}</td>
+        <td><span class="badge ${t.dir.toLowerCase()}">${t.dir==='LONG'?'▲':'▼'} ${t.dir}</span></td>
+        <td class="td-mono">${t.entry}</td>
+        <td class="td-mono">${t.exit||'—'}</td>
+        <td class="td-mono">${t.qty}</td>
+        <td>${pnlStr}</td>
+      </tr>`;
+    }).join('');
+    $("importPanel").hidden = false;
+    $("importPanel").scrollIntoView({behavior:'smooth',block:'nearest'});
+  };
+  reader.readAsText(file);
+});
+
+$("confirmImportBtn").addEventListener("click", () => {
+  importedTrades.forEach(t => {
+    trades.push({
+      id: uid(),
+      date: t.date,
+      market: guessMarket(t.symbol, t.exch),
+      dir: t.dir,
+      entry: t.entry,
+      sl: null,
+      target: null,
+      exit: t.exit || null,
+      qty: t.qty,
+      fees: 0,
+      notes: 'Zerodha import · ' + t.symbol,
+    });
+  });
+  saveTrades();
+  $("importPanel").hidden = true;
+  importedTrades = [];
+  refreshJournal();
+});
+
+$("cancelImportBtn").addEventListener("click", () => {
+  $("importPanel").hidden = true;
+  importedTrades = [];
+});
+
+/* ══════════════ TABS ══════════════ */
+function switchTab(name){
+  ["calc","journal"].forEach(t=>{
+    $(  "tab-"+t).hidden=t!==name;
+    document.querySelector('.tab-btn[data-tab="'+t+'"]').classList.toggle("active",t===name);
+  });
+  if(name==="journal") refreshJournal();
+}
+document.querySelectorAll(".tab-btn").forEach(b=>{
+  b.addEventListener("click",()=>switchTab(b.dataset.tab));
+});
+
+/* ══════════════ THEME ══════════════ */
+$("themeBtn").addEventListener("click",()=>{
+  const r=document.documentElement;
+  if(r.dataset.theme==="light"){ delete r.dataset.theme; $("themeBtn").textContent="☀ Light"; }
+  else { r.dataset.theme="light"; $("themeBtn").textContent="☾ Dark"; }
+});
+
+/* ══════════════ INIT ══════════════ */
+loadTrades();
+calc();
+</script>
