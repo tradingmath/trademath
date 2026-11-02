@@ -185,6 +185,32 @@ body::before {
   .tgt-head .th:nth-child(3),.tgt-row .v-pos { display:none; }
 }
 
+/* ── Settings ── */
+#tab-settings { padding-top:20px; }
+.settings-section { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:16px; }
+.settings-section .p-title { margin-bottom:16px; }
+.toggle-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 0; border-bottom:1px solid var(--border);
+}
+.toggle-row:last-child { border-bottom:none; padding-bottom:0; }
+.toggle-label { font-size:14px; color:var(--fg); font-weight:500; }
+.toggle-sub { font-size:11px; color:var(--fg3); margin-top:2px; }
+.toggle-switch {
+  position:relative; width:44px; height:24px; flex-shrink:0;
+}
+.toggle-switch input { opacity:0; width:0; height:0; position:absolute; }
+.toggle-track {
+  position:absolute; inset:0; border-radius:24px;
+  background:var(--border); cursor:pointer; transition:background .2s;
+}
+.toggle-track::after {
+  content:""; position:absolute; width:18px; height:18px; border-radius:50%;
+  background:#fff; top:3px; left:3px; transition:transform .2s;
+}
+.toggle-switch input:checked + .toggle-track { background:var(--accent); }
+.toggle-switch input:checked + .toggle-track::after { transform:translateX(20px); }
+
 /* ── Journal ── */
 #tab-journal { padding-top:20px; }
 
@@ -277,6 +303,7 @@ hr { border:none; border-top:1px solid var(--border); margin:14px 0; }
 <div class="tabs">
   <button class="tab-btn active" data-tab="calc">📐 Calculator</button>
   <button class="tab-btn" data-tab="journal">📒 Journal</button>
+  <button class="tab-btn" data-tab="settings">⚙ Settings</button>
 </div>
 
 <!-- ══ TAB: CALCULATOR ══ -->
@@ -378,6 +405,41 @@ hr { border:none; border-top:1px solid var(--border); margin:14px 0; }
     </div>
   </div>
   <p class="note">For position sizing only — not investment advice. Verify margin with your broker.</p>
+</div>
+
+<!-- ══ TAB: SETTINGS ══ -->
+<div id="tab-settings" hidden>
+  <div class="settings-section">
+    <div class="p-title">Markets Shown in Calculator</div>
+    <div class="toggle-row">
+      <div><div class="toggle-label">NSE Equity</div><div class="toggle-sub">Stocks — leverage 5×, fee 0.05%</div></div>
+      <label class="toggle-switch"><input type="checkbox" id="tog_equity" checked><span class="toggle-track"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div><div class="toggle-label">Nifty F&amp;O</div><div class="toggle-sub">Lot size 25 — fixed margin ₹75,000</div></div>
+      <label class="toggle-switch"><input type="checkbox" id="tog_nifty" checked><span class="toggle-track"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div><div class="toggle-label">BankNifty F&amp;O</div><div class="toggle-sub">Lot size 15 — fixed margin ₹55,000</div></div>
+      <label class="toggle-switch"><input type="checkbox" id="tog_bnf" checked><span class="toggle-track"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div><div class="toggle-label">MCX Gold Mini</div><div class="toggle-sub">Lot ×10 — fixed margin ₹16,000</div></div>
+      <label class="toggle-switch"><input type="checkbox" id="tog_gold" checked><span class="toggle-track"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div><div class="toggle-label">MCX Crude</div><div class="toggle-sub">Lot ×100 — fixed margin ₹25,000</div></div>
+      <label class="toggle-switch"><input type="checkbox" id="tog_crude" checked><span class="toggle-track"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div><div class="toggle-label">BTC Perp</div><div class="toggle-sub">0.001 BTC/lot — leverage 150×, fee 0.04%</div></div>
+      <label class="toggle-switch"><input type="checkbox" id="tog_btc" checked><span class="toggle-track"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div><div class="toggle-label">Custom</div><div class="toggle-sub">Configure your own market params</div></div>
+      <label class="toggle-switch"><input type="checkbox" id="tog_custom" checked><span class="toggle-track"></span></label>
+    </div>
+  </div>
 </div>
 
 <!-- ══ TAB: JOURNAL ══ -->
@@ -1002,10 +1064,52 @@ $("cancelImportBtn").addEventListener("click", () => {
   importedTrades = [];
 });
 
+/* ══════════════ SETTINGS ══════════════ */
+const MKT_KEYS = ["equity","nifty","bnf","gold","crude","btc","custom"];
+
+function loadSettings(){
+  try {
+    const s = JSON.parse(localStorage.getItem("tm_settings")||"{}");
+    MKT_KEYS.forEach(k=>{
+      const el = $("tog_"+k);
+      if(!el) return;
+      // default ON if not set
+      el.checked = s[k] !== false;
+    });
+  } catch(e){}
+  applyMarketToggles();
+}
+
+function saveSettings(){
+  const s={};
+  MKT_KEYS.forEach(k=>{ const el=$("tog_"+k); if(el) s[k]=el.checked; });
+  try{ localStorage.setItem("tm_settings",JSON.stringify(s)); }catch(e){}
+}
+
+function applyMarketToggles(){
+  MKT_KEYS.forEach(k=>{
+    const chip = document.querySelector('.chip[data-mkt="'+k+'"]');
+    const tog  = $("tog_"+k);
+    if(!chip||!tog) return;
+    chip.style.display = tog.checked ? "" : "none";
+  });
+  // If active chip is now hidden, switch to first visible
+  const activeChip = document.querySelector('.chip.active');
+  if(activeChip && activeChip.style.display==="none"){
+    const firstVisible = document.querySelector('.chip:not([style*="none"])');
+    if(firstVisible) firstVisible.click();
+  }
+}
+
+MKT_KEYS.forEach(k=>{
+  const el=$("tog_"+k);
+  if(el) el.addEventListener("change",()=>{ saveSettings(); applyMarketToggles(); });
+});
+
 /* ══════════════ TABS ══════════════ */
 function switchTab(name){
-  ["calc","journal"].forEach(t=>{
-    $(  "tab-"+t).hidden=t!==name;
+  ["calc","journal","settings"].forEach(t=>{
+    $("tab-"+t).hidden=t!==name;
     document.querySelector('.tab-btn[data-tab="'+t+'"]').classList.toggle("active",t===name);
   });
   if(name==="journal") refreshJournal();
@@ -1023,6 +1127,7 @@ $("themeBtn").addEventListener("click",()=>{
 
 /* ══════════════ INIT ══════════════ */
 loadTrades();
+loadSettings();
 calc();
 </script>
 </body>
