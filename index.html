@@ -346,11 +346,11 @@ hr { border:none; border-top:1px solid var(--border); margin:14px 0; }
           <input type="number" id="i_rsk" value="1" step="0.1" min="0.01" max="100" autocomplete="off">
         </div>
       </div>
-      <div class="field" id="usdrow" hidden>
+      <div class="field" id="usdrow" style="display:none">
         <label for="i_usd">USD / INR Rate</label>
         <input type="number" id="i_usd" value="84" step="0.5" min="1" autocomplete="off">
       </div>
-      <div class="custom-box" id="custombox" hidden>
+      <div class="custom-box" id="custombox" style="display:none">
         <div class="p-title">Market Config</div>
         <div class="field-row">
           <div class="field"><label for="c_mult">Price Multiplier / Lot</label><input type="number" id="c_mult" value="1" step="any" min="0.0001" autocomplete="off"></div>
@@ -697,8 +697,8 @@ document.querySelectorAll(".chip").forEach(btn=>{
     btn.classList.add("active");
     activeMkt=btn.dataset.mkt;
     const m=MKT[activeMkt]||MKT.custom;
-    $("usdrow").hidden=!m.usd;
-    $("custombox").hidden=activeMkt!=="custom";
+    $("usdrow").style.display=m.usd?"":"none";
+    $("custombox").style.display=activeMkt==="custom"?"":"none";
     $("curr1").textContent="("+m.cur+")";
     $("curr2").textContent="("+m.cur+")";
     calc();
