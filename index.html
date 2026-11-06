@@ -19,11 +19,9 @@
   </div>
 </header>
 
-<!-- Tab nav -->
 <div class="tabs">
   <button class="tab-btn active" data-tab="calc">📐 Calc</button>
   <button class="tab-btn" data-tab="journal">📒 Journal</button>
-  <button class="tab-btn" data-tab="analytics">📊 Analytics</button>
   <button class="tab-btn" data-tab="settings">⚙ Settings</button>
 </div>
 
@@ -34,44 +32,59 @@
 
     <!-- LEFT -->
     <div class="calc-left">
-      <div class="mkt-bar">
-        <div class="chips">
-          <button class="chip active" data-mkt="equity">NSE Equity</button>
-          <button class="chip" data-mkt="nifty">Nifty F&amp;O</button>
-          <button class="chip" data-mkt="bnf">BankNifty F&amp;O</button>
-          <button class="chip" data-mkt="gold">MCX Gold Mini</button>
-          <button class="chip" data-mkt="crude">MCX Crude</button>
-          <button class="chip" data-mkt="btc">BTC Perp</button>
-          <button class="chip" data-mkt="custom">Custom</button>
-        </div>
-      </div>
 
-      <!-- Options panel (Nifty / BankNifty only) -->
-      <div id="options_panel" class="options-panel" hidden>
-        <div class="p-title" style="margin-bottom:8px">Instrument Type</div>
-        <div class="opt-mode-row">
-          <button class="opt-mode-btn active" data-mode="futures">Futures</button>
-          <button class="opt-mode-btn" data-mode="CE">CE (Call)</button>
-          <button class="opt-mode-btn" data-mode="PE">Put (PE)</button>
+      <!-- Top control: Mode switch & F&O toggle -->
+      <div class="mode-bar">
+        <div class="mode-left">
+          <span class="mode-badge" id="mode_badge">🏢 Equity / Stocks</span>
+          <button class="fo-toggle-btn" id="fo_toggle_btn" type="button" title="Toggle F&amp;O (Options / Futures / Lot Sizing)">
+            <span id="fo_toggle_icon">⚡</span> <span id="fo_toggle_text">F&amp;O Mode</span>
+          </button>
         </div>
-        <div id="strike_row" hidden style="margin-bottom:8px">
-          <div class="field" style="margin-bottom:0">
-            <label for="i_strike">Strike Price (for breakeven)</label>
-            <input type="number" id="i_strike" step="50" min="0" placeholder="e.g. 24000" autocomplete="off">
+        <div id="fo_tabs_wrap" class="fo-tabs-wrap" hidden>
+          <div class="instr-tabs">
+            <button class="instr-tab active" id="instr_equity">🏢 Equity</button>
+            <button class="instr-tab" id="instr_futures">📈 Futures</button>
+            <button class="instr-tab" id="instr_options">⚡ Options</button>
+          </div>
+          <div class="mis-nrml">
+            <button class="mis-nrml-btn" id="mis_btn">MIS</button>
+            <button class="mis-nrml-btn active" id="nrml_btn">NRML</button>
           </div>
         </div>
-        <div id="options_stats" hidden></div>
       </div>
 
-      <!-- Tiles -->
-      <div id="r_empty" class="r-empty" style="padding:20px 0"><strong>Enter entry &amp; stop-loss below</strong>Results appear here instantly</div>
+      <!-- Symbol search (Optional) -->
+      <div class="sym-wrap">
+        <div class="sym-input-wrap">
+          <input type="text" id="sym_input" placeholder="Stock / Symbol (optional) … e.g. RELIANCE, TCS, NIFTY" autocomplete="off" autocorrect="off" spellcheck="false">
+          <div id="sym_dropdown" class="sym-dropdown" hidden></div>
+        </div>
+        <div class="sym-row2" id="sym_row2" hidden>
+          <span id="lot_label" class="lot-label" hidden></span>
+          <div id="type_row" class="type-row" hidden>
+            <select id="opt_type">
+              <option value="CE">CE (Call Option)</option>
+              <option value="PE">PE (Put Option)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results tiles -->
+      <div id="r_empty" class="r-empty"><strong>Enter entry &amp; stop-loss below</strong>Results appear here instantly</div>
       <div id="r_content" hidden>
         <div id="r_warn" class="warn-box" hidden></div>
         <div class="tiles">
           <div class="tile hi">
-            <div class="tile-lbl" id="t0lbl">Position (Qty)</div>
+            <div class="tile-lbl" id="t0lbl">Position (Shares)</div>
             <div class="tile-val" id="t0val">—</div>
             <div class="tile-sub" id="t0sub"></div>
+          </div>
+          <div class="tile">
+            <div class="tile-lbl">Margin Required</div>
+            <div class="tile-val" id="t1val">—</div>
+            <div class="tile-sub" id="t1sub"></div>
           </div>
           <div class="tile">
             <div class="tile-lbl">Max Risk</div>
@@ -83,31 +96,26 @@
             <div class="tile-val td-pos" id="t_profit_val">—</div>
             <div class="tile-sub" id="t_profit_sub"></div>
           </div>
-          <div class="tile">
-            <div class="tile-lbl">Margin Required</div>
-            <div class="tile-val" id="t1val">—</div>
-            <div class="tile-sub" id="t1sub"></div>
-          </div>
         </div>
       </div>
 
-      <!-- Trade Setup -->
+      <!-- Trade setup -->
       <div class="panel" style="margin-top:14px">
         <div class="p-title">Trade Setup</div>
         <div class="field-row">
           <div class="field">
-            <label for="i_entry"><span id="options_label_entry">Entry</span> <span id="curr1" style="color:var(--fg3)">(₹)</span></label>
-            <input type="number" id="i_entry" value="500" step="any" min="0" autocomplete="off">
+            <label for="i_entry">Entry Price (₹) <span id="dir_badge" class="dir-badge long">▲ LONG</span></label>
+            <input type="number" id="i_entry" value="500" step="any" min="0" autocomplete="off" placeholder="e.g. 500">
           </div>
           <div class="field">
-            <label for="i_sl"><span id="options_label_sl">Stop Loss</span> <span id="curr2" style="color:var(--fg3)">(₹)</span> <span id="dir_badge" class="dir-badge long">▲ LONG</span></label>
-            <input type="number" id="i_sl" value="495" step="any" min="0" autocomplete="off">
+            <label for="i_sl">Stop Loss (₹) <span id="sl_dist_badge" style="font-size:11px;color:var(--fg3);font-family:var(--mono)"></span></label>
+            <input type="number" id="i_sl" value="495" step="any" min="0" autocomplete="off" placeholder="e.g. 495">
           </div>
         </div>
         <div class="field-row">
           <div class="field">
             <label for="i_cap">Capital (₹)</label>
-            <input type="number" id="i_cap" value="100000" step="1" min="1" autocomplete="off">
+            <input type="number" id="i_cap" value="100000" step="1000" min="1" autocomplete="off">
           </div>
           <div class="field">
             <label style="display:flex;align-items:center;justify-content:space-between">
@@ -121,33 +129,36 @@
               </span>
             </label>
             <input type="number" id="i_rsk" value="1" step="0.1" min="0.01" max="100" autocomplete="off">
-            <input type="number" id="i_flat" value="" step="100" min="1" autocomplete="off" placeholder="e.g. ₹2000" style="display:none;margin-top:6px">
+            <input type="number" id="i_flat" value="" step="100" min="1" autocomplete="off" placeholder="e.g. ₹1000" style="display:none;margin-top:6px">
           </div>
         </div>
-        <div class="field-row">
-          <div class="field">
-            <label for="i_rr">Default R:R (for Profit tile)</label>
-            <input type="number" id="i_rr" value="2" step="0.5" min="0.5" max="20" autocomplete="off">
+
+        <!-- Leverage Selector (for Equity) -->
+        <div class="field" id="lev_field">
+          <label style="display:flex;align-items:center;justify-content:space-between">
+            <span>Leverage / Margin Mode</span>
+            <span id="lev_info_badge" style="font-size:11px;color:var(--accent);font-family:var(--mono)">5× Intraday MIS</span>
+          </label>
+          <div class="lev-pills">
+            <button type="button" class="lev-pill active" id="lev_btn_5" data-lev="5">5× Intraday (MIS)</button>
+            <button type="button" class="lev-pill" id="lev_btn_1" data-lev="1">1× Cash (CNC / Delivery)</button>
+            <button type="button" class="lev-pill" id="lev_btn_custom" data-lev="custom">Custom</button>
           </div>
-          <div class="field"></div>
+          <div id="custom_lev_wrap" style="display:none;margin-top:8px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:12px;color:var(--fg2)">Leverage:</span>
+              <input type="number" id="i_custom_lev" value="5" min="1" max="100" step="0.5" style="width:80px;padding:6px 10px;font-family:var(--mono)" autocomplete="off">
+              <span style="font-size:12px;color:var(--fg3)">× (Margin required: <span id="custom_margin_pct">20%</span>)</span>
+            </div>
+          </div>
         </div>
-        <div class="field" id="usdrow" style="display:none">
-          <label for="i_usd">USD / INR Rate</label>
-          <input type="number" id="i_usd" value="84" step="0.5" min="1" autocomplete="off">
-        </div>
-        <div class="custom-box" id="custombox" style="display:none">
-          <div class="p-title">Market Config</div>
-          <div class="field-row">
-            <div class="field"><label for="c_mult">Multiplier / Lot</label><input type="number" id="c_mult" value="1" step="any" min="0.0001" autocomplete="off"></div>
-            <div class="field"><label for="c_lev">Leverage (×)</label><input type="number" id="c_lev" value="5" step="1" min="1" autocomplete="off"></div>
-          </div>
-          <div class="field-row">
-            <div class="field"><label for="c_fee">Fees % (round)</label><input type="number" id="c_fee" value="0.05" step="0.01" min="0" autocomplete="off"></div>
-            <div class="field"><label for="c_lots">Use Lots?</label><input type="number" id="c_lots" value="0" min="0" max="1" step="1" autocomplete="off"></div>
-          </div>
+
+        <div class="field" style="margin-top:2px">
+          <label for="i_rr">Target R:R (for Profit tile)</label>
+          <input type="number" id="i_rr" value="2" step="0.5" min="0.5" max="20" autocomplete="off">
         </div>
         <hr>
-        <button class="btn btn-primary btn-sm" id="logTradeBtn" style="width:100%">+ Log This Trade to Journal</button>
+        <button class="btn btn-primary" id="logTradeBtn" style="width:100%;padding:10px 14px;font-size:14px;font-weight:600">+ Log This Trade to Journal</button>
       </div>
 
       <!-- R:R Targets -->
@@ -163,17 +174,16 @@
           </div>
           <div id="tgt_body"></div>
         </div>
-        <!-- Indian fee breakdown -->
         <div class="fee-section" id="fee_section" style="margin-top:10px">
           <button class="fee-toggle" id="fee_toggle_btn">
-            <span>📋 Indian Charges Breakdown (1:2 trade)</span>
+            <span>📋 Zerodha Charges Breakdown (1:2 trade)</span>
             <span class="fee-arrow">▼</span>
           </button>
           <div class="fee-body" id="fee_breakdown_body"></div>
         </div>
       </div>
       <p class="note">For position sizing only — not investment advice. Verify margin with your broker.</p>
-    </div><!-- /calc-left -->
+    </div>
 
     <!-- RIGHT: today's trades -->
     <div class="calc-right panel">
@@ -185,12 +195,11 @@
       <div id="today_empty" style="color:var(--fg3);font-size:13px;text-align:center;padding:32px 0;display:none">No trades logged today</div>
     </div>
 
-  </div><!-- /calc-layout -->
+  </div>
 </div>
 
 <!-- ══ TAB: JOURNAL ══ -->
 <div id="tab-journal" hidden>
-
   <div class="jnl-top">
     <div class="jnl-title">Trade Journal</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -200,8 +209,6 @@
       <button class="btn btn-primary btn-sm" id="showAddBtn">+ Add Trade</button>
     </div>
   </div>
-
-  <!-- Import preview -->
   <div class="add-form-wrap" id="importPanel" hidden>
     <div class="p-title">Zerodha CSV Import Preview</div>
     <div id="importInfo" style="font-size:13px;color:var(--fg2);margin-bottom:12px;"></div>
@@ -217,16 +224,12 @@
       <span id="importWarn" style="font-size:12px;color:var(--fg3);"></span>
     </div>
   </div>
-
-  <!-- Stats -->
   <div class="stats-row" id="statsRow">
     <div class="stat-card"><div class="stat-card-lbl">Total Trades</div><div class="stat-card-val acc" id="st_trades">0</div></div>
     <div class="stat-card"><div class="stat-card-lbl">Win Rate</div><div class="stat-card-val acc" id="st_wr">—</div></div>
     <div class="stat-card"><div class="stat-card-lbl">Net P&amp;L (₹)</div><div class="stat-card-val" id="st_pnl">₹0</div></div>
     <div class="stat-card"><div class="stat-card-lbl">Avg R:R (closed)</div><div class="stat-card-val acc" id="st_rr">—</div></div>
   </div>
-
-  <!-- Add / edit form -->
   <div class="add-form-wrap" id="addForm" hidden>
     <div class="p-title" id="formTitle">New Trade</div>
     <div class="field-row3">
@@ -253,13 +256,11 @@
       <div class="field"><label for="j_exit">Exit Price (blank if open)</label><input type="number" id="j_exit" step="any" min="0" autocomplete="off" placeholder="—"></div>
       <div class="field"><label for="j_fees">Fees (₹)</label><input type="number" id="j_fees" step="any" min="0" autocomplete="off" placeholder="0"></div>
     </div>
-    <!-- Setup tags -->
     <div class="field">
       <label>Setup / Strategy</label>
       <div class="tag-chips" id="j_setup_chips"></div>
       <input type="text" id="j_setup" placeholder="Custom setup name (or pick above)…" autocomplete="off">
     </div>
-    <!-- Mistake tags -->
     <div class="field">
       <label>Mistakes (optional)</label>
       <div class="tag-chips" id="j_mistake_chips"></div>
@@ -273,10 +274,7 @@
       <button class="btn btn-ghost" id="cancelAddBtn">Cancel</button>
     </div>
   </div>
-
   <div id="cal_wrap" style="margin-top:16px"></div>
-
-  <!-- Filters -->
   <div class="filter-row" style="margin-top:12px">
     <select class="filter-select" id="flt_market">
       <option value="">All Markets</option>
@@ -296,71 +294,150 @@
   <div class="empty-state" id="jnl_empty" style="display:none"><strong>No trades yet</strong>Click "+ Add Trade" to log your first trade</div>
 </div>
 
-<!-- ══ TAB: ANALYTICS ══ -->
-<div id="tab-analytics" hidden>
-  <div class="an-stats-row" style="margin-top:20px">
-    <div class="stat-card"><div class="stat-card-lbl">Profit Factor</div><div class="stat-card-val acc" id="an_pf">—</div></div>
-    <div class="stat-card"><div class="stat-card-lbl">Expectancy</div><div class="stat-card-val" id="an_exp">—</div></div>
-    <div class="stat-card"><div class="stat-card-lbl">Max Drawdown</div><div class="stat-card-val neg" id="an_dd">—</div></div>
-    <div class="stat-card"><div class="stat-card-lbl">Best Win Streak</div><div class="stat-card-val pos" id="an_str">—</div></div>
-  </div>
-  <div id="an_content">
-    <div class="an-empty">No closed trades yet. Close some trades to see analytics.</div>
-  </div>
-  <div class="panel" style="margin-top:16px" id="an_equity_panel" hidden>
-    <div class="p-title">Equity Curve</div>
-    <div id="an_equity"></div>
-  </div>
-  <div class="an-chart-grid" id="an_charts_grid" style="display:none">
-    <div class="panel"><div class="p-title">P&amp;L by Market</div><div id="an_market"></div></div>
-    <div class="panel"><div class="p-title">P&amp;L by Day of Week</div><div id="an_dow"></div></div>
-  </div>
-  <div class="panel" style="margin-top:16px" id="an_setup_panel" hidden>
-    <div class="p-title">Performance by Setup / Strategy</div>
-    <div id="an_setup"></div>
-  </div>
-</div>
 
 <!-- ══ TAB: SETTINGS ══ -->
 <div id="tab-settings" hidden>
 
-  <!-- Markets -->
+  <!-- Theme & Colors -->
   <div class="settings-section" style="margin-top:20px">
-    <div class="p-title">Markets Shown in Calculator</div>
+    <div class="p-title">Appearance &amp; Palettes</div>
     <div class="toggle-row">
-      <div><div class="toggle-label">NSE Equity</div><div class="toggle-sub">Stocks — leverage 5×, fee 0.05%</div></div>
-      <label class="toggle-switch"><input type="checkbox" id="tog_equity" checked><span class="toggle-track"></span></label>
+      <div>
+        <div class="toggle-label">Dark Mode</div>
+        <div class="toggle-sub">Switch between dark trading terminal and clean light mode</div>
+      </div>
+      <label class="toggle-switch"><input type="checkbox" id="tog_dark" checked><span class="toggle-track"></span></label>
+    </div>
+
+    <!-- Base Terminal Background -->
+    <div id="base_theme_wrap" style="margin-top:16px">
+      <div style="font-size:12px;color:var(--fg2);font-weight:500;margin-bottom:6px">Dark Terminal Theme</div>
+      <div class="theme-presets">
+        <button type="button" class="theme-preset-btn active" data-base="midnight">🌌 Midnight</button>
+        <button type="button" class="theme-preset-btn" data-base="oled">🌑 OLED Black</button>
+        <button type="button" class="theme-preset-btn" data-base="slate">🌊 Slate Navy</button>
+      </div>
+    </div>
+
+    <!-- Accent Color Palette -->
+    <div style="margin-top:16px">
+      <div style="font-size:12px;color:var(--fg2);font-weight:500;margin-bottom:8px">Accent Color Palette</div>
+      <div class="palette-grid">
+        <div class="palette-card active" data-color="amber">
+          <span class="palette-dot" style="background:#f59e0b"></span>
+          <span class="palette-name">Amber Gold</span>
+        </div>
+        <div class="palette-card" data-color="cyan">
+          <span class="palette-dot" style="background:#06b6d4"></span>
+          <span class="palette-name">Electric Cyan</span>
+        </div>
+        <div class="palette-card" data-color="emerald">
+          <span class="palette-dot" style="background:#10b981"></span>
+          <span class="palette-name">Emerald Pro</span>
+        </div>
+        <div class="palette-card" data-color="blue">
+          <span class="palette-dot" style="background:#3b82f6"></span>
+          <span class="palette-name">Cobalt Blue</span>
+        </div>
+        <div class="palette-card" data-color="purple">
+          <span class="palette-dot" style="background:#8b5cf6"></span>
+          <span class="palette-name">Hyper Violet</span>
+        </div>
+        <div class="palette-card" data-color="rose">
+          <span class="palette-dot" style="background:#f43f5e"></span>
+          <span class="palette-name">Crimson Rose</span>
+        </div>
+        <div class="palette-card" data-color="sunset">
+          <span class="palette-dot" style="background:#f97316"></span>
+          <span class="palette-name">Sunset Orange</span>
+        </div>
+        <div class="palette-card" data-color="lime">
+          <span class="palette-dot" style="background:#84cc16"></span>
+          <span class="palette-name">Matrix Lime</span>
+        </div>
+        <div class="palette-card" data-color="gold">
+          <span class="palette-dot" style="background:#eab308"></span>
+          <span class="palette-name">Bullion Gold</span>
+        </div>
+        <div class="palette-card" data-color="monochrome">
+          <span class="palette-dot" style="background:#94a3b8"></span>
+          <span class="palette-name">Minimal Slate</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Trading Defaults -->
+  <div class="settings-section">
+    <div class="p-title">Trading Defaults</div>
+    <div style="font-size:12px;color:var(--fg2);margin-bottom:12px">Set your standard parameters so you don't have to re-enter them every session.</div>
+    <div class="field-row">
+      <div class="field">
+        <label for="s_default_cap">Default Capital (₹)</label>
+        <input type="number" id="s_default_cap" value="100000" step="5000" min="1000" placeholder="100000" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="s_default_risk">Default Risk %</label>
+        <input type="number" id="s_default_risk" value="1" step="0.1" min="0.1" max="100" placeholder="1.0" autocomplete="off">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="s_default_lev">Default Leverage</label>
+        <select id="s_default_lev">
+          <option value="5">5× Intraday (MIS)</option>
+          <option value="1">1× Cash (CNC / Delivery)</option>
+          <option value="custom">Custom Multiplier</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="s_default_rr">Default Target R:R</label>
+        <input type="number" id="s_default_rr" value="2" step="0.5" min="0.5" max="20" placeholder="2.0" autocomplete="off">
+      </div>
+    </div>
+  </div>
+
+  <!-- Workflow & Simplicity Preferences -->
+  <div class="settings-section">
+    <div class="p-title">Calculator Preferences</div>
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-label">One-Click Quick Log</div>
+        <div class="toggle-sub">Instantly log trade to today's list &amp; journal without opening a modal</div>
+      </div>
+      <label class="toggle-switch"><input type="checkbox" id="tog_quick_log" checked><span class="toggle-track"></span></label>
     </div>
     <div class="toggle-row">
-      <div><div class="toggle-label">Nifty F&amp;O</div><div class="toggle-sub">Lot size 25 — fixed margin ₹75,000</div></div>
-      <label class="toggle-switch"><input type="checkbox" id="tog_nifty" checked><span class="toggle-track"></span></label>
+      <div>
+        <div class="toggle-label">Enable F&amp;O Mode by Default</div>
+        <div class="toggle-sub">Show Options, Futures, and lot sizes directly when opening the calculator</div>
+      </div>
+      <label class="toggle-switch"><input type="checkbox" id="tog_show_fo"><span class="toggle-track"></span></label>
     </div>
     <div class="toggle-row">
-      <div><div class="toggle-label">BankNifty F&amp;O</div><div class="toggle-sub">Lot size 15 — fixed margin ₹55,000</div></div>
-      <label class="toggle-switch"><input type="checkbox" id="tog_bnf" checked><span class="toggle-track"></span></label>
+      <div>
+        <div class="toggle-label">Show Zerodha Fee Breakdown</div>
+        <div class="toggle-sub">Show net P&amp;L after broker charges and taxes in targets and breakdown</div>
+      </div>
+      <label class="toggle-switch"><input type="checkbox" id="tog_show_fees" checked><span class="toggle-track"></span></label>
     </div>
-    <div class="toggle-row">
-      <div><div class="toggle-label">MCX Gold Mini</div><div class="toggle-sub">Lot ×10 — fixed margin ₹16,000</div></div>
-      <label class="toggle-switch"><input type="checkbox" id="tog_gold" checked><span class="toggle-track"></span></label>
+    <div class="fee-settings-row" id="fee_inputs_row" style="margin-top:14px">
+      <div class="field">
+        <label for="s_brokerage">Brokerage per order (₹)</label>
+        <input type="number" id="s_brokerage" value="20" min="0" step="1" autocomplete="off" placeholder="20">
+      </div>
+      <div class="field">
+        <label for="s_gst_pct">GST %</label>
+        <input type="number" id="s_gst_pct" value="18" min="0" step="1" autocomplete="off" placeholder="18">
+      </div>
     </div>
-    <div class="toggle-row">
-      <div><div class="toggle-label">MCX Crude</div><div class="toggle-sub">Lot ×100 — fixed margin ₹25,000</div></div>
-      <label class="toggle-switch"><input type="checkbox" id="tog_crude" checked><span class="toggle-track"></span></label>
-    </div>
-    <div class="toggle-row">
-      <div><div class="toggle-label">BTC Perp</div><div class="toggle-sub">0.001 BTC/lot — leverage 150×, fee 0.04%</div></div>
-      <label class="toggle-switch"><input type="checkbox" id="tog_btc" checked><span class="toggle-track"></span></label>
-    </div>
-    <div class="toggle-row">
-      <div><div class="toggle-label">Custom</div><div class="toggle-sub">Configure your own market params</div></div>
-      <label class="toggle-switch"><input type="checkbox" id="tog_custom" checked><span class="toggle-track"></span></label>
-    </div>
+    <div style="font-size:11px;color:var(--fg3);margin-top:6px">STT, exchange charges, SEBI fee, and stamp duty are calculated at SEBI-mandated rates per segment.</div>
   </div>
 
   <!-- Daily risk rules -->
   <div class="settings-section">
     <div class="p-title">Daily Risk Rules</div>
-    <div style="font-size:12px;color:var(--fg3);margin-bottom:14px">The calculator shows a warning banner when today's trades approach or hit these limits.</div>
+    <div style="font-size:12px;color:var(--fg2);margin-bottom:14px">The calculator shows a warning banner when today's trades approach or hit these limits.</div>
     <div class="field-row">
       <div class="field">
         <label for="s_max_loss">Max Daily Loss (₹)</label>
@@ -376,10 +453,10 @@
   <!-- Pre-trade checklist -->
   <div class="settings-section">
     <div class="p-title">Pre-Trade Checklist</div>
-    <div style="font-size:12px;color:var(--fg3);margin-bottom:12px">These items appear in the "Log Trade" modal so you verify your setup before entering.</div>
+    <div style="font-size:12px;color:var(--fg3);margin-bottom:12px">These items appear in the "Log Trade" modal before entering a trade.</div>
     <div id="settings_checklist"></div>
     <div style="display:flex;gap:8px;margin-top:12px">
-      <input type="text" id="new_checklist_item" class="field" style="margin-bottom:0;flex:1;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--fg);font-family:var(--sans);font-size:13px;outline:none" placeholder="e.g. Trend is aligned on higher TF">
+      <input type="text" id="new_checklist_item" style="flex:1;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--fg);font-family:var(--sans);font-size:13px;outline:none" placeholder="e.g. Trend aligned on higher TF">
       <button class="btn btn-primary btn-sm" id="add_checklist_btn">Add</button>
     </div>
   </div>
@@ -391,7 +468,6 @@
   <div class="modal">
     <div class="modal-title">Close Trade</div>
     <div class="modal-sub" id="cm_info"></div>
-    <!-- Full / Partial toggle -->
     <div style="display:flex;gap:6px;margin-bottom:14px">
       <button class="opt-mode-btn active" id="cm_full_btn" style="flex:1;padding:7px">Full Exit</button>
       <button class="opt-mode-btn" id="cm_partial_btn" style="flex:1;padding:7px">Partial Exit</button>
@@ -414,7 +490,7 @@
     </div>
     <div class="field" style="margin-top:8px">
       <label>Notes</label>
-      <textarea id="cm_notes" rows="2" placeholder="Exit reason, observations…" style="width:100%;border:1px solid var(--border);background:var(--bg);color:var(--fg);border-radius:8px;padding:7px 10px;font-size:13px;font-family:var(--sans);resize:none"></textarea>
+      <textarea id="cm_notes" rows="2" placeholder="Exit reason…" style="width:100%;border:1px solid var(--border);background:var(--bg);color:var(--fg);border-radius:8px;padding:7px 10px;font-size:13px;font-family:var(--sans);resize:none"></textarea>
     </div>
     <div style="display:flex;gap:8px;margin-top:10px">
       <button class="btn btn-primary" id="cm_confirm">Confirm</button>
@@ -428,17 +504,14 @@
   <div class="modal" style="max-width:460px">
     <div class="modal-title">Log Trade to Journal</div>
     <div class="modal-sub" id="pl_summary"></div>
-    <!-- Setup tags -->
     <div class="field" style="margin-bottom:12px">
       <label>Setup / Strategy</label>
       <div class="tag-chips" id="pl_setup_chips"></div>
     </div>
-    <!-- Mistake tags -->
     <div class="field" style="margin-bottom:12px">
       <label>Mistakes / Issues (optional)</label>
       <div class="tag-chips" id="pl_mistake_chips"></div>
     </div>
-    <!-- Confidence -->
     <div class="field" style="margin-bottom:12px">
       <label>Trade Confidence</label>
       <div class="star-row" id="pl_confidence" data-val="3">
@@ -449,12 +522,10 @@
         <button class="star-btn"    type="button">★</button>
       </div>
     </div>
-    <!-- Checklist -->
     <div class="field" style="margin-bottom:12px">
       <label>Pre-Trade Checklist</label>
       <div id="pl_checklist"></div>
     </div>
-    <!-- Notes -->
     <div class="field" style="margin-bottom:14px">
       <label>Notes</label>
       <textarea id="pl_notes" rows="2" placeholder="Entry reason, observations…" style="width:100%;border:1px solid var(--border);background:var(--bg);color:var(--fg);border-radius:8px;padding:7px 10px;font-size:13px;font-family:var(--sans);resize:none"></textarea>

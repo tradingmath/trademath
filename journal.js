@@ -107,14 +107,79 @@ $("showAddBtn").addEventListener("click", () => {
   $("addForm").scrollIntoView({ behavior: "smooth", block: "nearest" });
 });
 
-/* ── Pre-log modal (Log from Calc) ── */
+/* ── Toast notification helper ── */
+function showToast(msg) {
+  let toast = document.getElementById("tm_toast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "tm_toast";
+    toast.className = "tm-toast";
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.classList.add("show");
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 2600);
+}
+
+/* ── Pre-log modal & Quick Log (from Calc) ── */
 $("logTradeBtn").addEventListener("click", () => {
-  if (!lastCalc) { switchTab("journal"); $("showAddBtn").click(); return; }
-  // Open pre-log modal
+  if (!lastCalc) {
+    showToast("⚠️ Enter valid Entry & Stop Loss first");
+    return;
+  }
+  const s = typeof getAppSettings === "function" ? getAppSettings() : {};
+  // If quickLog is enabled (default), log directly without popup
+  if (s.quickLog !== false) {
+    quickLogTrade();
+    return;
+  }
+  openPreLogModal();
+});
+
+function quickLogTrade() {
+  if (!lastCalc) return;
   const lc = lastCalc;
-  const mktMap = { equity:"NSE Equity", nifty:"Nifty F&O", bnf:"BankNifty F&O", gold:"MCX Gold", crude:"MCX Crude", btc:"BTC Perp", custom:"Other" };
+  const unitWord = lc.isLots ? (lc.units === 1 ? "lot" : "lots") : (lc.units === 1 ? "share" : "shares");
+  const targetPx = lc.targetPrice || (lc.targets && lc.targets[2] ? lc.targets[2].tp : (lc.isLong ? lc.entry + Math.abs(lc.entry - lc.sl) * 2 : lc.entry - Math.abs(lc.entry - lc.sl) * 2));
+  
+  const symLabel = lc.symbolName && lc.symbolName !== "Equity" ? lc.symbolName : "";
+  const t = {
+    id: uid(),
+    date: todayStr(),
+    market: lc.market || (symLabel ? symLabel : "NSE Equity"),
+    dir: lc.isLong ? "LONG" : "SHORT",
+    entry: lc.entry,
+    sl: lc.sl,
+    target: parseFloat(targetPx.toFixed(2)),
+    qty: lc.units,
+    exit: null,
+    exits: [],
+    fees: 0,
+    notes: symLabel ? `Stock: ${symLabel}` : "",
+    setup: "",
+    mistakes: [],
+    confidence: 3,
+    checklistSkipped: false
+  };
+
+  trades.push(t);
+  saveTrades();
+  renderTodayTrades();
+  if (typeof renderDailyBanner === "function") renderDailyBanner();
+  
+  showToast(`✓ Logged: ${symLabel ? symLabel + " · " : ""}${t.dir === "LONG" ? "▲ LONG" : "▼ SHORT"} ${t.qty} ${unitWord} @ ₹${t.entry}`);
+}
+
+function openPreLogModal() {
+  if (!lastCalc) return;
+  const lc = lastCalc;
+  const unitWord = lc.isLots ? (lc.units === 1 ? "lot" : "lots") : (lc.units === 1 ? "share" : "shares");
+  const symLabel = lc.symbolName && lc.symbolName !== "Equity" ? lc.symbolName + " · " : "";
   $("pl_summary").textContent =
-    `${lc.isLong ? "▲ LONG" : "▼ SHORT"} · ${mktMap[lc.market] || "Other"} · Entry ${lc.entry} · SL ${lc.sl} · ${lc.units} ${lc.m.lots ? "lots" : "shares"}`;
+    `${symLabel}${lc.isLong ? "▲ LONG" : "▼ SHORT"} · ${lc.market} · Entry ₹${lc.entry} · SL ₹${lc.sl} · ${lc.units} ${unitWord}`;
   $("pl_notes").value  = "";
   $("pl_confidence").dataset.val = "3";
   renderStars(3);
@@ -124,7 +189,7 @@ $("logTradeBtn").addEventListener("click", () => {
   renderSetupChips("pl_mistake_chips", MISTAKE_PRESETS, selectedMistakeTags, null);
   renderPreLogChecklist();
   $("preLogModal").hidden = false;
-});
+}
 
 /* Stars */
 function renderStars(val) {
@@ -158,28 +223,36 @@ function togglePreCheck(el) {
 
 $("pl_confirm").addEventListener("click", () => {
   if (!lastCalc) return;
-  const lc   = lastCalc;
-  const mktMap = { equity:"NSE Equity", nifty:"Nifty F&O", bnf:"BankNifty F&O", gold:"MCX Gold", crude:"MCX Crude", btc:"BTC Perp", custom:"Other" };
+  const lc = lastCalc;
   const confidence = parseInt($("pl_confidence").dataset.val) || 3;
   const unchecked  = document.querySelectorAll("#pl_checklist .chk-box:not(.checked)").length;
+  const targetPx   = lc.targetPrice || (lc.targets && lc.targets[2] ? lc.targets[2].tp : (lc.isLong ? lc.entry + Math.abs(lc.entry - lc.sl) * 2 : lc.entry - Math.abs(lc.entry - lc.sl) * 2));
+  const symLabel   = lc.symbolName && lc.symbolName !== "Equity" ? lc.symbolName : "";
+
   const t = {
-    id: uid(), date: todayStr(),
-    market: mktMap[lc.market] || "Other",
+    id: uid(),
+    date: todayStr(),
+    market: lc.market || (symLabel ? symLabel : "NSE Equity"),
     dir:    lc.isLong ? "LONG" : "SHORT",
-    entry:  lc.entry, sl: lc.sl,
-    target: parseFloat(lc.targets[2].tp.toFixed(lc.m.dec)),
-    qty:    lc.units, exit: null, exits: [], fees: 0,
+    entry:  lc.entry,
+    sl:     lc.sl,
+    target: parseFloat(targetPx.toFixed(2)),
+    qty:    lc.units,
+    exit:   null,
+    exits:  [],
+    fees:   0,
     notes:  $("pl_notes").value.trim(),
     setup:  selectedSetupTags.join(", ") || "",
     mistakes: [...selectedMistakeTags],
     confidence,
-    checklistSkipped: unchecked,
+    checklistSkipped: unchecked > 0,
   };
   trades.push(t);
   saveTrades();
   $("preLogModal").hidden = true;
-  switchTab("journal");
-  refreshJournal();
+  renderTodayTrades();
+  if (typeof renderDailyBanner === "function") renderDailyBanner();
+  showToast(`✓ Logged ${t.qty} ${lc.isLots ? "lots" : "shares"} to Journal`);
 });
 
 $("pl_cancel").addEventListener("click", () => { $("preLogModal").hidden = true; });
@@ -471,6 +544,14 @@ $("cm_confirm").addEventListener("click", () => {
 });
 
 /* ══════════════ TODAY'S TRADES ══════════════ */
+function deleteTodayTrade(id) {
+  trades = trades.filter(t => t.id !== id);
+  saveTrades();
+  renderTodayTrades();
+  if (typeof renderDailyBanner === "function") renderDailyBanner();
+  showToast("Trade removed");
+}
+
 function renderTodayTrades() {
   const today  = todayStr();
   $("today_date").textContent = new Date().toLocaleDateString("en-IN", { weekday:"short", day:"numeric", month:"short" });
@@ -479,7 +560,16 @@ function renderTodayTrades() {
   const empty  = $("today_empty");
   if (!todays.length) { list.innerHTML = ""; empty.style.display = "block"; return; }
   empty.style.display = "none";
-  list.innerHTML = todays.map(t => {
+
+  const closedTodays = todays.filter(t => isClosed(t));
+  const todayPnlVal = closedTodays.reduce((s, t) => s + (pnlForTrade(t) || 0), 0);
+  const pnlSummaryHTML = closedTodays.length ? `
+    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--card);border-radius:8px;padding:8px 12px;margin-bottom:10px;border:1px solid var(--border)">
+      <span style="font-size:11px;color:var(--fg2);font-weight:500">Today's Realized P&amp;L</span>
+      <span class="td-mono ${todayPnlVal>=0?'td-pos':'td-neg'}" style="font-weight:700;font-size:14px">${fmtINR(todayPnlVal)}</span>
+    </div>` : "";
+
+  list.innerHTML = pnlSummaryHTML + todays.map(t => {
     const pnl    = pnlForTrade(t);
     const closed = isClosed(t);
     const pnlStr = !closed ? `<span style="color:var(--fg3)">OPEN</span>` : `<span class="${pnl>=0?'td-pos':'td-neg'}">${fmtINR(pnl)}</span>`;
@@ -488,10 +578,18 @@ function renderTodayTrades() {
       : pnl > 0 ? `<span class="badge win" style="font-size:10px">WIN</span>`
       : `<span class="badge loss" style="font-size:10px">LOSS</span>`;
     const closeBtn = !closed ? `<button class="btn btn-danger btn-sm" style="font-size:11px;padding:3px 10px" onclick="openCloseModal('${t.id}')">Close</button>` : "";
+    const delBtn   = `<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px;color:var(--fg3)" onclick="deleteTodayTrade('${t.id}')" title="Delete trade">✕</button>`;
     const setupTag = t.setup ? `<span style="font-size:10px;color:var(--accent);background:var(--accent-dim);border-radius:3px;padding:1px 6px">${t.setup}</span>` : "";
     return `<div class="today-trade" data-id="${t.id}">
-      <div class="today-trade-top">${badge}<span style="font-size:12px;font-weight:600">${t.market}</span>${res}${setupTag}<span class="today-trade-pnl">${pnlStr}</span></div>
-      <div class="today-trade-meta">E: ${t.entry||"—"} · SL: ${t.sl||"—"} · Qty: ${t.qty||"—"}${closed?` · Exit: ${t.exit||"partial"}`:""}</div>
+      <div class="today-trade-top">
+        ${badge}
+        <span style="font-size:12px;font-weight:600">${t.market}</span>
+        ${res}
+        ${setupTag}
+        <span class="today-trade-pnl">${pnlStr}</span>
+        ${delBtn}
+      </div>
+      <div class="today-trade-meta">E: ₹${t.entry||"—"} · SL: ₹${t.sl||"—"} · Qty: ${t.qty||"—"}${closed?` · Exit: ₹${t.exit||"partial"}`:""}</div>
       ${closeBtn ? `<div style="margin-top:8px;text-align:right">${closeBtn}</div>` : ""}
     </div>`;
   }).join("");
@@ -830,7 +928,6 @@ $("rc_close").addEventListener("click", () => { $("reportCardModal").hidden = tr
 $("reportCardModal").addEventListener("click", e => { if (e.target === $("reportCardModal")) $("reportCardModal").hidden = true; });
 
 $("rc_download").addEventListener("click", () => {
-  const card = $("rc_card");
   // Basic SVG export of card stats as a shareable image
   const title = $("rc_title").textContent;
   const stats  = [
