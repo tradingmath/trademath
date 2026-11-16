@@ -4,8 +4,38 @@
 let trades   = [];
 let editId   = null;
 
+/* Every trade has the same shape whichever level logged it: market (from the fixed MARKETS list), symbol,
+   instrument ("equity" | "options" | "futures") and optType. Older trades stored a symbol name or "Options (CE)"
+   in the market field, which broke the Market filter; this repairs them once on load. */
+function normalizeTrade(t) {
+  let changed = false;
+  const set = (k, v) => { if (t[k] !== v) { t[k] = v; changed = true; } };
+  const m = t.market || "";
+  if (!MARKETS.includes(m)) {
+    const sym = SYMBOLS.find(x => x.name === m.toUpperCase());
+    if (m === "BTC Perp") set("market", "Crypto");
+    else if (sym) {
+      if (!t.symbol) set("symbol", sym.name);
+      const inst = t.instrument || (t.lots || sym.indexOnly ? "options" : "equity");
+      set("instrument", inst);
+      set("market", marketForSymbol(sym, inst));
+    } else if (/^options/i.test(m)) {
+      set("instrument", "options");
+      const mm = m.match(/\((CE|PE)\)/i);
+      if (mm && !t.optType) set("optType", mm[1].toUpperCase());
+      set("market", "Other");
+    } else if (/^futures/i.test(m)) { set("instrument", "futures"); set("market", "Other"); }
+    else set("market", "Other");
+  }
+  return changed;
+}
+function cleanSymbol(v) { return (v || "").toUpperCase().replace(/[^A-Z0-9&_.:-]/g, "").slice(0, 40); }
+
 function loadTrades() {
   try { trades = JSON.parse(localStorage.getItem("tm_trades") || "[]"); } catch(e) { trades = []; }
+  let changed = false;
+  trades.forEach(t => { if (normalizeTrade(t)) changed = true; });
+  if (changed) { try { localStorage.setItem("tm_trades", JSON.stringify(trades)); } catch(e) {} }
   window.trades = trades; // expose for calc.js checkDailyLimits
 }
 function saveTrades() {
@@ -88,11 +118,21 @@ function renderSetupChips(containerId, presets, selected, onToggle) {
   });
 }
 
+/* ── Market dropdowns come from the single MARKETS list, so they can never drift apart ── */
+function fillMarketSelects() {
+  const opts = MARKETS.map(m => `<option>${m.replace("&", "&amp;")}</option>`).join("");
+  ["j_market", "d_market", "s_default_market"].forEach(id => { const el = $(id); if (el) el.innerHTML = opts; });
+  const f = $("flt_market"); if (f) f.innerHTML = '<option value="">All Markets</option>' + opts;
+  const dl = $("sym_list"); if (dl) dl.innerHTML = SYMBOLS.map(x => `<option value="${x.name}">`).join("");
+}
+fillMarketSelects();
+
 /* ── Add form ── */
 $("showAddBtn").addEventListener("click", () => {
   editId = null;
   $("formTitle").textContent = "New Trade";
   $("j_date").value   = todayStr();
+  $("j_symbol").value = "";
   $("j_exit").value   = "";
   $("j_notes").value  = "";
   $("j_setup").value  = "";
@@ -148,7 +188,10 @@ function quickLogTrade() {
   const t = {
     id: uid(),
     date: todayStr(),
-    market: lc.market || (symLabel ? symLabel : "NSE Equity"),
+    market: lc.market || "NSE Equity",
+    symbol: lc.symbol || null,
+    instrument: lc.instrument || null,
+    optType: lc.optType || null,
     dir: lc.isLong ? "LONG" : "SHORT",
     entry: lc.entry,
     sl: lc.sl,
@@ -159,7 +202,7 @@ function quickLogTrade() {
     exit: null,
     exits: [],
     fees: 0,
-    notes: symLabel ? `Stock: ${symLabel}` : "",
+    notes: "",
     setup: "",
     mistakes: [],
     confidence: 3,
@@ -233,7 +276,10 @@ $("pl_confirm").addEventListener("click", () => {
   const t = {
     id: uid(),
     date: todayStr(),
-    market: lc.market || (symLabel ? symLabel : "NSE Equity"),
+    market: lc.market || "NSE Equity",
+    symbol: lc.symbol || null,
+    instrument: lc.instrument || null,
+    optType: lc.optType || null,
     dir:    lc.isLong ? "LONG" : "SHORT",
     entry:  lc.entry,
     sl:     lc.sl,
@@ -261,6 +307,11 @@ $("pl_confirm").addEventListener("click", () => {
 $("pl_cancel").addEventListener("click", () => { $("preLogModal").hidden = true; });
 $("preLogModal").addEventListener("click", e => { if (e.target === $("preLogModal")) $("preLogModal").hidden = true; });
 
+$("j_symbol").addEventListener("input", () => {
+  const sym = SYMBOLS.find(x => x.name === cleanSymbol($("j_symbol").value));
+  if (sym) $("j_market").value = marketForSymbol(sym, sym.indexOnly || FNO_MARKETS.includes($("j_market").value) ? "options" : "equity");
+});
+
 $("cancelAddBtn").addEventListener("click", () => { $("addForm").hidden = true; editId = null; });
 
 $("saveTradeBtn").addEventListener("click", () => {
@@ -268,6 +319,7 @@ $("saveTradeBtn").addEventListener("click", () => {
     id:     editId || uid(),
     date:   $("j_date").value,
     market: $("j_market").value,
+    symbol: cleanSymbol($("j_symbol").value) || null,
     dir:    $("j_dir").value,
     entry:  parseFloat($("j_entry").value)  || null,
     sl:     parseFloat($("j_sl").value)     || null,
@@ -294,11 +346,11 @@ $("saveTradeBtn").addEventListener("click", () => {
 
 /* ── Export CSV ── */
 $("exportBtn").addEventListener("click", () => {
-  const cols = ["date","market","dir","entry","sl","target","exit","qty","fees","pnl","rr","setup","notes"];
+  const cols = ["date","market","symbol","instrument","dir","entry","sl","target","exit","qty","fees","pnl","rr","setup","notes"];
   const rows = trades.map(t => {
     const pnl = pnlForTrade(t);
     const rr  = rrActual(t);
-    return [t.date, t.market, t.dir, t.entry, t.sl, t.target, t.exit, t.qty, t.fees,
+    return [t.date, t.market, '"' + (t.symbol || "") + '"', t.instrument || "", t.dir, t.entry, t.sl, t.target, t.exit, t.qty, t.fees,
       pnl !== null ? pnl.toFixed(2) : "", rr !== null ? rr.toFixed(2) : "",
       '"' + (t.setup || "").replace(/"/g,'""') + '"',
       '"' + (t.notes || "").replace(/"/g,'""') + '"'].join(",");
@@ -399,13 +451,17 @@ function processZerodhaRows(rows) {
   return result.sort((a,b) => a.date > b.date ? -1 : 1);
 }
 
-function guessMarket(symbol, exch) {
-  const s = symbol.toUpperCase(), e = (exch||'').toUpperCase();
-  if (e.includes('MCX') || s.includes('GOLD'))  return 'MCX Gold';
-  if (s.includes('CRUDE'))                       return 'MCX Crude';
-  if (s.includes('NIFTY') || s.includes('BANKNIFTY')) return 'Nifty F&O';
-  if (e.includes('NFO') || e.includes('BFO'))    return 'Nifty F&O';
-  return 'NSE Equity';
+function contractInfo(symbol, exch) {
+  const s = (symbol || "").toUpperCase(), e = (exch || "").toUpperCase();
+  // Contract symbols end in digits + CE/PE (strike) or digits + MON + FUT (expiry); plain stocks like RELIANCE or PRICE do not.
+  const optM = s.match(/\d(CE|PE)$/), isFut = /\d[A-Z]{3}FUT$/.test(s);
+  const isFno = e.includes("NFO") || e.includes("BFO") || !!optM || isFut;
+  const instrument = optM ? "options" : isFut ? "futures" : isFno ? "options" : "equity";
+  let market;
+  if (e.includes("MCX") || (!e && /GOLD|CRUDE/.test(s))) market = s.includes("GOLD") ? "MCX Gold" : s.includes("CRUDE") ? "MCX Crude" : "Other";
+  else if (isFno) market = s.startsWith("BANKNIFTY") ? "BankNifty F&O" : s.startsWith("NIFTY") ? "Nifty F&O" : /^(FINNIFTY|MIDCPNIFTY|SENSEX|BANKEX)/.test(s) ? "Other Index F&O" : "Stock F&O";
+  else market = "NSE Equity";
+  return { market, instrument, optType: optM ? optM[1] : null };
 }
 
 $("importBtn").addEventListener("click", () => $("csvFileInput").click());
@@ -448,7 +504,8 @@ $("csvFileInput").addEventListener("change", e => {
 
 $("confirmImportBtn").addEventListener("click", () => {
   importedTrades.forEach(t => {
-    trades.push({ id:uid(), date:t.date, market:guessMarket(t.symbol,t.exch),
+    const ci = contractInfo(t.symbol, t.exch);
+    trades.push({ id:uid(), date:t.date, market:ci.market, symbol:cleanSymbol(t.symbol), instrument:ci.instrument, optType:ci.optType,
       dir:t.dir, entry:t.entry, sl:null, target:null, exit:t.exit||null,
       qty:t.qty, fees:0, exits:[], notes:'Zerodha import · '+t.symbol, setup:'', mistakes:[] });
   });
@@ -456,6 +513,41 @@ $("confirmImportBtn").addEventListener("click", () => {
 });
 
 $("cancelImportBtn").addEventListener("click", () => { $("importPanel").hidden = true; importedTrades = []; });
+
+/* ══════════════ TRADE DETAILS: the one-tap way to tidy a trade you logged in a hurry ══════════════ */
+let detailsId = null;
+function openDetails(id) {
+  const t = trades.find(x => x.id === id); if (!t) return;
+  detailsId = id;
+  $("d_info").textContent = `${t.dir} · ${t.date} · Entry ₹${t.entry}`;
+  $("d_market").value = MARKETS.includes(t.market) ? t.market : "Other";
+  $("d_symbol").value = t.symbol || "";
+  $("d_setup").value  = t.setup || "";
+  $("d_notes").value  = t.notes || "";
+  $("detailsModal").hidden = false;
+  $("d_symbol").focus();
+}
+function closeDetails() { $("detailsModal").hidden = true; detailsId = null; }
+$("d_symbol").addEventListener("input", () => {            // a known symbol picks its own market
+  const sym = SYMBOLS.find(x => x.name === cleanSymbol($("d_symbol").value));
+  if (!sym) return;
+  const t = trades.find(x => x.id === detailsId);
+  const inst = sym.indexOnly ? "options" : ((t && t.instrument) || (FNO_MARKETS.includes($("d_market").value) ? "options" : "equity"));
+  $("d_market").value = marketForSymbol(sym, inst);
+});
+$("d_save").addEventListener("click", () => {
+  const t = trades.find(x => x.id === detailsId); if (!t) return;
+  t.market = $("d_market").value;
+  t.symbol = cleanSymbol($("d_symbol").value) || null;
+  t.setup  = $("d_setup").value.trim();
+  t.notes  = $("d_notes").value.trim();
+  saveTrades();
+  closeDetails();
+  if (!$("tab-journal").hidden) refreshJournal();
+  showToast("✓ Trade updated");
+});
+$("d_cancel").addEventListener("click", closeDetails);
+$("detailsModal").addEventListener("click", e => { if (e.target === $("detailsModal")) closeDetails(); });
 
 /* ══════════════ CLOSE TRADE MODAL ══════════════ */
 let closeTradeId  = null;
@@ -555,6 +647,13 @@ function deleteTodayTrade(id) {
   showToast("Trade removed");
 }
 
+function symChip(t) {
+  return t.symbol ? ` <span class="sym-chip">${t.symbol}${t.optType ? " " + t.optType : ""}</span>` : "";
+}
+function editBtnFor(t) {
+  return `<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px;color:var(--fg3)" onclick="openDetails('${t.id}')" title="Edit market, symbol and notes">✎</button>`;
+}
+
 function qtyLabel(t) {
   return t.lots ? `${t.lots} lot${t.lots === 1 ? "" : "s"} × ${t.lotSize} = ${t.qty}` : (t.qty || "—");
 }
@@ -590,10 +689,11 @@ function renderTodayTrades() {
     return `<div class="today-trade" data-id="${t.id}">
       <div class="today-trade-top">
         ${badge}
-        <span style="font-size:12px;font-weight:600">${t.market}</span>
+        <span style="font-size:12px;font-weight:600">${t.market}</span>${symChip(t)}
         ${res}
         ${setupTag}
         <span class="today-trade-pnl">${pnlStr}</span>
+        ${editBtnFor(t)}
         ${delBtn}
       </div>
       <div class="today-trade-meta">E: ₹${t.entry||"—"} · SL: ₹${t.sl||"—"} · Qty: ${qtyLabel(t)}${closed?` · Exit: ₹${t.exit||"partial"}`:""}</div>
@@ -685,7 +785,7 @@ function repTradeRow(t, dayId, moKey) {
     const partialBadge = (!t.exit && t.exits && t.exits.length) ? ` <span style="font-size:10px;color:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 4px">partial</span>` : "";
     return `<tr class="tr-row" data-id="${t.id}" data-grp="${dayId}" data-mo="${moKey}">
       <td class="td-muted td-mono">${t.date||"—"}</td>
-      <td>${t.market||"—"}</td>
+      <td>${t.market||"—"}${symChip(t)}</td>
       <td><span class="badge ${t.dir.toLowerCase()}">${t.dir==="LONG"?"▲":"▼"} ${t.dir}</span></td>
       <td class="td-mono">${t.entry||"—"}</td><td class="td-mono">${t.sl||"—"}</td>
       <td class="td-mono">${t.target||"—"}</td><td class="td-mono">${t.exit||"—"}${partialBadge}</td>
@@ -698,6 +798,7 @@ function repTradeRow(t, dayId, moKey) {
       <td>${res}</td>
       <td>
         ${!closed ? `<button class="btn btn-danger btn-sm rep-close-btn" data-id="${t.id}" style="font-size:10px;padding:1px 6px">Close</button>` : ""}
+        <button class="btn btn-ghost btn-sm rep-edit-btn" data-id="${t.id}" style="font-size:10px;padding:1px 5px;color:var(--fg3)" title="Edit market, symbol and notes">✎</button>
         <button class="btn btn-ghost btn-sm rep-del-btn" data-id="${t.id}" style="font-size:10px;padding:1px 5px;color:var(--fg3)">✕</button>
       </td>
     </tr>`;
@@ -794,6 +895,8 @@ function renderReports() {
 }
 
 $("rep_body").addEventListener("click", e => {
+  const edit = e.target.closest(".rep-edit-btn");
+  if (edit) { e.stopPropagation(); openDetails(edit.dataset.id); return; }
   const close = e.target.closest(".rep-close-btn");
   if (close) { e.stopPropagation(); openCloseModal(close.dataset.id); return; }
   const del = e.target.closest(".rep-del-btn");

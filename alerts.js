@@ -110,11 +110,12 @@
     flashNote(text, 9000);
     if (typeof showToast === "function") showToast(text);
   }
-  function beepGroup(when) {
+  function beepGroup(when, over) {
+    const c = over ? Object.assign({}, cfg, over) : cfg;     // `over` lets Settings preview a sound before it is saved
     const g = ctx.createGain();
-    g.gain.value = cfg.vol / 100 * 0.6;
+    g.gain.value = c.vol / 100 * 0.6;
     g.connect(ctx.destination);
-    (SOUNDS[cfg.sound] || SOUNDS.chime).play(ctx, g, when);
+    (SOUNDS[c.sound] || SOUNDS.chime).play(ctx, g, when);
     return g;
   }
   function scheduleAhead() {
@@ -199,46 +200,35 @@
     else if (running && ctx && ctx.state !== "running") note.textContent = "🔇 Sound is paused by the browser. Click Test sound once to turn it back on.";
   }
   function save() { try { localStorage.setItem(LS_KEY, JSON.stringify(cfg)); } catch (e) {} }
-  function changed() { save(); if (running) resync(); else paint(); }
-  async function preview() {
+  function notify() { document.dispatchEvent(new CustomEvent("tm:beepchanged")); }
+  function changed() { save(); if (running) resync(); else paint(); notify(); }
+  async function preview(over) {
     const c = await resumeCtx();
-    if (c && c.state === "running") beepGroup(c.currentTime + 0.02); else soundBlocked();
+    if (c && c.state === "running") beepGroup(c.currentTime + 0.02, over); else soundBlocked();
   }
-
-  function setMinutes(n, fromCustom) {
-    cfg.min = n;
-    document.querySelectorAll(".alert-chip").forEach(c => c.classList.toggle("active", !fromCustom && +c.dataset.min === n));
-    if (!fromCustom) $("alert_custom").value = "";
-    changed();
+  function sanitize(c) {
+    return {
+      min:    Math.min(720, Math.max(1, Math.round(+c.min) || 5)),
+      anchor: +c.anchor === 0 ? 0 : 555,
+      hours:  !!c.hours,
+      vol:    Math.min(100, Math.max(5, Math.round(+c.vol) || 60)),
+      sound:  SOUNDS[c.sound] ? c.sound : "chime",
+      lead:   Math.max(0, Math.round(+c.lead) || 0),
+    };
   }
+  function paintChips() {                                   // header menu only; the Settings page stages its own copy
+    document.querySelectorAll("#alert_pop .alert-chip").forEach(c => c.classList.toggle("active", +c.dataset.min === cfg.min));
+  }
+  function setMinutes(n) { cfg.min = n; paintChips(); changed(); }
 
   function init() {
     unlockOnFirstInteraction();
     try { Object.assign(cfg, JSON.parse(localStorage.getItem(LS_KEY) || "{}")); } catch (e) {}
-    cfg.min = Math.min(720, Math.max(1, Math.round(+cfg.min) || 5));
-    if (!SOUNDS[cfg.sound]) cfg.sound = "chime";
-    cfg.lead = Math.max(0, Math.round(+cfg.lead) || 0);
-    const preset = !!document.querySelector('.alert-chip[data-min="' + cfg.min + '"]');
-    document.querySelectorAll(".alert-chip").forEach(c => c.classList.toggle("active", +c.dataset.min === cfg.min));
-    if (!preset) $("alert_custom").value = cfg.min;
-    $("alert_anchor").value = String(cfg.anchor);
-    $("alert_hours").checked = !!cfg.hours;
-    $("alert_vol").value = cfg.vol;
-    $("alert_sound").value = cfg.sound;
-    $("alert_lead").value = String(cfg.lead);
-
-    document.querySelectorAll(".alert-chip").forEach(c => c.addEventListener("click", () => setMinutes(+c.dataset.min, false)));
-    $("alert_custom").addEventListener("input", e => {
-      const v = Math.round(parseFloat(e.target.value));
-      if (v >= 1 && v <= 720) setMinutes(v, true);
-    });
-    $("alert_anchor").addEventListener("change", e => { cfg.anchor = +e.target.value; changed(); });
-    $("alert_hours").addEventListener("change", e => { cfg.hours = e.target.checked; changed(); });
-    $("alert_vol").addEventListener("input", e => { cfg.vol = +e.target.value; changed(); });
-    $("alert_sound").addEventListener("change", e => { cfg.sound = e.target.value; changed(); preview(); });
-    $("alert_lead").addEventListener("change", e => { cfg.lead = +e.target.value; changed(); });
+    Object.assign(cfg, sanitize(cfg));
+    paintChips();
+    document.querySelectorAll("#alert_pop .alert-chip").forEach(c => c.addEventListener("click", () => setMinutes(+c.dataset.min)));
     $("alert_start").addEventListener("click", () => running ? stop() : start());
-    document.querySelectorAll(".alert-test").forEach(b => b.addEventListener("click", preview));
+    document.querySelectorAll("#alert_pop .alert-test").forEach(b => b.addEventListener("click", () => preview()));
 
     const btn = $("alert_btn"), pop = $("alert_pop");
     const setOpen = open => { pop.hidden = !open; btn.setAttribute("aria-expanded", open); };
@@ -255,5 +245,10 @@
 
   init();
   window.tmNextBeep = nextBeepAfter;               // exposed for testing
-  window.tmAlert = { nextBeepLead, SOUNDS, stats: () => ({ state: ctx ? ctx.state : "none", played, running }), stop, isRunning: () => running };
+  window.tmAlert = {
+    nextBeepLead, SOUNDS, stop, isRunning: () => running, preview,
+    stats: () => ({ state: ctx ? ctx.state : "none", played, running }),
+    getConfig: () => Object.assign({}, cfg),
+    setConfig: o => { Object.assign(cfg, sanitize(Object.assign({}, cfg, o))); paintChips(); changed(); },
+  };
 })();

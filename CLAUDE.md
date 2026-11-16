@@ -106,6 +106,19 @@ Script load order matters: `calc.js` → `journal.js` → `projection.js` → `a
 - **Journal quantity:** one-click log stores `qty` = lots × lot size (real units) plus `lots` and `lotSize` for display, because P&L is `(exit - entry) × qty`. Trades logged before this change stored lots in `qty` and understate P&L.
 - Quick shows only: Entry, SL, Risk (flat ₹, `#i_flat`), Target (R:R, `#i_rr`) and the Options toggle. Capital (default from Settings) is hidden, and Quick forces flat-₹ risk.
 
+## Settings are staged (Save + confirm)
+- Controls on the Settings page only edit a draft. Nothing is written or applied until the user presses **Save changes** and confirms in the dialog (it lists old → new). Discard reverts. A sticky bar shows "N unsaved changes" and the Settings tab gets a dot. `beforeunload` warns if there are unsaved changes.
+- All of this is the `SETTINGS_FIELDS` table in app.js (one row per setting: scope, key, label, default `fb`, `get()` reads the draft, `set()` fills the control, `fmt()` for the confirmation). **To add a setting: add the control in index.html and one row to `SETTINGS_FIELDS`.** Do not call `saveSetting()` from a Settings control; `saveSetting()` is only for state that is not on the page (lot size, level, options toggle).
+- Beep settings are staged too; they are stored by alerts.js (`tmAlert.getConfig()` / `tmAlert.setConfig()`). The header 🔔 menu's interval chips are a live control and save immediately. Sound/volume previews in Settings play without saving (`tmAlert.preview(override)`).
+- Theme (dark mode, base theme, accent) is NOT previewed on the Settings page; it applies on confirm. The header ☀/☾ button is a separate live toggle.
+
+## Trade data model (the same for Quick, Trader and Pro)
+- Every trade has: `market` (one of `MARKETS` in calc.js: NSE Equity, Nifty F&O, BankNifty F&O, Stock F&O, Other Index F&O, MCX Gold, MCX Crude, Crypto, Other), `symbol` (optional), `instrument` ("equity" | "options" | "futures"), `optType` ("CE" | "PE" | null), plus `qty` (real units), `lots`, `lotSize`.
+- `deriveMarket(sym, instr)` (calc.js) decides the market: a known symbol wins; otherwise the **"I mainly trade"** setting (`defaultMarket`, Settings → Trading Defaults) adjusted for the Options toggle. This is how a Quick log (no symbol box) still lands in the right market.
+- Never store a symbol or "Options (CE)" in `market`. `normalizeTrade()` (journal.js) repairs older trades on load. All market dropdowns are filled from `MARKETS` by `fillMarketSelects()`; do not hard-code option lists in HTML.
+- Any trade can be tidied later with the ✎ button (Today's list and journal rows): market, symbol, setup, notes. A known symbol auto-picks its market.
+- Zerodha import uses `contractInfo(symbol, exch)`. Option symbols end in digit + CE/PE and futures in digit + MON + FUT (a bare "CE"/"PE" ending is not enough: RELIANCE ends in CE).
+
 ## Pages & routing
 - 3 top tabs: Calc, Journal, Settings. Projection is a view inside Journal (`#jnl_projection`, opened by the 🎯 button, `#jnl_main` is the trade list).
 - Hash routes: `#calc` (home), `#journal`, `#journal/projection`, `#settings`. Use `switchTab(tab, sub)` (app.js). It updates the URL and renders synchronously; `hashchange` handles back/forward and typed links.

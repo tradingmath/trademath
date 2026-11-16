@@ -1,153 +1,216 @@
 "use strict";
-/* ══════════════ SETTINGS ══════════════ */
+/* ══════════════ SETTINGS ══════════════
+   The Settings page is STAGED: its controls only edit a draft. Nothing is saved or applied until the user
+   presses "Save changes" and confirms. getAppSettings() always returns what is actually saved. */
 
 function getAppSettings() {
   try { return JSON.parse(localStorage.getItem("tm_settings") || "{}"); } catch(e) { return {}; }
 }
+// For state that is NOT on the Settings page (lot size, level, options toggle). Page settings go through commitSettings().
 function saveSetting(key, value) {
   const s = getAppSettings(); s[key] = value;
   try { localStorage.setItem("tm_settings", JSON.stringify(s)); } catch(e) {}
 }
-
-function loadSettings() {
-  const s = getAppSettings();
-  // Trading defaults
-  if ($("s_default_cap"))  $("s_default_cap").value  = s.defaultCap  != null ? s.defaultCap  : 100000;
-  if ($("s_default_risk")) $("s_default_risk").value = s.defaultRisk != null ? s.defaultRisk : 1;
-  if ($("s_default_lev"))  $("s_default_lev").value  = s.defaultLev  != null ? s.defaultLev  : "5";
-  if ($("s_default_rr"))   $("s_default_rr").value   = s.defaultRR   != null ? s.defaultRR   : 2;
-
-  if ($("i_lot")) $("i_lot").value = rememberedLot();
-
-  // Apply defaults to calculator inputs if not already modified
-  if ($("i_cap") && s.defaultCap)   $("i_cap").value = s.defaultCap;
-  if ($("i_rsk") && s.defaultRisk)  $("i_rsk").value = s.defaultRisk;
-  if ($("i_rr")  && s.defaultRR)    $("i_rr").value  = s.defaultRR;
-  if (s.defaultLev && typeof setLeverage === "function") setLeverage(s.defaultLev);
-
-  // Workflow toggles
-  if ($("tog_quick_log")) $("tog_quick_log").checked = s.quickLog !== false;
-  if ($("tog_show_fo"))   $("tog_show_fo").checked   = s.showFO === true;
-  if (typeof toggleFOMode === "function") toggleFOMode(s.showFO === true);
-
-  // Daily risk rules
-  if ($("s_max_loss"))   $("s_max_loss").value   = s.maxDailyLoss  || "";
-  if ($("s_max_trades")) $("s_max_trades").value = s.maxDailyTrades || "";
-
-  // Fee settings
-  if ($("s_brokerage"))  $("s_brokerage").value  = s.brokerage != null ? s.brokerage : 20;
-  if ($("s_gst_pct"))    $("s_gst_pct").value    = s.gstPct    != null ? s.gstPct    : 18;
-  if ($("tog_show_fees"))$("tog_show_fees").checked = s.showFees !== false;
-
-  // Theme
-  if ($("tog_dark")) $("tog_dark").checked = s.darkMode !== false;
-  applyDarkToggle(s.darkMode !== false);
-  applyBaseTheme(s.baseTheme || "midnight");
-  applyAccent(s.accentColor || "blue");
-  renderChecklistSettings();
-}
-
-function saveSettings() {
-  const s = getAppSettings();
-  if ($("s_default_cap"))  s.defaultCap   = parseFloat($("s_default_cap").value)  || 100000;
-  if ($("s_default_risk")) s.defaultRisk  = parseFloat($("s_default_risk").value) || 1;
-  if ($("s_default_lev"))  s.defaultLev   = $("s_default_lev").value || "5";
-  if ($("s_default_rr"))   s.defaultRR    = parseFloat($("s_default_rr").value)   || 2;
-
-  if ($("tog_quick_log"))  s.quickLog     = $("tog_quick_log").checked;
-  if ($("tog_show_fo"))    s.showFO       = $("tog_show_fo").checked;
-
-  if ($("s_max_loss"))     s.maxDailyLoss   = $("s_max_loss").value   || "";
-  if ($("s_max_trades"))   s.maxDailyTrades = $("s_max_trades").value || "";
-  if ($("s_brokerage")) { const b = parseFloat($("s_brokerage").value); s.brokerage = isNaN(b) || b < 0 ? 20 : b; }
-  if ($("s_gst_pct"))   { const g = parseFloat($("s_gst_pct").value);   s.gstPct    = isNaN(g) || g < 0 ? 18 : g; }
-  if ($("tog_show_fees"))  s.showFees       = $("tog_show_fees").checked;
-  try { localStorage.setItem("tm_settings", JSON.stringify(s)); } catch(e) {}
-}
-
-// Trading defaults inputs
-["s_default_cap","s_default_risk","s_default_lev","s_default_rr"].forEach(id => {
-  const el = $(id);
-  if (el) el.addEventListener("change", () => {
-    saveSettings();
-    const s = getAppSettings();
-    if ($("i_cap")) $("i_cap").value = s.defaultCap || 100000;
-    if ($("i_rsk")) $("i_rsk").value = s.defaultRisk || 1;
-    if ($("i_rr"))  $("i_rr").value  = s.defaultRR || 2;
-    if (s.defaultLev && typeof setLeverage === "function") setLeverage(s.defaultLev);
-    if (typeof calc === "function") calc();
-  });
-});
-
-// Calculator workflow toggles
-const togQuickLog = $("tog_quick_log");
-if (togQuickLog) togQuickLog.addEventListener("change", () => saveSettings());
-
-const togShowFO = $("tog_show_fo");
-if (togShowFO) togShowFO.addEventListener("change", () => {
-  saveSettings();
-  if (typeof toggleFOMode === "function") toggleFOMode(togShowFO.checked);
-});
-
-// Daily risk rule inputs
-["s_max_loss","s_max_trades"].forEach(id => {
-  const el = $(id);
-  if (el) el.addEventListener("change", () => { saveSettings(); renderDailyBanner(); });
-});
-
-// Fee setting inputs
-["s_brokerage","s_gst_pct"].forEach(id => {
-  const el = $(id);
-  if (el) el.addEventListener("change", () => { saveSettings(); calc(); });
-});
-
-const togShowFees = $("tog_show_fees");
-if (togShowFees) togShowFees.addEventListener("change", () => { saveSettings(); calc(); renderFeeBreakdown(); });
-
-/* ── Checklist management ── */
 function getChecklistItems() {
   try { return JSON.parse(localStorage.getItem("tm_checklist") || "[]"); } catch(e) { return []; }
 }
 function saveChecklistItems(items) {
   try { localStorage.setItem("tm_checklist", JSON.stringify(items)); } catch(e) {}
 }
+const esc = t => String(t).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
+/* ── draft state for controls that are not plain inputs ── */
+let draftBase = "midnight", draftAccent = "blue", draftChecklist = [], draftMin = 5, minTouched = false;
+const BASE_NAMES  = { midnight: "Midnight", oled: "OLED Black", slate: "Slate Navy" };
+const paletteName = c => { const el = document.querySelector('.palette-card[data-color="' + c + '"] .palette-name'); return el ? el.textContent : c; };
+const onOff       = v => v ? "On" : "Off";
+const positive    = (id, fb) => { const v = parseFloat($(id).value); return v > 0 ? v : fb; };
+const nonNeg      = (id, fb) => { const v = parseFloat($(id).value); return isNaN(v) || v < 0 ? fb : v; };
+const rupees      = v => "₹" + Number(v).toLocaleString("en-IN");
+
+/* One row per setting on the page: how to read the draft, how to fill the control, the default, and how to show it. */
+const SETTINGS_FIELDS = [
+  { scope: "settings", key: "darkMode",    label: "Dark mode",           fb: true,       get: () => $("tog_dark").checked,                 set: v => { $("tog_dark").checked = v; }, fmt: onOff },
+  { scope: "settings", key: "baseTheme",   label: "Dark terminal theme", fb: "midnight", get: () => draftBase,                              set: v => { draftBase = v; },            fmt: v => BASE_NAMES[v] || v },
+  { scope: "settings", key: "accentColor", label: "Accent colour",       fb: "blue",     get: () => draftAccent,                            set: v => { draftAccent = v; },          fmt: paletteName },
+  { scope: "settings", key: "defaultCap",  label: "Default capital",     fb: 100000,     get: () => positive("s_default_cap", 100000),     set: v => { $("s_default_cap").value = v; },  fmt: rupees },
+  { scope: "settings", key: "defaultRisk", label: "Default risk %",      fb: 1,          get: () => positive("s_default_risk", 1),         set: v => { $("s_default_risk").value = v; }, fmt: v => v + "%" },
+  { scope: "settings", key: "defaultLev",  label: "Default leverage",    fb: "5",        get: () => $("s_default_lev").value,              set: v => { $("s_default_lev").value = v; }, fmt: v => v === "5" ? "5× intraday" : v === "1" ? "1× cash" : "Custom" },
+  { scope: "settings", key: "defaultRR",   label: "Default target R:R",  fb: 2,          get: () => positive("s_default_rr", 2),           set: v => { $("s_default_rr").value = v; },  fmt: v => "1 : " + v },
+  { scope: "settings", key: "defaultMarket", label: "I mainly trade",    fb: "NSE Equity", get: () => $("s_default_market").value,         set: v => { $("s_default_market").value = v; }, fmt: v => v },
+  { scope: "settings", key: "quickLog",    label: "One-click quick log", fb: true,       get: () => $("tog_quick_log").checked,            set: v => { $("tog_quick_log").checked = v; }, fmt: onOff },
+  { scope: "settings", key: "showFO",      label: "F&O mode by default", fb: false,      get: () => $("tog_show_fo").checked,              set: v => { $("tog_show_fo").checked = v; }, fmt: onOff },
+  { scope: "settings", key: "showFees",    label: "Show fee breakdown",  fb: true,       get: () => $("tog_show_fees").checked,            set: v => { $("tog_show_fees").checked = v; }, fmt: onOff },
+  { scope: "settings", key: "brokerage",   label: "Brokerage per order", fb: 20,         get: () => nonNeg("s_brokerage", 20),             set: v => { $("s_brokerage").value = v; },   fmt: v => "₹" + v },
+  { scope: "settings", key: "gstPct",      label: "GST",                 fb: 18,         get: () => nonNeg("s_gst_pct", 18),               set: v => { $("s_gst_pct").value = v; },     fmt: v => v + "%" },
+  { scope: "settings", key: "maxDailyLoss",   label: "Max daily loss",   fb: "",         get: () => $("s_max_loss").value.trim(),          set: v => { $("s_max_loss").value = v; },    fmt: v => v ? rupees(v) : "Off" },
+  { scope: "settings", key: "maxDailyTrades", label: "Max trades / day", fb: "",         get: () => $("s_max_trades").value.trim(),        set: v => { $("s_max_trades").value = v; }, fmt: v => v || "Off" },
+  { scope: "alert",    key: "min",    label: "Beep interval",      get: () => draftMin,                          set: v => { draftMin = v; },                 fmt: v => v + " min" },
+  { scope: "alert",    key: "anchor", label: "Beep aligned to",    get: () => +$("alert_anchor").value,          set: v => { $("alert_anchor").value = String(v); }, fmt: v => +v === 0 ? "Clock (:00)" : "NSE candles (9:15)" },
+  { scope: "alert",    key: "lead",   label: "Beep before close",  get: () => +$("alert_lead").value,            set: v => { $("alert_lead").value = String(v); },   fmt: v => +v ? v + " sec early" : "At the close" },
+  { scope: "alert",    key: "sound",  label: "Beep sound",         get: () => $("alert_sound").value,            set: v => { $("alert_sound").value = v; },         fmt: v => (tmAlert.SOUNDS[v] || {}).label || v },
+  { scope: "alert",    key: "vol",    label: "Beep volume",        get: () => +$("alert_vol").value,             set: v => { $("alert_vol").value = v; },           fmt: v => v + "%" },
+  { scope: "alert",    key: "hours",  label: "Beep only in market hours", get: () => $("alert_hours").checked,   set: v => { $("alert_hours").checked = v; },    fmt: onOff },
+  { scope: "checklist", key: "checklist", label: "Pre-trade checklist", get: () => JSON.stringify(draftChecklist), set: () => {}, fmt: v => JSON.parse(v).length + " item(s)" },
+];
+
+function savedOf(f) {
+  if (f.scope === "alert")     return tmAlert.getConfig()[f.key];
+  if (f.scope === "checklist") return JSON.stringify(getChecklistItems());
+  const v = getAppSettings()[f.key];
+  return v != null ? v : f.fb;
+}
+function changes() {
+  return SETTINGS_FIELDS.map(f => ({ f, from: savedOf(f), to: f.get() })).filter(c => String(c.from) !== String(c.to));
+}
+
+/* Highlight the choices in the draft (this never applies a theme; only a confirmed save does). */
+function paintChoices() {
+  document.querySelectorAll(".palette-card").forEach(c => c.classList.toggle("active", c.dataset.color === draftAccent));
+  document.querySelectorAll(".theme-preset-btn").forEach(b => b.classList.toggle("active", (b.dataset.base || "midnight") === draftBase));
+}
+function paintBeepChips() {
+  let preset = false;
+  document.querySelectorAll("#beep_settings .alert-chip").forEach(c => {
+    const on = +c.dataset.min === draftMin; c.classList.toggle("active", on); if (on) preset = true;
+  });
+  const cu = $("alert_custom");
+  if (document.activeElement !== cu) cu.value = preset ? "" : draftMin;
+}
 function renderChecklistSettings() {
   const el = $("settings_checklist");
   if (!el) return;
-  const items = getChecklistItems();
-  if (!items.length) {
+  if (!draftChecklist.length) {
     el.innerHTML = `<div style="font-size:12px;color:var(--fg3);padding:8px 0">No items yet. Add your pre-trade rules below.</div>`;
     return;
   }
-  el.innerHTML = items.map((item, i) => `
+  el.innerHTML = draftChecklist.map((item, i) => `
     <div class="chk-item">
       <div class="chk-box checked" style="cursor:default">✓</div>
-      <span class="chk-label">${item}</span>
+      <span class="chk-label">${esc(item)}</span>
       <button class="chk-del" onclick="deleteChecklistItem(${i})" title="Remove">✕</button>
     </div>`).join("");
 }
-
 function deleteChecklistItem(i) {
-  const items = getChecklistItems();
-  items.splice(i, 1);
-  saveChecklistItems(items);
+  draftChecklist.splice(i, 1);
   renderChecklistSettings();
+  refreshDirty();
 }
+
+function refreshDirty() {
+  const n = changes().length;
+  $("set_status").textContent = n ? `● ${n} unsaved change${n === 1 ? "" : "s"}` : "All changes saved";
+  $("set_status").classList.toggle("dirty", n > 0);
+  $("set_save").disabled = $("set_discard").disabled = !n;
+  document.querySelector('.tab-btn[data-tab="settings"]').classList.toggle("dirty", n > 0);
+}
+
+/* Fill every control from what is saved (page load, and Discard). */
+function populateForm() {
+  SETTINGS_FIELDS.forEach(f => {
+    if (f.scope === "checklist") draftChecklist = getChecklistItems().slice();
+    else f.set(savedOf(f));
+  });
+  minTouched = false;
+  paintChoices(); paintBeepChips(); renderChecklistSettings(); refreshDirty();
+}
+
+/* Apply what is saved to the running app (page load). */
+function loadSettings() {
+  const s = getAppSettings();
+  if ($("i_lot")) $("i_lot").value = rememberedLot();
+  if ($("i_cap") && s.defaultCap)  $("i_cap").value = s.defaultCap;
+  if ($("i_rsk") && s.defaultRisk) $("i_rsk").value = s.defaultRisk;
+  if ($("i_rr")  && s.defaultRR)   $("i_rr").value  = s.defaultRR;
+  if (s.defaultLev) setLeverage(s.defaultLev);
+  toggleFOMode(s.showFO === true);
+  applyDarkToggle(s.darkMode !== false);               // also applies the saved base theme and accent
+  populateForm();
+}
+
+/* ── confirm, then save ── */
+function openSettingsConfirm() {
+  const ch = changes(); if (!ch.length) return;
+  const show = (f, v) => esc(f.fmt ? f.fmt(v) : String(v));
+  $("set_changes").innerHTML = ch.map(c => `<li><b>${esc(c.f.label)}</b><span><s>${show(c.f, c.from)}</s> → ${show(c.f, c.to)}</span></li>`).join("");
+  $("setConfirm").hidden = false;
+  $("set_confirm_yes").focus();
+}
+function commitSettings() {
+  const ch = changes();
+  if (!ch.length) { $("setConfirm").hidden = true; return; }
+  const changed = new Set(ch.map(c => c.f.key));
+  const s = getAppSettings();
+  const beep = {};
+  ch.forEach(c => {
+    if (c.f.scope === "settings") s[c.f.key] = c.to;
+    else if (c.f.scope === "alert") beep[c.f.key] = c.to;
+  });
+  try { localStorage.setItem("tm_settings", JSON.stringify(s)); } catch(e) {}
+  if (Object.keys(beep).length) tmAlert.setConfig(beep);
+  if (changed.has("checklist")) saveChecklistItems(draftChecklist);
+
+  // ── apply only what changed, so unrelated calculator inputs are left alone ──
+  if (changed.has("darkMode") || changed.has("baseTheme") || changed.has("accentColor")) applyDarkToggle(s.darkMode !== false);
+  if (["defaultCap", "defaultRisk", "defaultRR", "defaultLev"].some(k => changed.has(k))) {
+    $("i_cap").value = s.defaultCap || 100000;
+    $("i_rsk").value = s.defaultRisk || 1;
+    $("i_rr").value  = s.defaultRR || 2;
+    setLeverage(s.defaultLev || "5");
+  }
+  if (changed.has("showFO") && getLevel() === "pro") toggleFOMode(s.showFO === true);
+  if (changed.has("maxDailyLoss") || changed.has("maxDailyTrades")) renderDailyBanner();
+  calc();
+  renderFeeBreakdown();
+
+  $("setConfirm").hidden = true;
+  populateForm();
+  showToast("✓ Settings saved");
+}
+function discardSettings() { populateForm(); showToast("Changes discarded"); }
+
+/* ── wiring: every control only updates the draft ── */
+["tog_dark", "s_default_cap", "s_default_risk", "s_default_lev", "s_default_rr", "s_default_market", "tog_quick_log",
+ "tog_show_fo", "tog_show_fees", "s_brokerage", "s_gst_pct", "s_max_loss", "s_max_trades",
+ "alert_anchor", "alert_lead", "alert_hours", "alert_vol"].forEach(id => {
+  const el = $(id); if (!el) return;
+  ["input", "change"].forEach(ev => el.addEventListener(ev, refreshDirty));
+});
+document.querySelectorAll(".palette-card").forEach(card => card.addEventListener("click", () => { draftAccent = card.dataset.color; paintChoices(); refreshDirty(); }));
+document.querySelectorAll(".theme-preset-btn").forEach(btn => btn.addEventListener("click", () => { draftBase = btn.dataset.base || "midnight"; paintChoices(); refreshDirty(); }));
+document.querySelectorAll("#beep_settings .alert-chip").forEach(c => c.addEventListener("click", () => {
+  draftMin = +c.dataset.min; minTouched = true; $("alert_custom").value = ""; paintBeepChips(); refreshDirty();
+}));
+$("alert_custom").addEventListener("input", e => {
+  const v = Math.round(parseFloat(e.target.value));
+  if (v >= 1 && v <= 720) { draftMin = v; minTouched = true; paintBeepChips(); refreshDirty(); }
+});
+const stagedBeep = () => ({ sound: $("alert_sound").value, vol: +$("alert_vol").value });
+$("alert_sound").addEventListener("change", () => { refreshDirty(); tmAlert.preview(stagedBeep()); });     // hear it before saving
+document.querySelectorAll("#beep_settings .alert-test").forEach(b => b.addEventListener("click", () => tmAlert.preview(stagedBeep())));
+document.addEventListener("tm:beepchanged", () => {                       // the header menu changed the interval live
+  if (!minTouched) { draftMin = tmAlert.getConfig().min; paintBeepChips(); }
+  refreshDirty();
+});
 
 $("add_checklist_btn").addEventListener("click", () => {
   const input = $("new_checklist_item");
   const text  = input.value.trim();
   if (!text) return;
-  const items = getChecklistItems();
-  items.push(text);
-  saveChecklistItems(items);
+  draftChecklist.push(text);
   input.value = "";
   renderChecklistSettings();
+  refreshDirty();
 });
-$("new_checklist_item").addEventListener("keydown", e => {
-  if (e.key === "Enter") $("add_checklist_btn").click();
-});
+$("new_checklist_item").addEventListener("keydown", e => { if (e.key === "Enter") $("add_checklist_btn").click(); });
+
+$("set_save").addEventListener("click", openSettingsConfirm);
+$("set_discard").addEventListener("click", discardSettings);
+$("set_confirm_yes").addEventListener("click", commitSettings);
+$("set_confirm_no").addEventListener("click", () => { $("setConfirm").hidden = true; $("set_save").focus(); });
+$("setConfirm").addEventListener("click", e => { if (e.target === $("setConfirm")) $("setConfirm").hidden = true; });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("setConfirm").hidden) $("setConfirm").hidden = true; });
+window.addEventListener("beforeunload", e => { if (changes().length) { e.preventDefault(); e.returnValue = ""; } });
 
 /* ══════════════ TABS ══════════════ */
 /* Every page has its own link: #calc (home), #journal, #journal/projection, #settings.
@@ -281,7 +344,6 @@ function applyAccent(name) {
   root.setProperty("--accent-dim",   c.dim);
   root.setProperty("--accent-solid", solid);
   root.setProperty("--on-accent",    bestOn(solid));
-  document.querySelectorAll(".palette-card").forEach(s => s.classList.toggle("active", s.dataset.color === name));
 }
 
 function applyBaseTheme(base) {
@@ -291,9 +353,6 @@ function applyBaseTheme(base) {
   } else {
     r.dataset.baseTheme = base;
   }
-  document.querySelectorAll(".theme-preset-btn").forEach(b => {
-    b.classList.toggle("active", (b.dataset.base || "midnight") === (base || "midnight"));
-  });
 }
 
 function applyDarkToggle(dark) {
@@ -322,34 +381,7 @@ $("themeBtn").addEventListener("click", () => {
   try { localStorage.setItem("tm_settings", JSON.stringify(s)); } catch(e){}
   const togEl = $("tog_dark");
   if (togEl) togEl.checked = goDark;
-});
-
-// Settings dark toggle
-const togDarkEl = $("tog_dark");
-if (togDarkEl) togDarkEl.addEventListener("change", () => {
-  applyDarkToggle(togDarkEl.checked);
-  const s = getAppSettings(); s.darkMode = togDarkEl.checked;
-  try { localStorage.setItem("tm_settings", JSON.stringify(s)); } catch(e){}
-});
-
-// Accent palette cards
-document.querySelectorAll(".palette-card").forEach(card => {
-  card.addEventListener("click", () => {
-    const color = card.dataset.color;
-    applyAccent(color);
-    const s = getAppSettings(); s.accentColor = color;
-    try { localStorage.setItem("tm_settings", JSON.stringify(s)); } catch(e){}
-  });
-});
-
-// Base theme preset buttons (Midnight, OLED Black, Slate Navy)
-document.querySelectorAll(".theme-preset-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const base = btn.dataset.base;
-    applyBaseTheme(base);
-    const s = getAppSettings(); s.baseTheme = base;
-    try { localStorage.setItem("tm_settings", JSON.stringify(s)); } catch(e){}
-  });
+  refreshDirty();
 });
 
 /* ══════════════ POP OUT ══════════════ */

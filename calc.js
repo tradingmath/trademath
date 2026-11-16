@@ -11,6 +11,26 @@ let showFOMode         = false;     // hidden by default for maximum simplicity
 let lastCalc           = null;
 const DEFAULT_LOT      = 65;        // Nifty; the lot field is editable and remembers the last value you typed
 
+/* ── Markets: ONE fixed list used by the calculator, journal, filters and settings, so data stays consistent
+   whichever level (Quick / Trader / Pro) a trade was logged from. ── */
+const MARKETS     = ["NSE Equity", "Nifty F&O", "BankNifty F&O", "Stock F&O", "Other Index F&O", "MCX Gold", "MCX Crude", "Crypto", "Other"];
+const FNO_MARKETS = ["Nifty F&O", "BankNifty F&O", "Stock F&O", "Other Index F&O"];
+
+function marketForSymbol(sym, instr) {
+  if (sym.indexOnly) return sym.name === "NIFTY" ? "Nifty F&O" : sym.name === "BANKNIFTY" ? "BankNifty F&O" : "Other Index F&O";
+  return instr === "equity" ? "NSE Equity" : "Stock F&O";
+}
+/* A known symbol decides the market. Without one (Quick has no symbol box) the "I mainly trade" setting does,
+   adjusted for the Options toggle, so a Quick log is still filed under the right market. */
+function deriveMarket(sym, instr) {
+  if (sym) return marketForSymbol(sym, instr);
+  const dm = (typeof getAppSettings === "function" && getAppSettings().defaultMarket) || "NSE Equity";
+  const isFno = instr !== "equity";
+  if (isFno && dm === "NSE Equity") return "Nifty F&O";
+  if (!isFno && FNO_MARKETS.includes(dm)) return "NSE Equity";
+  return MARKETS.includes(dm) ? dm : (isFno ? "Nifty F&O" : "NSE Equity");
+}
+
 const $ = id => document.getElementById(id);
 const comma = n => Math.abs(n).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
@@ -636,13 +656,17 @@ function calc() {
   const profitTP    = isLong ? entry + slDist * defRR : entry - slDist * defRR;
   const profitGross = slDist * defRR * lotSize * units;
 
-  const symName   = sym ? sym.name : (($("sym_input") ? $("sym_input").value.trim().toUpperCase() : "") || "Equity");
-  const marketStr = sym ? sym.name : (instrType === "equity" ? "NSE Equity" : instrType === "options" ? (($("type_row") && $("type_row").offsetParent !== null) ? `Options (${optType})` : "Options") : "Futures");
+  const typed     = $("sym_input") ? $("sym_input").value.trim().toUpperCase() : "";
+  const symName   = sym ? sym.name : (typed || "Equity");
+  const optShown  = instrType === "options" && $("type_row") && $("type_row").offsetParent !== null;
 
   lastCalc = {
     entry, sl, isLong, units, lotSize, actualRisk, targets, sym,
     symbolName: symName,
-    market: marketStr,
+    market: deriveMarket(sym, instrType),
+    symbol: sym ? sym.name : (typed || null),
+    instrument: instrType,
+    optType: optShown ? optType : null,
     isLots: instrType !== "equity" && lotSize > 1,
     dec: 2,
     margin: totalMgn,
@@ -705,7 +729,7 @@ function calc() {
   // Tile 3: Profit
   $("t_profit_lbl").textContent = "Profit (1:" + defRR + ")";
   $("t_profit_val").textContent = "+₹" + fmtP(profitGross, 0);
-  $("t_profit_sub").textContent = "@ ₹" + fmtP(profitTP, 2) + " Target";
+  $("t_profit_sub").innerHTML = '<span class="tile-target"><i>🎯 Target</i><b>₹' + fmtP(profitTP, 2) + '</b></span>';
 
   const showFees = typeof getAppSettings === "function" ? getAppSettings().showFees !== false : true;
   $("tgt_body").innerHTML = targets.map(t => `
