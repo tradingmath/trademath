@@ -55,13 +55,16 @@ function isClosed(t) {
   return false;
 }
 
+function fxOf(t) { return t.instrument === "crypto" ? (t.fx || 1) : 1; }   // crypto prices are USDT; P&L is in ₹
 function pnlForTrade(t) {
   const dir = t.dir === "LONG" ? 1 : -1;
+  const k = fxOf(t);
+  const funding = t.instrument === "crypto" ? (t.funding || 0) : 0;            // ₹ paid/received on the perpetual, counted once
   if (t.exits && t.exits.length) {
-    return t.exits.reduce((sum, ex) => sum + dir * (ex.price - t.entry) * ex.qty - (ex.fees || 0), 0);
+    return t.exits.reduce((sum, ex) => sum + dir * (ex.price - t.entry) * ex.qty * k - (ex.fees || 0), 0) - funding;
   }
   if (!t.exit) return null;
-  return dir * (t.exit - t.entry) * t.qty - (t.fees || 0);
+  return dir * (t.exit - t.entry) * t.qty * k - (t.fees || 0) - funding;
 }
 
 function rrActual(t) {
@@ -133,6 +136,7 @@ $("showAddBtn").addEventListener("click", () => {
   $("formTitle").textContent = "New Trade";
   $("j_date").value   = todayStr();
   $("j_symbol").value = "";
+  $("j_hint").hidden = $("j_market").value !== "Crypto";
   $("j_exit").value   = "";
   $("j_notes").value  = "";
   $("j_setup").value  = "";
@@ -181,7 +185,7 @@ $("logTradeBtn").addEventListener("click", () => {
 function quickLogTrade() {
   if (!lastCalc) return;
   const lc = lastCalc;
-  const unitWord = lc.isLots ? (lc.units === 1 ? "lot" : "lots") : (lc.units === 1 ? "share" : "shares");
+  const unitWord = lc.instrument === "crypto" ? (lc.unitName || "coins") : lc.isLots ? (lc.units === 1 ? "lot" : "lots") : (lc.units === 1 ? "share" : "shares");
   const targetPx = lc.targetPrice || (lc.targets && lc.targets[2] ? lc.targets[2].tp : (lc.isLong ? lc.entry + Math.abs(lc.entry - lc.sl) * 2 : lc.entry - Math.abs(lc.entry - lc.sl) * 2));
   
   const symLabel = lc.symbolName && lc.symbolName !== "Equity" ? lc.symbolName : "";
@@ -192,6 +196,10 @@ function quickLogTrade() {
     symbol: lc.symbol || null,
     instrument: lc.instrument || null,
     optType: lc.optType || null,
+    leverage: lc.cryptoLev || null,
+    fx: lc.fx || null,
+    ccy: lc.instrument === "crypto" ? "USDT" : null,
+    liq: lc.liq || null,
     dir: lc.isLong ? "LONG" : "SHORT",
     entry: lc.entry,
     sl: lc.sl,
@@ -214,13 +222,13 @@ function quickLogTrade() {
   renderTodayTrades();
   if (typeof renderDailyBanner === "function") renderDailyBanner();
   
-  showToast(`✓ Logged: ${symLabel ? symLabel + " · " : ""}${t.dir === "LONG" ? "▲ LONG" : "▼ SHORT"} ${t.qty} ${unitWord} @ ₹${t.entry}`);
+  showToast(`✓ Logged: ${symLabel ? symLabel + " · " : ""}${t.dir === "LONG" ? "▲ LONG" : "▼ SHORT"} ${lc.units} ${unitWord} @ ${pxs(t, t.entry)}`);
 }
 
 function openPreLogModal() {
   if (!lastCalc) return;
   const lc = lastCalc;
-  const unitWord = lc.isLots ? (lc.units === 1 ? "lot" : "lots") : (lc.units === 1 ? "share" : "shares");
+  const unitWord = lc.instrument === "crypto" ? (lc.unitName || "coins") : lc.isLots ? (lc.units === 1 ? "lot" : "lots") : (lc.units === 1 ? "share" : "shares");
   const symLabel = lc.symbolName && lc.symbolName !== "Equity" ? lc.symbolName + " · " : "";
   $("pl_summary").textContent =
     `${symLabel}${lc.isLong ? "▲ LONG" : "▼ SHORT"} · ${lc.market} · Entry ₹${lc.entry} · SL ₹${lc.sl} · ${lc.units} ${unitWord}`;
@@ -280,6 +288,10 @@ $("pl_confirm").addEventListener("click", () => {
     symbol: lc.symbol || null,
     instrument: lc.instrument || null,
     optType: lc.optType || null,
+    leverage: lc.cryptoLev || null,
+    fx: lc.fx || null,
+    ccy: lc.instrument === "crypto" ? "USDT" : null,
+    liq: lc.liq || null,
     dir:    lc.isLong ? "LONG" : "SHORT",
     entry:  lc.entry,
     sl:     lc.sl,
@@ -307,6 +319,7 @@ $("pl_confirm").addEventListener("click", () => {
 $("pl_cancel").addEventListener("click", () => { $("preLogModal").hidden = true; });
 $("preLogModal").addEventListener("click", e => { if (e.target === $("preLogModal")) $("preLogModal").hidden = true; });
 
+$("j_market").addEventListener("change", () => { $("j_hint").hidden = $("j_market").value !== "Crypto"; });
 $("j_symbol").addEventListener("input", () => {
   const sym = SYMBOLS.find(x => x.name === cleanSymbol($("j_symbol").value));
   if (sym) $("j_market").value = marketForSymbol(sym, sym.indexOnly || FNO_MARKETS.includes($("j_market").value) ? "options" : "equity");
@@ -320,6 +333,7 @@ $("saveTradeBtn").addEventListener("click", () => {
     date:   $("j_date").value,
     market: $("j_market").value,
     symbol: cleanSymbol($("j_symbol").value) || null,
+    ...($("j_market").value === "Crypto" ? { instrument: "crypto", fx: rememberedFx(), ccy: "USDT" } : {}),
     dir:    $("j_dir").value,
     entry:  parseFloat($("j_entry").value)  || null,
     sl:     parseFloat($("j_sl").value)     || null,
@@ -346,11 +360,11 @@ $("saveTradeBtn").addEventListener("click", () => {
 
 /* ── Export CSV ── */
 $("exportBtn").addEventListener("click", () => {
-  const cols = ["date","market","symbol","instrument","dir","entry","sl","target","exit","qty","fees","pnl","rr","setup","notes"];
+  const cols = ["date","market","symbol","instrument","ccy","fx","leverage","funding","dir","entry","sl","target","exit","qty","fees","pnl","rr","setup","notes"];
   const rows = trades.map(t => {
     const pnl = pnlForTrade(t);
     const rr  = rrActual(t);
-    return [t.date, t.market, '"' + (t.symbol || "") + '"', t.instrument || "", t.dir, t.entry, t.sl, t.target, t.exit, t.qty, t.fees,
+    return [t.date, t.market, '"' + (t.symbol || "") + '"', t.instrument || "", t.ccy || "", t.fx || "", t.leverage || "", t.funding || "", t.dir, t.entry, t.sl, t.target, t.exit, t.qty, t.fees,
       pnl !== null ? pnl.toFixed(2) : "", rr !== null ? rr.toFixed(2) : "",
       '"' + (t.setup || "").replace(/"/g,'""') + '"',
       '"' + (t.notes || "").replace(/"/g,'""') + '"'].join(",");
@@ -524,6 +538,9 @@ function openDetails(id) {
   $("d_symbol").value = t.symbol || "";
   $("d_setup").value  = t.setup || "";
   $("d_notes").value  = t.notes || "";
+  $("d_cry").hidden = t.instrument !== "crypto";
+  $("d_lev").value  = t.leverage || "";
+  $("d_fx").value   = t.fx || "";
   $("detailsModal").hidden = false;
   $("d_symbol").focus();
 }
@@ -541,6 +558,10 @@ $("d_save").addEventListener("click", () => {
   t.symbol = cleanSymbol($("d_symbol").value) || null;
   t.setup  = $("d_setup").value.trim();
   t.notes  = $("d_notes").value.trim();
+  if (t.instrument === "crypto") {
+    t.leverage = parseFloat($("d_lev").value) || null;
+    const fx = parseFloat($("d_fx").value); if (fx > 0) t.fx = fx;
+  }
   saveTrades();
   closeDetails();
   if (!$("tab-journal").hidden) refreshJournal();
@@ -562,17 +583,34 @@ function openCloseModal(id) {
   $("cm_exit").value  = "";
   $("cm_qty").value   = t.qty   || "";
   $("cm_fees").value  = "";
+  feesTouched = false;
+  $("cm_funding_wrap").hidden = t.instrument !== "crypto";
+  $("cm_funding").value = "";
   $("cm_notes").value = t.notes || "";
   // Show existing partial exits
   renderPartialExitList(t);
   $("cm_full_btn").classList.add("active");
   $("cm_partial_btn").classList.remove("active");
   $("cm_partial_label").textContent = `Exit Qty (total: ${t.qty})`;
-  $("cm_hit_sl").onclick = () => { $("cm_exit").value = t.sl     || ""; $("cm_exit").focus(); };
-  $("cm_hit_tp").onclick = () => { $("cm_exit").value = t.target || ""; $("cm_exit").focus(); };
+  $("cm_hit_sl").onclick = () => { $("cm_exit").value = t.sl     || ""; autoCryptoFees(); $("cm_exit").focus(); };
+  $("cm_hit_tp").onclick = () => { $("cm_exit").value = t.target || ""; autoCryptoFees(); $("cm_exit").focus(); };
   $("closeModal").hidden = false;
   $("cm_exit").focus();
 }
+
+let feesTouched = false;
+/* Fill the Fees box with the round-trip taker fee + GST for the quantity being closed, unless the user typed their own. */
+function autoCryptoFees() {
+  const t = trades.find(x => x.id === closeTradeId);
+  if (!t || t.instrument !== "crypto" || feesTouched) return;
+  const exit = parseFloat($("cm_exit").value), qty = parseFloat($("cm_qty").value) || t.qty;
+  if (!(exit > 0) || !(qty > 0)) return;
+  const f = cryptoFeeCfg(), entry = parseFloat($("cm_entry").value) || t.entry;
+  $("cm_fees").value = Math.round(qty * (entry + exit) * (f.taker / 100) * (1 + f.gst / 100) * (t.fx || 1) * 100) / 100;
+}
+$("cm_exit").addEventListener("input", autoCryptoFees);
+$("cm_qty").addEventListener("input", autoCryptoFees);
+$("cm_fees").addEventListener("input", () => { feesTouched = true; });
 
 function renderPartialExitList(t) {
   const wrap = $("cm_exits_list"); if (!wrap) return;
@@ -580,7 +618,7 @@ function renderPartialExitList(t) {
   const dir = t.dir === "LONG" ? 1 : -1;
   wrap.innerHTML = `<div style="font-size:11px;color:var(--fg3);margin-bottom:4px">Previous exits:</div>` +
     t.exits.map(ex => {
-      const pnl = dir * (ex.price - t.entry) * ex.qty - (ex.fees || 0);
+      const pnl = dir * (ex.price - t.entry) * ex.qty * fxOf(t) - (ex.fees || 0);
       return `<div class="exit-item">
         <span>${ex.date || ""}</span>
         <span class="td-mono">Qty ${ex.qty} @ ${ex.price}</span>
@@ -616,12 +654,14 @@ $("cm_confirm").addEventListener("click", () => {
   if (!exit) { $("cm_exit").focus(); return; }
   const exitQty  = parseFloat($("cm_qty").value)  || 0;
   const exitFees = parseFloat($("cm_fees").value) || 0;
+  const funding  = parseFloat($("cm_funding").value) || 0;
   trades = trades.map(t => {
     if (t.id !== closeTradeId) return t;
     const updated = { ...t,
       entry: parseFloat($("cm_entry").value) || t.entry,
       notes: $("cm_notes").value.trim() || t.notes || "",
     };
+    if (t.instrument === "crypto") updated.funding = (t.funding || 0) + funding;
     const partialExit = { price: exit, qty: exitQty || t.qty, fees: exitFees, date: todayStr() };
     if (!updated.exits) updated.exits = [];
     updated.exits = [...updated.exits, partialExit];
@@ -654,7 +694,10 @@ function editBtnFor(t) {
   return `<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px;color:var(--fg3)" onclick="openDetails('${t.id}')" title="Edit market, symbol and notes">✎</button>`;
 }
 
+const px  = (t, v) => v ? (t.instrument === "crypto" ? "$" + fmtUsd(v) : v) : "—";          // table cells
+const pxs = (t, v) => v ? (t.instrument === "crypto" ? "$" + fmtUsd(v) : "₹" + v) : "—";   // with currency symbol
 function qtyLabel(t) {
+  if (t.instrument === "crypto") return `${t.qty}${t.leverage ? " · " + t.leverage + "× lev" : ""}`;
   return t.lots ? `${t.lots} lot${t.lots === 1 ? "" : "s"} × ${t.lotSize} = ${t.qty}` : (t.qty || "—");
 }
 
@@ -696,7 +739,7 @@ function renderTodayTrades() {
         ${editBtnFor(t)}
         ${delBtn}
       </div>
-      <div class="today-trade-meta">E: ₹${t.entry||"—"} · SL: ₹${t.sl||"—"} · Qty: ${qtyLabel(t)}${closed?` · Exit: ₹${t.exit||"partial"}`:""}</div>
+      <div class="today-trade-meta">E: ${pxs(t, t.entry)} · SL: ${pxs(t, t.sl)} · Qty: ${qtyLabel(t)}${closed?` · Exit: ${t.exit ? pxs(t, t.exit) : "partial"}`:""}</div>
       ${closeBtn ? `<div style="margin-top:8px;text-align:right">${closeBtn}</div>` : ""}
     </div>`;
   }).join("");
@@ -779,7 +822,7 @@ function repTradeRow(t, dayId, moKey) {
     const closed = isClosed(t);
     const res = !closed ? `<span class="badge open">OPEN</span>` : pnl > 0 ? `<span class="badge win">WIN</span>` : `<span class="badge loss">LOSS</span>`;
     const pc  = pnl === null ? "td-muted" : pnl > 0 ? "td-pos" : "td-neg";
-    const gv  = pnl !== null ? fmtINR((t.exit - t.entry) * (t.dir === "LONG" ? 1 : -1) * t.qty) : "—";
+    const gv  = pnl !== null ? fmtINR((t.exit - t.entry) * (t.dir === "LONG" ? 1 : -1) * t.qty * fxOf(t)) : "—";
     const gc  = pnl !== null ? (pnl > 0 ? "td-pos" : "td-neg") : "td-muted";
     const setupTag = t.setup ? `<span style="font-size:10px;color:var(--accent)">${t.setup}</span>` : "—";
     const partialBadge = (!t.exit && t.exits && t.exits.length) ? ` <span style="font-size:10px;color:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 4px">partial</span>` : "";
@@ -787,8 +830,8 @@ function repTradeRow(t, dayId, moKey) {
       <td class="td-muted td-mono">${t.date||"—"}</td>
       <td>${t.market||"—"}${symChip(t)}</td>
       <td><span class="badge ${t.dir.toLowerCase()}">${t.dir==="LONG"?"▲":"▼"} ${t.dir}</span></td>
-      <td class="td-mono">${t.entry||"—"}</td><td class="td-mono">${t.sl||"—"}</td>
-      <td class="td-mono">${t.target||"—"}</td><td class="td-mono">${t.exit||"—"}${partialBadge}</td>
+      <td class="td-mono">${px(t, t.entry)}</td><td class="td-mono">${px(t, t.sl)}</td>
+      <td class="td-mono">${px(t, t.target)}</td><td class="td-mono">${px(t, t.exit)}${partialBadge}</td>
       <td class="td-mono">${t.qty||"—"}</td>
       <td class="td-mono ${gc}">${gv}</td>
       <td class="td-mono td-muted">${t.fees ? fmtINR(t.fees) : "₹0"}</td>

@@ -43,6 +43,10 @@ const SETTINGS_FIELDS = [
   { scope: "settings", key: "showFees",    label: "Show fee breakdown",  fb: true,       get: () => $("tog_show_fees").checked,            set: v => { $("tog_show_fees").checked = v; }, fmt: onOff },
   { scope: "settings", key: "brokerage",   label: "Brokerage per order", fb: 20,         get: () => nonNeg("s_brokerage", 20),             set: v => { $("s_brokerage").value = v; },   fmt: v => "₹" + v },
   { scope: "settings", key: "gstPct",      label: "GST",                 fb: 18,         get: () => nonNeg("s_gst_pct", 18),               set: v => { $("s_gst_pct").value = v; },     fmt: v => v + "%" },
+  { scope: "settings", key: "cryptoTaker",   label: "Crypto taker fee",      fb: 0.05, get: () => nonNeg("s_cry_taker", 0.05),  set: v => { $("s_cry_taker").value = v; }, fmt: v => v + "%" },
+  { scope: "settings", key: "cryptoGst",     label: "GST on crypto fees",    fb: 18,   get: () => nonNeg("s_cry_gst", 18),      set: v => { $("s_cry_gst").value = v; },   fmt: v => v + "%" },
+  { scope: "settings", key: "cryptoFunding", label: "Funding per 8 hours",   fb: 0.01, get: () => nonNeg("s_cry_fund", 0.01),   set: v => { $("s_cry_fund").value = v; },  fmt: v => v + "%" },
+  { scope: "settings", key: "cryptoMmr",     label: "Maintenance margin",    fb: 0.5,  get: () => nonNeg("s_cry_mmr", 0.5),     set: v => { $("s_cry_mmr").value = v; },   fmt: v => v + "%" },
   { scope: "settings", key: "maxDailyLoss",   label: "Max daily loss",   fb: "",         get: () => $("s_max_loss").value.trim(),          set: v => { $("s_max_loss").value = v; },    fmt: v => v ? rupees(v) : "Off" },
   { scope: "settings", key: "maxDailyTrades", label: "Max trades / day", fb: "",         get: () => $("s_max_trades").value.trim(),        set: v => { $("s_max_trades").value = v; }, fmt: v => v || "Off" },
   { scope: "alert",    key: "min",    label: "Beep interval",      get: () => draftMin,                          set: v => { draftMin = v; },                 fmt: v => v + " min" },
@@ -119,6 +123,8 @@ function populateForm() {
 function loadSettings() {
   const s = getAppSettings();
   if ($("i_lot")) $("i_lot").value = rememberedLot();
+  if ($("i_fx"))  $("i_fx").value  = rememberedFx();
+  if ($("i_lev")) $("i_lev").value = s.cryptoLev > 0 ? s.cryptoLev : DEFAULT_CRYPTO_LEV;
   if ($("i_cap") && s.defaultCap)  $("i_cap").value = s.defaultCap;
   if ($("i_rsk") && s.defaultRisk) $("i_rsk").value = s.defaultRisk;
   if ($("i_rr")  && s.defaultRR)   $("i_rr").value  = s.defaultRR;
@@ -171,7 +177,7 @@ function discardSettings() { populateForm(); showToast("Changes discarded"); }
 
 /* ── wiring: every control only updates the draft ── */
 ["tog_dark", "s_default_cap", "s_default_risk", "s_default_lev", "s_default_rr", "s_default_market", "tog_quick_log",
- "tog_show_fo", "tog_show_fees", "s_brokerage", "s_gst_pct", "s_max_loss", "s_max_trades",
+ "tog_show_fo", "tog_show_fees", "s_brokerage", "s_gst_pct", "s_cry_taker", "s_cry_gst", "s_cry_fund", "s_cry_mmr", "s_max_loss", "s_max_trades",
  "alert_anchor", "alert_lead", "alert_hours", "alert_vol"].forEach(id => {
   const el = $(id); if (!el) return;
   ["input", "change"].forEach(ev => el.addEventListener(ev, refreshDirty));
@@ -284,9 +290,9 @@ function setLevel(level, init) {
   const rank = LEVEL_ORDER.indexOf(level);
   if (rank < 2) {                                   // Pro features are now hidden
     if (showFOMode) {
-      const keepOptions = instrType === "options";  // options have their own toggle at every level
+      const keep = (instrType === "options" || instrType === "crypto") ? instrType : null;   // these have their own toggles at every level
       toggleFOMode(false);                          // futures and the F&O tabs are Pro only
-      if (keepOptions) setInstrType("options");
+      if (keep) setInstrType(keep);
       else { const sym = getSelectedSymbol(); if (sym && sym.indexOnly) { $("sym_input").value = ""; updateLotLabel(); } }
     }
     if (currentRoute === "journal/projection") switchTab("journal");
@@ -412,5 +418,5 @@ loadSettings();
 calc();
 renderTodayTrades();
 setLevel(getLevel(), true);                              // apply the saved level (and reset anything it hides)
-if (getAppSettings().optionsOn) setInstrType("options"); // reopen in options mode if that is how you left it
+{ const st = getAppSettings(); if (st.cryptoOn) setInstrType("crypto"); else if (st.optionsOn) setInstrType("options"); }   // reopen in the mode you left
 { const r = parseRoute(); showRoute(r.tab, r.sub); }   // open the page named in the link

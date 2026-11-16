@@ -782,3 +782,8 @@ html[data-ui="pro"]    [data-level="below-pro"] { display:none !important; }
 .set-changes li:last-child { border-bottom:none; }
 .set-changes li span { color:var(--fg); text-align:right; }
 .set-changes s { color:var(--fg2); opacity:.75; }
+
+/* Crypto toggle: leverage and USD/INR sit side by side under the switch */
+.cry-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.cry-lbl { display:flex; flex-direction:column; gap:3px; font-size:11px; color:var(--fg2); }
+.cry-lbl input { width:100%; min-width:0; }

@@ -119,6 +119,14 @@ Script load order matters: `calc.js` → `journal.js` → `projection.js` → `a
 - Any trade can be tidied later with the ✎ button (Today's list and journal rows): market, symbol, setup, notes. A known symbol auto-picks its market.
 - Zerodha import uses `contractInfo(symbol, exch)`. Option symbols end in digit + CE/PE and futures in digit + MON + FUT (a bare "CE"/"PE" ending is not enough: RELIANCE ends in CE).
 
+## Crypto perpetuals (all levels)
+- A **Crypto** toggle sits next to Options (mutually exclusive; remembered as `cryptoOn`). On: Entry/SL are typed in **USDT**, Risk stays in **₹**, and two fields appear: Leverage × (`#i_lev`, default 10, remembered as `cryptoLev`) and `1 USD = ₹` (`#i_fx`, default 88, remembered as `usdInr`). `instrType === "crypto"`; `deriveMarket` always returns "Crypto".
+- Sizing (`sizeCrypto` in calc.js): coins = (risk ₹ / fx) / SL distance, rounded DOWN to 4 decimals. Notional = coins × entry × fx. Margin = notional / leverage (isolated estimate). Liquidation estimate: long `entry × (1 - 1/lev + mmr)`, short `entry × (1 + 1/lev - mmr)`; a warning shows if liquidation comes before the stop.
+- Fees: taker % on entry and exit notional + GST on fees, all editable in Settings → Crypto Fees (`cryptoTaker` 0.05, `cryptoGst` 18, `cryptoFunding` 0.01 per 8h, `cryptoMmr` 0.5). These are typical defaults, NOT verified for any exchange. Funding is shown as an estimate per 8h and is not included in the target net. Tax is deliberately ignored.
+- Journal: a crypto trade stores `instrument:"crypto"`, `ccy:"USDT"`, `fx` (rate at logging), `leverage`, `liq`, `qty` in coins, prices in USDT. `pnlForTrade` converts with `fxOf(t)`; `fees` and `funding` are in ₹. Closing a crypto trade auto-fills fees (round-trip taker + GST at the trade's fx) unless you type your own, and has a Funding (₹) field. The ✎ editor can change leverage and USD/INR.
+- Older trades with market "Crypto" but no `instrument` are treated as plain ₹, on purpose (no surprise conversion).
+- `fmtP` now puts commas on the whole part only; `fmtUsd` formats prices (2 decimals ≥ 1000, up to 4 below, up to 6 below 1, trailing zeros trimmed).
+
 ## Pages & routing
 - 3 top tabs: Calc, Journal, Settings. Projection is a view inside Journal (`#jnl_projection`, opened by the 🎯 button, `#jnl_main` is the trade list).
 - Hash routes: `#calc` (home), `#journal`, `#journal/projection`, `#settings`. Use `switchTab(tab, sub)` (app.js). It updates the URL and renders synchronously; `hashchange` handles back/forward and typed links.

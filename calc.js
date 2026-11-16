@@ -23,12 +23,35 @@ function marketForSymbol(sym, instr) {
 /* A known symbol decides the market. Without one (Quick has no symbol box) the "I mainly trade" setting does,
    adjusted for the Options toggle, so a Quick log is still filed under the right market. */
 function deriveMarket(sym, instr) {
+  if (instr === "crypto") return "Crypto";
   if (sym) return marketForSymbol(sym, instr);
   const dm = (typeof getAppSettings === "function" && getAppSettings().defaultMarket) || "NSE Equity";
   const isFno = instr !== "equity";
   if (isFno && dm === "NSE Equity") return "Nifty F&O";
   if (!isFno && FNO_MARKETS.includes(dm)) return "NSE Equity";
   return MARKETS.includes(dm) ? dm : (isFno ? "Nifty F&O" : "NSE Equity");
+}
+
+/* ── Crypto perpetuals: prices in USDT, risk / margin / P&L in ₹ ──
+   Rates are editable in Settings (exchanges differ and change them); these defaults are typical, not any one exchange's. */
+const CRYPTO_DEFAULTS = { taker: 0.05, gst: 18, funding: 0.01, mmr: 0.5 };
+const DEFAULT_FX = 88, DEFAULT_CRYPTO_LEV = 10;
+function cryptoFeeCfg() {
+  const s = typeof getAppSettings === "function" ? getAppSettings() : {};
+  const n = (v, d) => { const x = parseFloat(v); return isNaN(x) || x < 0 ? d : x; };
+  return { taker: n(s.cryptoTaker, CRYPTO_DEFAULTS.taker), gst: n(s.cryptoGst, CRYPTO_DEFAULTS.gst),
+           funding: n(s.cryptoFunding, CRYPTO_DEFAULTS.funding), mmr: n(s.cryptoMmr, CRYPTO_DEFAULTS.mmr) };
+}
+function rememberedFx() { const v = parseFloat(typeof getAppSettings === "function" ? getAppSettings().usdInr : 0); return v > 0 ? v : DEFAULT_FX; }
+function getFx()        { const v = parseFloat($("i_fx") ? $("i_fx").value : ""); return v > 0 ? v : DEFAULT_FX; }
+function getCryptoLev() { const v = parseFloat($("i_lev") ? $("i_lev").value : ""); return v >= 1 ? Math.min(125, v) : DEFAULT_CRYPTO_LEV; }
+const fmtUsd = n => {                           // 97,000.00  |  1.2345  |  0.05  (small prices keep their precision, trailing zeros trimmed)
+  const a = Math.abs(n), t = fmtP(n, a >= 1000 ? 2 : a >= 1 ? 4 : 6);
+  return a >= 1000 ? t : t.replace(/(\.\d{2}\d*?)0+$/, "$1");
+};
+function cryptoBase() {
+  const t = ($("sym_input") ? $("sym_input").value : "").trim().toUpperCase().replace(/(-?PERP|USDT|USD)$/, "");
+  return t || "coins";
 }
 
 const $ = id => document.getElementById(id);
@@ -41,7 +64,10 @@ function fmtINR(n) {
   if (a >= 1000) return s + "₹" + comma(n);
   return s + "₹" + a.toFixed(2);
 }
-function fmtP(n, dec) { return Math.abs(n).toFixed(dec).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+function fmtP(n, dec) {                         // thousands commas on the whole part only, never inside the decimals
+  const [i, d] = Math.abs(n).toFixed(dec).split(".");
+  return i.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + (d ? "." + d : "");
+}
 
 // Local calendar date (not UTC, which is "yesterday" in India before 5:30 AM).
 function todayStr() {
@@ -312,7 +338,7 @@ function toggleFOMode(forceState) {
   const symRow2 = $("sym_row2");
 
   if (wrap) wrap.hidden = !showFOMode;
-  if (symRow2) symRow2.hidden = !showFOMode && instrType === "equity";
+  if (symRow2) symRow2.hidden = (!showFOMode && instrType === "equity") || instrType === "crypto";
   if (btn) btn.classList.toggle("active", showFOMode);
 
   if (showFOMode) {
@@ -396,7 +422,7 @@ function setInstrType(type) {
   const typeRow = $("type_row");
   if (typeRow) typeRow.hidden = instrType !== "options";
   const symRow2 = $("sym_row2");
-  if (symRow2) symRow2.hidden = !showFOMode && instrType === "equity";
+  if (symRow2) symRow2.hidden = (!showFOMode && instrType === "equity") || instrType === "crypto";
   const levField = $("lev_field");
   if (levField) levField.style.display = instrType === "equity" ? "" : "none";
 
@@ -404,7 +430,7 @@ function setInstrType(type) {
   if (badge) {
     badge.textContent = instrType === "equity"
       ? (showFOMode ? "🏢 Equity" : "🏢 Equity / Stocks")
-      : instrType === "options" ? `⚡ Options (${optType})` : "📈 Futures";
+      : instrType === "crypto" ? "₿ Crypto perpetual" : instrType === "options" ? `⚡ Options (${optType})` : "📈 Futures";
   }
 
   syncOptionsUI(prev);
@@ -426,9 +452,16 @@ function autoLot(sym) {
 function syncOptionsUI(prev) {
   const t = $("optToggle"), row = $("lot_row"), hint = $("lot_hint");
   if (t)    t.checked = instrType === "options";
-  if (row)  row.hidden = instrType === "equity";
+  if (row)  row.hidden = instrType === "equity" || instrType === "crypto";
   if (hint) hint.hidden = instrType !== "options";
-  if (prev === "equity" && instrType !== "equity") autoLot(getSelectedSymbol());   // switching on picks the lot size
+  const ct = $("cryToggle");
+  if (ct) ct.checked = instrType === "crypto";
+  const ccy = instrType === "crypto" ? "USDT" : "₹";           // crypto prices are typed in USDT
+  if ($("lbl_e")) $("lbl_e").textContent = "Entry Price (" + ccy + ")";
+  if ($("lbl_s")) $("lbl_s").textContent = "Stop Loss (" + ccy + ")";
+  if ($("cry_row"))  $("cry_row").hidden  = instrType !== "crypto";
+  if ($("cry_hint")) $("cry_hint").hidden = instrType !== "crypto";
+  if ((prev === "equity" || prev === "crypto") && (instrType === "options" || instrType === "futures")) autoLot(getSelectedSymbol());   // switching on picks the lot size
 }
 
 function updateTypeOptions() {
@@ -468,7 +501,7 @@ function getMarginPerUnit(sym, entry) {
 }
 
 function getLotSize(sym) {
-  if (instrType === "equity") return 1;
+  if (instrType === "equity" || instrType === "crypto") return 1;
   const v = parseInt($("i_lot") ? $("i_lot").value : "", 10);
   return v >= 1 ? v : (sym && sym.lot ? sym.lot : DEFAULT_LOT);
 }
@@ -568,6 +601,20 @@ function renderFeeBreakdown() {
   const { entry, sl, isLong, units, lotSize } = lastCalc;
   const slDist = Math.abs(entry - sl);
   const tp2    = isLong ? entry + slDist * 2 : entry - slDist * 2;
+
+  if (lastCalc.instrument === "crypto") {
+    const f = cryptoFeeCfg(), fx = lastCalc.fx;
+    const entryFee = units * entry * f.taker / 100 * fx, exitFee = units * tp2 * f.taker / 100 * fx;
+    const gst = (entryFee + exitFee) * f.gst / 100;
+    fb.innerHTML = `
+      <div class="fee-row"><span class="fee-lbl">Entry fee (taker ${f.taker}%)</span><span class="fee-val">${fmtINR(entryFee)}</span></div>
+      <div class="fee-row"><span class="fee-lbl">Exit fee (taker ${f.taker}%)</span><span class="fee-val">${fmtINR(exitFee)}</span></div>
+      <div class="fee-row"><span class="fee-lbl">GST (${f.gst}%)</span><span class="fee-val">${fmtINR(gst)}</span></div>
+      <div class="fee-row total"><span class="fee-lbl">Total fees (1:2 trade)</span><span class="fee-val">${fmtINR(entryFee + exitFee + gst)}</span></div>
+      <div class="fee-row"><span class="fee-lbl">Funding per 8h held (${f.funding}%, not included)</span><span class="fee-val">${fmtINR(units * entry * f.funding / 100 * fx)}</span></div>
+      <div class="fee-row"><span class="fee-lbl">Estimated liquidation price</span><span class="fee-val">$${fmtUsd(lastCalc.liq)}</span></div>`;
+    return;
+  }
   const fees   = calcZerodhaFees(entry, tp2, units, lotSize, isLong);
 
   const { brok, gstPct } = feeSettings();
@@ -609,6 +656,55 @@ $("flatRiskToggle").addEventListener("change", () => {
   calc();
 });
 
+/* Position sizing. Standard = equity / options / futures (whole shares or lots, ₹ prices).
+   Crypto = fractional coins, USDT prices, risk and results in ₹ at the USD/INR rate. */
+const RRS = [1, 1.5, 2, 3];
+const feesOn = () => (typeof getAppSettings === "function" ? getAppSettings().showFees !== false : true);
+
+function sizeStandard(c) {
+  const { entry, isLong, slDist, riskINR, defRR, sym, lotSize } = c;
+  const slPerUnit = slDist * lotSize;
+  if (slPerUnit <= 0) return null;
+  const units = Math.max(1, Math.floor(riskINR / slPerUnit));
+  const marginPerUnit = getMarginPerUnit(sym, entry);
+  const tradeVal = units * lotSize * entry;
+  const totalMgn = instrType === "options" ? tradeVal
+                 : instrType === "equity"  ? tradeVal / (leverageMultiplier || 1)
+                 : marginPerUnit * units;
+  const actualRisk = units * slPerUnit;
+  const targets = RRS.map(rr => {
+    const tp    = isLong ? entry + slDist * rr : entry - slDist * rr;
+    const gross = slDist * rr * lotSize * units;
+    const fees  = feesOn() ? calcZerodhaFees(entry, tp, units, lotSize, isLong).total : 0;
+    return { rr, tp, gross, net: gross - fees };
+  });
+  return { units, tradeVal, totalMgn, actualRisk, targets,
+           profitTP: isLong ? entry + slDist * defRR : entry - slDist * defRR,
+           profitGross: slDist * defRR * lotSize * units };
+}
+
+function sizeCrypto(c) {
+  const { entry, sl, isLong, slDist, riskINR, defRR } = c;
+  const fx = getFx(), lev = getCryptoLev(), f = cryptoFeeCfg();
+  const units = Math.floor(riskINR / fx / slDist * 1e4) / 1e4;          // coins, rounded DOWN to 4 decimals
+  if (!(units > 0)) return null;
+  const tradeVal   = units * entry * fx;                                 // ₹ notional
+  const totalMgn   = tradeVal / lev;                                    // isolated-margin estimate
+  const actualRisk = units * slDist * fx;
+  const feeINR = tp => units * (entry + tp) * (f.taker / 100) * (1 + f.gst / 100) * fx;   // entry + exit, taker both sides, plus GST
+  const targets = RRS.map(rr => {
+    const tp    = isLong ? entry + slDist * rr : entry - slDist * rr;
+    const gross = slDist * rr * units * fx;
+    return { rr, tp, gross, net: gross - (feesOn() ? feeINR(tp) : 0) };
+  });
+  const mm  = f.mmr / 100;
+  const liq = isLong ? entry * (1 - 1 / lev + mm) : entry * (1 + 1 / lev - mm);   // estimate, ignores fees and funding
+  return { units, tradeVal, totalMgn, actualRisk, targets,
+           profitTP: isLong ? entry + slDist * defRR : entry - slDist * defRR,
+           profitGross: slDist * defRR * units * fx,
+           crypto: { fx, lev, liq, liqBeforeSL: isLong ? liq >= sl : liq <= sl } };
+}
+
 /* ── Main calc ── */
 function calc() {
   const { entry, sl, cap, rsk, rr: defRR, riskINR, flatOn } = getInputs();
@@ -617,44 +713,21 @@ function calc() {
   const slDist  = Math.abs(entry - sl);
   const sym     = getSelectedSymbol();
   const lotSize = getLotSize(sym);
+  const crypto  = instrType === "crypto";
+  const cur     = crypto ? "$" : "₹";
 
   const slDistBadge = $("sl_dist_badge");
   if (slDistBadge) {
-    slDistBadge.textContent = `· SL: ₹${slDist.toFixed(2)} (${((slDist/entry)*100).toFixed(1)}%)`;
+    slDistBadge.textContent = `· SL: ${cur}${crypto ? fmtUsd(slDist) : slDist.toFixed(2)} (${((slDist/entry)*100).toFixed(1)}%)`;
   }
 
-  // Sizing: for equity = shares; for futures/options = lots
-  const slPerUnit = slDist * lotSize;
-  if (slPerUnit <= 0) { showEmpty(); return; }
-  const units = Math.max(1, Math.floor(riskINR / slPerUnit));
-
-  // Margin & Trade Value
-  const marginPerUnit = getMarginPerUnit(sym, entry);
-  const tradeVal      = instrType === "options"
-    ? entry * lotSize * units
-    : units * lotSize * entry;
-
-  const totalMgn      = instrType === "options"
-    ? tradeVal
-    : instrType === "equity"
-      ? tradeVal / (leverageMultiplier || 1)
-      : marginPerUnit * units;
-
+  const M = crypto
+    ? sizeCrypto({ entry, sl, isLong, slDist, riskINR, defRR })
+    : sizeStandard({ entry, isLong, slDist, riskINR, defRR, sym, lotSize });
+  if (!M) { showEmpty(); return; }
+  const { units, tradeVal, totalMgn, actualRisk, targets, profitTP, profitGross } = M;
   const mgnPct        = (totalMgn / cap) * 100;
-  const actualRisk    = units * slPerUnit;
   const actualRiskPct = (actualRisk / cap) * 100;
-
-  const RRS = [1, 1.5, 2, 3];
-  const targets = RRS.map(rr => {
-    const tp    = isLong ? entry + slDist * rr : entry - slDist * rr;
-    const gross = slDist * rr * lotSize * units;
-    const showFees = typeof getAppSettings === "function" ? getAppSettings().showFees !== false : true;
-    const fees = showFees ? calcZerodhaFees(entry, tp, units, lotSize, isLong).total : 0;
-    return { rr, tp, gross, net: gross - fees };
-  });
-
-  const profitTP    = isLong ? entry + slDist * defRR : entry - slDist * defRR;
-  const profitGross = slDist * defRR * lotSize * units;
 
   const typed     = $("sym_input") ? $("sym_input").value.trim().toUpperCase() : "";
   const symName   = sym ? sym.name : (typed || "Equity");
@@ -667,12 +740,14 @@ function calc() {
     symbol: sym ? sym.name : (typed || null),
     instrument: instrType,
     optType: optShown ? optType : null,
-    isLots: instrType !== "equity" && lotSize > 1,
+    isLots: instrType !== "equity" && !crypto && lotSize > 1,
     dec: 2,
     margin: totalMgn,
     tradeValue: tradeVal,
-    leverage: instrType === "equity" ? leverageMultiplier : orderType,
-    targetPrice: profitTP
+    leverage: crypto ? M.crypto.lev : (instrType === "equity" ? leverageMultiplier : orderType),
+    targetPrice: profitTP,
+    cur, unitName: crypto ? cryptoBase() : null,
+    cryptoLev: crypto ? M.crypto.lev : null, fx: crypto ? M.crypto.fx : null, liq: crypto ? M.crypto.liq : null
   };
 
   $("r_empty").hidden   = true;
@@ -699,6 +774,8 @@ function calc() {
     warns.push(`⚠ Max risk is ${actualRiskPct.toFixed(1)}% of your capital.`);
   }
 
+  if (crypto && M.crypto.liqBeforeSL) warns.push(`⚠ Estimated liquidation ($${fmtUsd(M.crypto.liq)}) comes BEFORE your stop-loss ($${fmtUsd(sl)}). Lower the leverage or tighten the stop.`);
+
   const wb = $("r_warn");
   if (wb) {
     if (warns.length) {
@@ -713,14 +790,23 @@ function calc() {
     ? (units === 1 ? "share" : "shares")
     : (units === 1 ? "lot" : "lots");
 
-  // Tile 0: Position
-  $("t0lbl").textContent = instrType === "equity" ? "Position (Shares)" : "Position (Lots)";
-  $("t0val").textContent = comma(units) + " " + unitWord;
-  $("t0sub").textContent = `Trade Value: ${fmtINR(tradeVal)}${lotSize > 1 ? ` · ${comma(units * lotSize)} units` : ""}`;
+  if (crypto) {
+    const base = cryptoBase();
+    $("t0lbl").textContent = "Position (" + base + ")";
+    $("t0val").textContent = fmtP(units, 4).replace(/\.?0+$/, "") + " " + base;
+    $("t0sub").textContent = `Notional: $${fmtP(tradeVal / M.crypto.fx, 2)} · ${fmtINR(tradeVal)}`;
+    $("t1val").textContent = fmtINR(totalMgn);
+    $("t1sub").textContent = `${mgnPct.toFixed(1)}% of capital · ${M.crypto.lev}× · Liq $${fmtUsd(M.crypto.liq)}`;
+  } else {
+    // Tile 0: Position
+    $("t0lbl").textContent = instrType === "equity" ? "Position (Shares)" : "Position (Lots)";
+    $("t0val").textContent = comma(units) + " " + unitWord;
+    $("t0sub").textContent = `Trade Value: ${fmtINR(tradeVal)}${lotSize > 1 ? ` · ${comma(units * lotSize)} units` : ""}`;
 
-  // Tile 1: Margin Required
-  $("t1val").textContent = fmtINR(totalMgn);
-  $("t1sub").textContent = `${mgnPct.toFixed(1)}% of capital · ${instrType === "equity" ? leverageMultiplier + "× leverage" : orderType}`;
+    // Tile 1: Margin Required
+    $("t1val").textContent = fmtINR(totalMgn);
+    $("t1sub").textContent = `${mgnPct.toFixed(1)}% of capital · ${instrType === "equity" ? leverageMultiplier + "× leverage" : orderType}`;
+  }
 
   // Tile 2: Max Risk
   $("t2val").textContent = fmtINR(actualRisk);
@@ -729,13 +815,13 @@ function calc() {
   // Tile 3: Profit
   $("t_profit_lbl").textContent = "Profit (1:" + defRR + ")";
   $("t_profit_val").textContent = "+₹" + fmtP(profitGross, 0);
-  $("t_profit_sub").innerHTML = '<span class="tile-target"><i>🎯 Target</i><b>₹' + fmtP(profitTP, 2) + '</b></span>';
+  $("t_profit_sub").innerHTML = '<span class="tile-target"><i>🎯 Target</i><b>' + cur + (crypto ? fmtUsd(profitTP) : fmtP(profitTP, 2)) + '</b></span>';
 
   const showFees = typeof getAppSettings === "function" ? getAppSettings().showFees !== false : true;
   $("tgt_body").innerHTML = targets.map(t => `
     <div class="tgt-row">
       <div class="rr-pill">1:${t.rr}</div>
-      <div class="tp-px">₹${fmtP(t.tp, 2)}</div>
+      <div class="tp-px">${cur}${crypto ? fmtUsd(t.tp) : fmtP(t.tp, 2)}</div>
       <div class="v-pos">₹${fmtP(t.gross, 0)}</div>
       ${showFees
         ? `<div class="v-dim ${t.net >= 0 ? "pos" : "neg"}">${t.net < 0 ? "−" : ""}₹${fmtP(Math.abs(t.net), 0)}</div>`
@@ -757,21 +843,35 @@ function showEmpty() {
 }
 
 /* ── Input listeners ── */
-["i_entry","i_sl","i_cap","i_rsk","i_flat","i_rr","i_lot"]
+["i_entry","i_sl","i_cap","i_rsk","i_flat","i_rr","i_lot","i_lev","i_fx"]
   .forEach(id => { const el = $(id); if (el) el.addEventListener("input", calc); });
 
 /* ── Instrument type tabs ── */
 ["options","futures","equity"].forEach(t => {
   const btn = $("instr_" + t);
-  if (btn) btn.addEventListener("click", () => { setInstrType(t); saveSetting("optionsOn", t === "options"); });
+  if (btn) btn.addEventListener("click", () => { setInstrType(t); rememberInstr(); });
 });
 
 /* ── Options toggle and editable lot size ── */
 const optToggleEl = $("optToggle");
 if (optToggleEl) optToggleEl.addEventListener("change", () => {
   setInstrType(optToggleEl.checked ? "options" : "equity");
-  saveSetting("optionsOn", optToggleEl.checked);
+  rememberInstr();
 });
+function rememberInstr() {                          // options and crypto are mutually exclusive; remember which one is on
+  saveSetting("optionsOn", instrType === "options");
+  saveSetting("cryptoOn",  instrType === "crypto");
+}
+
+/* ── Crypto toggle, leverage and USD/INR (remembered) ── */
+const cryToggleEl = $("cryToggle");
+if (cryToggleEl) cryToggleEl.addEventListener("change", () => {
+  setInstrType(cryToggleEl.checked ? "crypto" : "equity");
+  rememberInstr();
+});
+const levEl = $("i_lev"), fxEl = $("i_fx");
+if (levEl) levEl.addEventListener("input", () => { const v = parseFloat(levEl.value); if (v >= 1) saveSetting("cryptoLev", Math.min(125, v)); });
+if (fxEl)  fxEl.addEventListener("input",  () => { const v = parseFloat(fxEl.value);  if (v > 0)  saveSetting("usdInr", v); });
 const lotEl = $("i_lot");
 if (lotEl) lotEl.addEventListener("input", () => {
   const v = parseInt(lotEl.value, 10);

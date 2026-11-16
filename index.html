@@ -139,11 +139,11 @@
         <div class="p-title">Trade Setup</div>
         <div class="field-row">
           <div class="field">
-            <label for="i_entry">Entry Price (₹) <span id="dir_badge" class="dir-badge long">▲ LONG</span></label>
+            <label for="i_entry"><span id="lbl_e">Entry Price (₹)</span> <span id="dir_badge" class="dir-badge long">▲ LONG</span></label>
             <input type="number" id="i_entry" value="500" step="any" min="0" autocomplete="off" placeholder="e.g. 500">
           </div>
           <div class="field">
-            <label for="i_sl">Stop Loss (₹) <span id="sl_dist_badge" style="font-size:11px;color:var(--fg3);font-family:var(--mono)"></span></label>
+            <label for="i_sl"><span id="lbl_s">Stop Loss (₹)</span> <span id="sl_dist_badge" style="font-size:11px;color:var(--fg3);font-family:var(--mono)"></span></label>
             <input type="number" id="i_sl" value="495" step="any" min="0" autocomplete="off" placeholder="e.g. 495">
           </div>
         </div>
@@ -180,6 +180,17 @@
               <input type="number" id="i_lot" value="65" min="1" step="1" autocomplete="off" aria-label="Units in one lot">
             </div>
             <div class="lot-hint" id="lot_hint" hidden>Enter option premiums for Entry and SL.</div>
+          </div>
+          <div class="field opt-field" id="cry_field">
+            <div class="opt-head">
+              <span class="opt-title">Crypto <span class="proj-hint">perpetual</span></span>
+              <label class="toggle-switch" style="width:32px;height:17px;flex-shrink:0"><input type="checkbox" id="cryToggle" aria-label="Trade crypto perpetuals"><span class="toggle-track"></span></label>
+            </div>
+            <div class="cry-row" id="cry_row" hidden>
+              <label class="cry-lbl">Leverage ×<input type="number" id="i_lev" value="10" min="1" max="125" step="1" autocomplete="off"></label>
+              <label class="cry-lbl">1 USD = ₹<input type="number" id="i_fx" value="88" min="1" step="0.1" autocomplete="off"></label>
+            </div>
+            <div class="lot-hint" id="cry_hint" hidden>Enter Entry and SL in USDT. Risk stays in ₹.</div>
           </div>
         </div>
 
@@ -291,6 +302,7 @@
         </div>
       </div>
       <div class="field" data-level="trader"><label for="j_symbol">Symbol <span class="proj-hint">optional</span></label><input type="text" id="j_symbol" list="sym_list" placeholder="e.g. NIFTY, RELIANCE, BTCUSDT" autocomplete="off"></div>
+      <div class="lot-hint" id="j_hint" hidden style="margin:-6px 0 12px">Crypto: enter prices in USDT. Profit is converted to ₹ at your saved USD/INR rate.</div>
       <div class="field-row3">
         <div class="field"><label for="j_entry">Entry Price</label><input type="number" id="j_entry" step="any" min="0" autocomplete="off" placeholder="0.00"></div>
         <div class="field"><label for="j_sl">Stop Loss</label><input type="number" id="j_sl" step="any" min="0" autocomplete="off" placeholder="0.00"></div>
@@ -570,6 +582,20 @@
     <div style="margin-top:12px"><button type="button" class="btn btn-ghost btn-sm alert-test">▶ Test sound</button></div>
   </div>
 
+  <!-- Crypto fees -->
+  <div class="settings-section" data-level="trader">
+    <div class="p-title">Crypto Fees</div>
+    <div style="font-size:12px;color:var(--fg2);margin-bottom:12px">Used when the Crypto toggle is on. These defaults are typical, not any one exchange's. Check your exchange's fee page and edit them.</div>
+    <div class="field-row">
+      <div class="field"><label for="s_cry_taker">Taker fee % <span class="proj-hint">per side, market orders</span></label><input type="number" id="s_cry_taker" step="any" min="0" autocomplete="off"></div>
+      <div class="field"><label for="s_cry_gst">GST on fees % <span class="proj-hint">0 if your exchange has none</span></label><input type="number" id="s_cry_gst" step="any" min="0" autocomplete="off"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label for="s_cry_fund">Funding % per 8 hours <span class="proj-hint">shown as an estimate</span></label><input type="number" id="s_cry_fund" step="any" min="0" autocomplete="off"></div>
+      <div class="field"><label for="s_cry_mmr">Maintenance margin % <span class="proj-hint">for the liquidation estimate</span></label><input type="number" id="s_cry_mmr" step="any" min="0" autocomplete="off"></div>
+    </div>
+  </div>
+
   <!-- Daily risk rules -->
   <div class="settings-section" data-level="trader">
     <div class="p-title">Daily Risk Rules</div>
@@ -632,6 +658,7 @@
       <div class="field"><label id="cm_partial_label">Qty / Lots</label><input type="number" id="cm_qty" step="any" autocomplete="off"></div>
       <div class="field"><label>Fees (₹)</label><input type="number" id="cm_fees" step="any" autocomplete="off" placeholder="0"></div>
     </div>
+    <div class="field" id="cm_funding_wrap" hidden><label for="cm_funding">Funding paid (₹) <span class="proj-hint">crypto, optional. Negative if you received it.</span></label><input type="number" id="cm_funding" step="any" autocomplete="off" placeholder="0"></div>
     <div class="field" style="margin-top:8px">
       <label>Notes</label>
       <textarea id="cm_notes" rows="2" placeholder="Exit reason…" style="width:100%;border:1px solid var(--border);background:var(--bg);color:var(--fg);border-radius:8px;padding:7px 10px;font-size:13px;font-family:var(--sans);resize:none"></textarea>
@@ -690,6 +717,10 @@
     <div class="modal-sub" id="d_info"></div>
     <div class="field"><label for="d_market">Market</label><select id="d_market"></select></div>
     <div class="field"><label for="d_symbol">Symbol <span class="proj-hint">optional. A known symbol picks its market.</span></label><input type="text" id="d_symbol" list="sym_list" placeholder="e.g. NIFTY, RELIANCE, BTCUSDT" autocomplete="off"></div>
+    <div class="field-row" id="d_cry" hidden>
+      <div class="field"><label for="d_lev">Leverage ×</label><input type="number" id="d_lev" min="1" step="1" autocomplete="off"></div>
+      <div class="field"><label for="d_fx">1 USD = ₹</label><input type="number" id="d_fx" min="1" step="0.1" autocomplete="off"></div>
+    </div>
     <div class="field" data-level="trader"><label for="d_setup">Setup / strategy</label><input type="text" id="d_setup" autocomplete="off"></div>
     <div class="field"><label for="d_notes">Notes</label><textarea id="d_notes" rows="2" style="width:100%;border:1px solid var(--border);background:var(--bg);color:var(--fg);border-radius:8px;padding:7px 10px;font-size:13px;font-family:var(--sans);resize:none"></textarea></div>
     <div style="display:flex;gap:8px;margin-top:10px">
