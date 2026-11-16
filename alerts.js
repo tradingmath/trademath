@@ -199,9 +199,8 @@
     if (Date.now() < noteUntil) note.textContent = noteMsg;
     else if (running && ctx && ctx.state !== "running") note.textContent = "🔇 Sound is paused by the browser. Click Test sound once to turn it back on.";
   }
-  function save() { try { localStorage.setItem(LS_KEY, JSON.stringify(cfg)); } catch (e) {} }
-  function notify() { document.dispatchEvent(new CustomEvent("tm:beepchanged")); }
-  function changed() { save(); if (running) resync(); else paint(); notify(); }
+  function save() { tmSet(LS_KEY, cfg); }
+  function changed() { save(); if (running) resync(); else paint(); }
   async function preview(over) {
     const c = await resumeCtx();
     if (c && c.state === "running") beepGroup(c.currentTime + 0.02, over); else soundBlocked();
@@ -216,8 +215,11 @@
       lead:   Math.max(0, Math.round(+c.lead) || 0),
     };
   }
-  function paintChips() {                                   // header menu only; the Settings page stages its own copy
-    document.querySelectorAll("#alert_pop .alert-chip").forEach(c => c.classList.toggle("active", +c.dataset.min === cfg.min));
+  function paintChips() {                                   // the interval is chosen in the header menu only
+    let preset = false;
+    document.querySelectorAll("#alert_pop .alert-chip").forEach(c => { const on = +c.dataset.min === cfg.min; c.classList.toggle("active", on); if (on) preset = true; });
+    const cu = $("alert_custom");
+    if (cu && document.activeElement !== cu) cu.value = preset ? "" : cfg.min;
   }
   function setMinutes(n) { cfg.min = n; paintChips(); changed(); }
 
@@ -227,6 +229,9 @@
     Object.assign(cfg, sanitize(cfg));
     paintChips();
     document.querySelectorAll("#alert_pop .alert-chip").forEach(c => c.addEventListener("click", () => setMinutes(+c.dataset.min)));
+    const cu = $("alert_custom");
+    cu.addEventListener("input", () => { const v = Math.round(parseFloat(cu.value)); if (v >= 1 && v <= 720) setMinutes(v); });
+    cu.addEventListener("blur", paintChips);
     $("alert_start").addEventListener("click", () => running ? stop() : start());
     document.querySelectorAll("#alert_pop .alert-test").forEach(b => b.addEventListener("click", () => preview()));
 

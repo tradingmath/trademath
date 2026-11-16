@@ -22,7 +22,7 @@
       <div class="alert-pop lvl-pop" id="lvl_pop" role="menu" aria-label="Interface level" hidden>
         <div class="alert-pop-title">How much do you want to see?</div>
         <button type="button" role="menuitemradio" aria-checked="false" class="lvl-item" data-ui="quick"><span class="lvl-ico" aria-hidden="true">⚡</span><span class="lvl-txt"><b>Quick</b><small>Entry, stop-loss, risk and target, an options toggle, and the beep.</small></span></button>
-        <button type="button" role="menuitemradio" aria-checked="false" class="lvl-item" data-ui="trader"><span class="lvl-ico" aria-hidden="true">📈</span><span class="lvl-txt"><b>Trader</b><small>Adds targets, fees, symbols, filters, tags and Zerodha import.</small></span></button>
+        <button type="button" role="menuitemradio" aria-checked="false" class="lvl-item" data-ui="trader"><span class="lvl-ico" aria-hidden="true">📈</span><span class="lvl-txt"><b>Trader</b><small>Adds targets, fees, symbols, filters, tags and broker import.</small></span></button>
         <button type="button" role="menuitemradio" aria-checked="false" class="lvl-item" data-ui="pro"><span class="lvl-ico" aria-hidden="true">🛠</span><span class="lvl-txt"><b>Pro</b><small>Everything: F&amp;O lots, projection, checklist, partial exits, themes.</small></span></button>
       </div>
     </div>
@@ -41,6 +41,7 @@
           <button type="button" class="alert-chip" data-min="30">30m</button>
           <button type="button" class="alert-chip" data-min="60">1h</button>
         </div>
+        <label class="alert-custom" for="alert_custom">Custom <input type="number" id="alert_custom" min="1" max="720" step="1" placeholder="45" autocomplete="off"> minutes</label>
         <div class="alert-actions">
           <button type="button" class="btn btn-primary btn-sm" id="alert_start">Start</button>
           <button type="button" class="btn btn-ghost btn-sm alert-test">Test sound</button>
@@ -67,27 +68,6 @@
 
     <!-- LEFT -->
     <div class="calc-left">
-
-      <!-- Top control: Mode switch & F&O toggle -->
-      <div class="mode-bar" data-level="pro">
-        <div class="mode-left">
-          <span class="mode-badge" id="mode_badge">🏢 Equity / Stocks</span>
-          <button class="fo-toggle-btn" id="fo_toggle_btn" type="button" title="Toggle F&amp;O (Options / Futures / Lot Sizing)">
-            <span id="fo_toggle_icon">⚡</span> <span id="fo_toggle_text">F&amp;O Mode</span>
-          </button>
-        </div>
-        <div id="fo_tabs_wrap" class="fo-tabs-wrap" hidden>
-          <div class="instr-tabs">
-            <button class="instr-tab active" id="instr_equity">🏢 Equity</button>
-            <button class="instr-tab" id="instr_futures">📈 Futures</button>
-            <button class="instr-tab" id="instr_options">⚡ Options</button>
-          </div>
-          <div class="mis-nrml">
-            <button class="mis-nrml-btn" id="mis_btn">MIS</button>
-            <button class="mis-nrml-btn active" id="nrml_btn">NRML</button>
-          </div>
-        </div>
-      </div>
 
       <!-- Symbol search (Optional) -->
       <div class="sym-wrap" data-level="trader">
@@ -175,11 +155,16 @@
               <span class="opt-title">Options <span class="proj-hint">trade in lots</span></span>
               <label class="toggle-switch" style="width:32px;height:17px;flex-shrink:0"><input type="checkbox" id="optToggle" aria-label="Trade options in lots"><span class="toggle-track"></span></label>
             </div>
-            <div class="lot-row" id="lot_row" hidden>
-              <span class="lot-eq">1 lot =</span>
-              <input type="number" id="i_lot" value="65" min="1" step="1" autocomplete="off" aria-label="Units in one lot">
+          </div>
+          <div class="field opt-field" id="fut_field" data-level="pro">
+            <div class="opt-head">
+              <span class="opt-title">Futures <span class="proj-hint">trade in lots</span></span>
+              <label class="toggle-switch" style="width:32px;height:17px;flex-shrink:0"><input type="checkbox" id="futToggle" aria-label="Trade futures in lots"><span class="toggle-track"></span></label>
             </div>
-            <div class="lot-hint" id="lot_hint" hidden>Enter option premiums for Entry and SL.</div>
+            <div class="mis-nrml" id="fut_order" hidden>
+              <button type="button" class="mis-nrml-btn" id="mis_btn">MIS</button>
+              <button type="button" class="mis-nrml-btn active" id="nrml_btn">NRML</button>
+            </div>
           </div>
           <div class="field opt-field" id="cry_field">
             <div class="opt-head">
@@ -192,6 +177,14 @@
             </div>
             <div class="lot-hint" id="cry_hint" hidden>Enter Entry and SL in USDT. Risk stays in ₹.</div>
           </div>
+        </div>
+
+        <div class="field lot-wrap" id="lot_wrap" hidden>
+          <div class="lot-row" id="lot_row">
+            <span class="lot-eq">1 lot =</span>
+            <input type="number" id="i_lot" value="65" min="1" step="1" autocomplete="off" aria-label="Units in one lot">
+          </div>
+          <div class="lot-hint" id="lot_hint">Enter option premiums for Entry and SL.</div>
         </div>
 
         <!-- Leverage Selector (for Equity) -->
@@ -232,7 +225,7 @@
         </div>
         <div class="fee-section" id="fee_section" data-level="pro" style="margin-top:10px">
           <button class="fee-toggle" id="fee_toggle_btn">
-            <span>📋 Zerodha Charges Breakdown (1:2 trade)</span>
+            <span>📋 Charges Breakdown (1:2 trade)</span>
             <span class="fee-arrow">▼</span>
           </button>
           <div class="fee-body" id="fee_breakdown_body"></div>
@@ -262,14 +255,18 @@
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-ghost btn-sm" id="projBtn" data-level="pro" title="Fill the Projection tab with your own closed trades (win rate, average win and loss, trades per day)">🎯 Projection</button>
         <button class="btn btn-ghost btn-sm" id="exportBtn">↓ Export CSV</button>
-        <button class="btn btn-ghost btn-sm" id="importBtn" data-level="trader">↑ Import Zerodha CSV</button>
+        <button class="btn btn-ghost btn-sm" id="importBtn" data-level="trader">↑ Import broker data</button>
         <input type="file" id="csvFileInput" accept=".csv" hidden>
         <button class="btn btn-primary btn-sm" id="showAddBtn">+ Add Trade</button>
       </div>
     </div>
     <div class="add-form-wrap" id="importPanel" hidden>
-      <div class="p-title">Zerodha CSV Import Preview</div>
+      <div class="p-title">Import broker trades</div>
       <div id="importInfo" style="font-size:13px;color:var(--fg2);margin-bottom:12px;"></div>
+      <div id="importMap" hidden>
+        <div class="proj-grid" id="importMapFields"></div>
+        <div style="margin-top:10px"><button type="button" class="btn btn-primary btn-sm" id="im_apply">Continue</button></div>
+      </div>
       <div class="tbl-wrap" style="max-height:260px;overflow-y:auto;margin-bottom:14px;">
         <table id="importPreviewTable" style="min-width:560px;">
           <thead><tr><th>Date</th><th>Symbol</th><th>Dir</th><th>Entry</th><th>Exit</th><th>Qty</th><th>Est. P&amp;L</th></tr></thead>
@@ -422,26 +419,17 @@
       <div class="theme-presets">
         <button type="button" class="theme-preset-btn active" data-base="midnight">🌌 Midnight</button>
         <button type="button" class="theme-preset-btn" data-base="oled">🌑 OLED Black</button>
-        <button type="button" class="theme-preset-btn" data-base="slate">🌊 Slate Navy</button>
       </div>
     </div>
 
     <!-- Accent Color Palette -->
     <div style="margin-top:16px">
       <div style="font-size:12px;color:var(--fg2);font-weight:500;margin-bottom:4px">Accent Color Palette</div>
-      <div style="font-size:11px;color:var(--fg3);margin-bottom:10px;line-height:1.5">Default is a calm blue: it stays neutral and doesn't compete with the green and red you read profit and loss by. Warm colours like amber and orange feel more urgent.</div>
+      <div style="font-size:11px;color:var(--fg3);margin-bottom:10px;line-height:1.5">Default is a calm blue: it stays neutral and doesn't compete with the green and red you read profit and loss by. Amber is warmer and feels more urgent.</div>
       <div class="palette-grid">
         <div class="palette-card" data-color="amber">
           <span class="palette-dot" style="background:#f59e0b"></span>
-          <span class="palette-name">Amber Gold</span>
-        </div>
-        <div class="palette-card" data-color="cyan">
-          <span class="palette-dot" style="background:#06b6d4"></span>
-          <span class="palette-name">Electric Cyan</span>
-        </div>
-        <div class="palette-card" data-color="emerald">
-          <span class="palette-dot" style="background:#10b981"></span>
-          <span class="palette-name">Emerald Pro</span>
+          <span class="palette-name">Amber</span>
         </div>
         <div class="palette-card active" data-color="blue">
           <span class="palette-dot" style="background:#3b82f6"></span>
@@ -449,27 +437,11 @@
         </div>
         <div class="palette-card" data-color="purple">
           <span class="palette-dot" style="background:#8b5cf6"></span>
-          <span class="palette-name">Hyper Violet</span>
-        </div>
-        <div class="palette-card" data-color="rose">
-          <span class="palette-dot" style="background:#f43f5e"></span>
-          <span class="palette-name">Crimson Rose</span>
-        </div>
-        <div class="palette-card" data-color="sunset">
-          <span class="palette-dot" style="background:#f97316"></span>
-          <span class="palette-name">Sunset Orange</span>
-        </div>
-        <div class="palette-card" data-color="lime">
-          <span class="palette-dot" style="background:#84cc16"></span>
-          <span class="palette-name">Matrix Lime</span>
-        </div>
-        <div class="palette-card" data-color="gold">
-          <span class="palette-dot" style="background:#eab308"></span>
-          <span class="palette-name">Bullion Gold</span>
+          <span class="palette-name">Violet</span>
         </div>
         <div class="palette-card" data-color="monochrome">
           <span class="palette-dot" style="background:#94a3b8"></span>
-          <span class="palette-name">Minimal Slate</span>
+          <span class="palette-name">Slate</span>
         </div>
       </div>
     </div>
@@ -519,16 +491,9 @@
       </div>
       <label class="toggle-switch"><input type="checkbox" id="tog_quick_log" checked><span class="toggle-track"></span></label>
     </div>
-    <div class="toggle-row" data-level="pro">
-      <div>
-        <div class="toggle-label">Enable F&amp;O Mode by Default</div>
-        <div class="toggle-sub">Show Options, Futures, and lot sizes directly when opening the calculator</div>
-      </div>
-      <label class="toggle-switch"><input type="checkbox" id="tog_show_fo"><span class="toggle-track"></span></label>
-    </div>
     <div class="toggle-row" data-level="trader">
       <div>
-        <div class="toggle-label">Show Zerodha Fee Breakdown</div>
+        <div class="toggle-label">Show fee breakdown</div>
         <div class="toggle-sub">Show net P&amp;L after broker charges and taxes in targets and breakdown</div>
       </div>
       <label class="toggle-switch"><input type="checkbox" id="tog_show_fees" checked><span class="toggle-track"></span></label>
@@ -543,28 +508,15 @@
         <input type="number" id="s_gst_pct" value="18" min="0" step="1" autocomplete="off" placeholder="18">
       </div>
     </div>
-    <div style="font-size:11px;color:var(--fg3);margin-top:6px">Brokerage is capped at 0.03% per order for equity intraday &amp; futures, flat for options, ₹0 for delivery. STT, exchange, SEBI and stamp duty use Zerodha's published NSE rates (F&amp;O STT as revised 1 Apr 2026).</div>
+    <div style="font-size:11px;color:var(--fg3);margin-top:6px">Brokerage is capped at 0.03% per order for equity intraday &amp; futures, flat for options, ₹0 for delivery. STT, exchange, SEBI and stamp duty use the published NSE rates (F&amp;O STT as revised 1 Apr 2026).</div>
   </div>
 
   <!-- Interval beep -->
   <div class="settings-section" id="beep_settings">
     <div class="p-title">Interval Beep</div>
-    <div style="font-size:12px;color:var(--fg2);margin-bottom:14px">A reminder to check your chart on every candle. Start and stop it from the 🔔 button in the top bar; everything else is set here.</div>
-    <div style="font-size:12px;color:var(--fg2);font-weight:500;margin-bottom:6px">Interval</div>
-    <div class="alert-chips" role="group" aria-label="Beep interval">
-      <button type="button" class="alert-chip" data-min="1">1m</button>
-      <button type="button" class="alert-chip" data-min="3">3m</button>
-      <button type="button" class="alert-chip" data-min="5">5m</button>
-      <button type="button" class="alert-chip" data-min="10">10m</button>
-      <button type="button" class="alert-chip" data-min="15">15m</button>
-      <button type="button" class="alert-chip" data-min="30">30m</button>
-      <button type="button" class="alert-chip" data-min="60">1h</button>
-    </div>
-    <div class="field-row">
-      <div class="field"><label for="alert_custom">Custom interval (minutes)</label><input type="number" id="alert_custom" min="1" max="720" step="1" placeholder="e.g. 45" autocomplete="off"></div>
-      <div class="field"><label for="alert_anchor">Align beeps to</label>
-        <select id="alert_anchor"><option value="555">NSE candles (from 9:15)</option><option value="0">Clock (:00, for MCX / crypto)</option></select>
-      </div>
+    <div style="font-size:12px;color:var(--fg2);margin-bottom:14px">A reminder to check your chart on every candle. Start, stop and choose the interval (1m, 5m, or your own) from the 🔔 button in the top bar; the sound and timing are set here.</div>
+    <div class="field"><label for="alert_anchor">Align beeps to</label>
+      <select id="alert_anchor"><option value="555">NSE candles (from 9:15)</option><option value="0">Clock (:00, for MCX / crypto)</option></select>
     </div>
     <div class="field-row">
       <div class="field"><label for="alert_lead">Beep before candle close</label>
@@ -623,6 +575,23 @@
     </div>
   </div>
 
+
+  <!-- Your data -->
+  <div class="settings-section" id="your_data">
+    <div class="p-title">Your data</div>
+    <div style="font-size:12px;color:var(--fg2);margin-bottom:6px">Everything lives only in this browser. Clearing site data or switching browser or device loses it, so keep a backup file.</div>
+    <div id="bk_info" class="bk-info"></div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">
+      <button type="button" class="btn btn-primary btn-sm" id="bk_download">Download backup</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="bk_pick">Restore from backup…</button>
+      <input type="file" id="bk_file" accept=".json,application/json" hidden>
+    </div>
+    <div id="bk_msg" class="bk-msg" aria-live="polite"></div>
+    <div id="bk_confirm" class="bk-confirm" hidden>
+      <button type="button" class="btn btn-danger btn-sm" id="bk_apply">Replace my data</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="bk_cancel">Cancel</button>
+    </div>
+  </div>
 
   <div class="set-bar" id="set_bar" role="region" aria-label="Save settings">
     <span class="set-status" id="set_status" aria-live="polite">All changes saved</span>
@@ -771,6 +740,7 @@
 
 <script src="calc.js"></script>
 <script src="journal.js"></script>
+<script src="import.js"></script>
 <script src="projection.js"></script>
 <script src="alerts.js"></script>
 <script src="app.js"></script>

@@ -1,4 +1,39 @@
 "use strict";
+/* ══════════════ SAFE STORAGE ══════════════
+   Every write goes through tmSet(). If the browser refuses (storage full, private window, blocked), a banner stays on
+   screen so a trader never believes a trade was saved when it was not. */
+function tmBanner(id, html, onMount) {
+  let b = document.getElementById(id);
+  if (!b) {
+    b = document.createElement("div");
+    b.id = id; b.className = "tm-banner"; b.setAttribute("role", "alert");
+    document.body.insertBefore(b, document.body.firstChild);
+  }
+  b.innerHTML = html;
+  if (onMount) onMount(b);
+}
+function tmBannerOff(id) { const b = document.getElementById(id); if (b) b.remove(); }
+function tmSet(key, value) {
+  try {
+    localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
+    tmBannerOff("tm_store_banner");
+    return true;
+  } catch (e) {
+    tmBanner("tm_store_banner", "<b>Not saved.</b> Your browser is not letting TradeMath store data (storage is full or blocked, or this is a private window). What you do now will be lost when you close this tab. Use <b>Settings → Your data → Download backup</b> to keep a copy.");
+    return false;
+  }
+}
+function tmGet(key, fallback) {
+  try { const raw = localStorage.getItem(key); return raw == null ? fallback : JSON.parse(raw); } catch (e) { return fallback; }
+}
+/* Save text as a file the user can keep (used for backups and for recovering unreadable data). */
+function tmDownload(name, text, type) {
+  const url = URL.createObjectURL(new Blob([text], { type: type || "application/json" }));
+  const a = document.createElement("a");
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 /* ══════════════ CALCULATOR ══════════════ */
 
 let instrType          = "equity"; // "options" | "futures" | "equity" (default simple equity)
@@ -7,7 +42,6 @@ let orderType          = "MIS";     // derived: equity → from leverage, F&O �
 let foOrderType        = "NRML";    // user's MIS/NRML pick for futures & options
 let leverageMultiplier = 5;         // default 5x intraday
 let leverageMode       = "5";       // "5" | "1" | "custom"
-let showFOMode         = false;     // hidden by default for maximum simplicity
 let lastCalc           = null;
 const DEFAULT_LOT      = 65;        // Nifty; the lot field is editable and remembers the last value you typed
 
@@ -76,13 +110,15 @@ function todayStr() {
 }
 
 /* ══════════════ SYMBOL DATABASE ══════════════ */
-// lot = F&O lot size, marginNRML = approx SPAN+exposure per lot (₹), equityOnly = no F&O
+// lot = F&O lot size, marginNRML = approx SPAN+exposure per lot (₹).
+// verified:true means the lot size was checked against the exchange list. Every other lot size, and every margin, is an
+// approximation: the app labels them "approx." and warns, because exchanges revise lot sizes and brokers change margins.
 const SYMBOLS = [
   // Index derivatives (F&O only)
-  {name:"NIFTY",       lot:65,   sector:"Index",    marginNRML:112000, indexOnly:true},
-  {name:"BANKNIFTY",   lot:30,   sector:"Index",    marginNRML:51000,  indexOnly:true},
-  {name:"FINNIFTY",    lot:60,   sector:"Index",    marginNRML:91000,  indexOnly:true},
-  {name:"MIDCPNIFTY",  lot:120,  sector:"Index",    marginNRML:88000,  indexOnly:true},
+  {name:"NIFTY",       lot:65,   sector:"Index",    marginNRML:112000, indexOnly:true, verified:true},
+  {name:"BANKNIFTY",   lot:30,   sector:"Index",    marginNRML:51000,  indexOnly:true, verified:true},
+  {name:"FINNIFTY",    lot:60,   sector:"Index",    marginNRML:91000,  indexOnly:true, verified:true},
+  {name:"MIDCPNIFTY",  lot:120,  sector:"Index",    marginNRML:88000,  indexOnly:true, verified:true},
   {name:"SENSEX",      lot:10,   sector:"Index",    marginNRML:90000,  indexOnly:true},
   {name:"BANKEX",      lot:15,   sector:"Index",    marginNRML:58000,  indexOnly:true},
   // Stocks
@@ -267,7 +303,7 @@ function initSymbolAutocomplete() {
     drop.innerHTML = matches.map(s =>
       `<div class="sym-opt" data-name="${s.name}">
         <span class="sym-name">${s.name}</span>
-        <span class="sym-meta">${s.sector}${s.lot ? ' · lot ' + s.lot : ''}</span>
+        <span class="sym-meta">${s.sector}${s.lot ? ' · lot ' + (s.verified ? '' : '~') + s.lot : ''}</span>
       </div>`
     ).join("");
     drop.hidden = false;
@@ -302,8 +338,8 @@ function selectSymbol(name) {
   drop.hidden = true;
   // Auto-switch: index symbols → suggest futures/options
   if (sym && sym.indexOnly && instrType === "equity") {
-    if (typeof getLevel === "function" && getLevel() === "pro") { if (!showFOMode) toggleFOMode(true); setInstrType("futures"); }
-    else setInstrType("options");
+    setInstrType(typeof getLevel === "function" && getLevel() === "pro" ? "futures" : "options");
+    rememberInstr();
   }
   if (instrType !== "equity") autoLot(sym);       // the moment you pick an option/future its lot size is filled in
   updateLotLabel();
@@ -321,39 +357,12 @@ function updateLotLabel() {
   const el = $("lot_label");
   if (!el) return;
   if (sym && sym.lot && instrType !== "equity") {
-    el.textContent = `1 lot = ${getLotSize(sym).toLocaleString()}`;
+    el.textContent = `1 lot ${sym.verified ? "=" : "≈"} ${getLotSize(sym).toLocaleString()}${sym.verified ? "" : " (approx.)"}`;
     el.hidden = false;
   } else {
     el.hidden = true;
   }
 }
-
-/* ── Mode Toggle (Simple Equity vs F&O) ── */
-function toggleFOMode(forceState) {
-  showFOMode = typeof forceState === "boolean" ? forceState : !showFOMode;
-  const wrap = $("fo_tabs_wrap");
-  const btn  = $("fo_toggle_btn");
-  const badge = $("mode_badge");
-  const levField = $("lev_field");
-  const symRow2 = $("sym_row2");
-
-  if (wrap) wrap.hidden = !showFOMode;
-  if (symRow2) symRow2.hidden = (!showFOMode && instrType === "equity") || instrType === "crypto";
-  if (btn) btn.classList.toggle("active", showFOMode);
-
-  if (showFOMode) {
-    if (badge) badge.textContent = "⚡ F&O Mode";
-  } else {
-    // In simple mode, default to equity
-    if (badge) badge.textContent = "🏢 Equity / Stocks";
-    if (instrType !== "equity") setInstrType("equity");
-  }
-  if (levField) levField.style.display = instrType === "equity" ? "" : "none";
-  calc();
-}
-
-const foBtn = $("fo_toggle_btn");
-if (foBtn) foBtn.addEventListener("click", () => toggleFOMode());
 
 /* ── Leverage Selection ── */
 function setLeverage(mode, customVal) {
@@ -391,7 +400,7 @@ function setLeverage(mode, customVal) {
 
 // Single source of truth for orderType; keeps the MIS/NRML buttons in sync with it.
 function applyOrderType() {
-  orderType = instrType === "equity" ? (leverageMultiplier > 1 ? "MIS" : "NRML") : foOrderType;
+  orderType = instrType === "equity" ? (leverageMultiplier > 1 ? "MIS" : "NRML") : instrType === "futures" ? foOrderType : "NRML";
   const mis = $("mis_btn"), nrml = $("nrml_btn");
   if (mis)  mis.classList.toggle("active",  orderType === "MIS");
   if (nrml) nrml.classList.toggle("active", orderType === "NRML");
@@ -414,24 +423,13 @@ if (customLevInp) {
 function setInstrType(type) {
   const prev = instrType;
   instrType = type;
-  ["options","futures","equity"].forEach(t => {
-    const btn = $("instr_" + t);
-    if (btn) btn.classList.toggle("active", t === type);
-  });
   // Show/hide type dropdown
   const typeRow = $("type_row");
   if (typeRow) typeRow.hidden = instrType !== "options";
   const symRow2 = $("sym_row2");
-  if (symRow2) symRow2.hidden = (!showFOMode && instrType === "equity") || instrType === "crypto";
+  if (symRow2) symRow2.hidden = instrType === "equity" || instrType === "crypto";
   const levField = $("lev_field");
   if (levField) levField.style.display = instrType === "equity" ? "" : "none";
-
-  const badge = $("mode_badge");
-  if (badge) {
-    badge.textContent = instrType === "equity"
-      ? (showFOMode ? "🏢 Equity" : "🏢 Equity / Stocks")
-      : instrType === "crypto" ? "₿ Crypto perpetual" : instrType === "options" ? `⚡ Options (${optType})` : "📈 Futures";
-  }
 
   syncOptionsUI(prev);
   updateLotLabel();
@@ -450,10 +448,13 @@ function autoLot(sym) {
   if (el) el.value = sym && sym.lot ? sym.lot : rememberedLot();
 }
 function syncOptionsUI(prev) {
-  const t = $("optToggle"), row = $("lot_row"), hint = $("lot_hint");
-  if (t)    t.checked = instrType === "options";
-  if (row)  row.hidden = instrType === "equity" || instrType === "crypto";
-  if (hint) hint.hidden = instrType !== "options";
+  const t = $("optToggle"), ft = $("futToggle"), wrap = $("lot_wrap"), hint = $("lot_hint"), fo = $("fut_order");
+  const lots = instrType === "options" || instrType === "futures";
+  if (t)    t.checked  = instrType === "options";
+  if (ft)   ft.checked = instrType === "futures";
+  if (wrap) wrap.hidden = !lots;
+  if (fo)   fo.hidden = instrType !== "futures";
+  if (hint) hint.textContent = instrType === "futures" ? "Enter the futures price for Entry and SL." : "Enter option premiums for Entry and SL.";
   const ct = $("cryToggle");
   if (ct) ct.checked = instrType === "crypto";
   const ccy = instrType === "crypto" ? "USDT" : "₹";           // crypto prices are typed in USDT
@@ -506,8 +507,8 @@ function getLotSize(sym) {
   return v >= 1 ? v : (sym && sym.lot ? sym.lot : DEFAULT_LOT);
 }
 
-/* ══════════════ ZERODHA FEE CALCULATOR ══════════════ */
-// Source: zerodha.com/charges (NSE rates). F&O STT per Budget 2026, effective 1 Apr 2026.
+/* ══════════════ INDIAN TRADING CHARGES ══════════════ */
+// Statutory and exchange charges (NSE rates). F&O STT per Budget 2026, effective 1 Apr 2026. Brokerage and GST are editable in Settings.
 // stt is charged on the sell side only, except delivery (both sides). Re-check these when SEBI/NSE revise.
 const FEE_RATES = {
   eqDelivery: { stt: 0.001,   exch: 0.0000307, stamp: 0.00015 },
@@ -532,7 +533,7 @@ function feeSegment() {
   return orderType === "NRML" ? "eqDelivery" : "eqIntraday";
 }
 
-function calcZerodhaFees(entry, exit, qty, lotSize, isLong) {
+function calcFees(entry, exit, qty, lotSize, isLong) {
   const units    = qty * lotSize;
   const buyVal   = (isLong ? entry : exit)  * units;
   const sellVal  = (isLong ? exit  : entry) * units;
@@ -615,7 +616,7 @@ function renderFeeBreakdown() {
       <div class="fee-row"><span class="fee-lbl">Estimated liquidation price</span><span class="fee-val">$${fmtUsd(lastCalc.liq)}</span></div>`;
     return;
   }
-  const fees   = calcZerodhaFees(entry, tp2, units, lotSize, isLong);
+  const fees   = calcFees(entry, tp2, units, lotSize, isLong);
 
   const { brok, gstPct } = feeSettings();
   const seg = feeSegment();
@@ -675,7 +676,7 @@ function sizeStandard(c) {
   const targets = RRS.map(rr => {
     const tp    = isLong ? entry + slDist * rr : entry - slDist * rr;
     const gross = slDist * rr * lotSize * units;
-    const fees  = feesOn() ? calcZerodhaFees(entry, tp, units, lotSize, isLong).total : 0;
+    const fees  = feesOn() ? calcFees(entry, tp, units, lotSize, isLong).total : 0;
     return { rr, tp, gross, net: gross - fees };
   });
   return { units, tradeVal, totalMgn, actualRisk, targets,
@@ -773,6 +774,9 @@ function calc() {
   if (actualRiskPct > 5) {
     warns.push(`⚠ Max risk is ${actualRiskPct.toFixed(1)}% of your capital.`);
   }
+  if ((instrType === "options" || instrType === "futures") && sym && !sym.verified && lotSize === sym.lot) {
+    warns.push(`⚠ The ${sym.name} lot size (${comma(sym.lot)}) is approximate. Check it with your broker, or type the right number in the lot box.`);
+  }
 
   if (crypto && M.crypto.liqBeforeSL) warns.push(`⚠ Estimated liquidation ($${fmtUsd(M.crypto.liq)}) comes BEFORE your stop-loss ($${fmtUsd(sl)}). Lower the leverage or tighten the stop.`);
 
@@ -805,7 +809,7 @@ function calc() {
 
     // Tile 1: Margin Required
     $("t1val").textContent = fmtINR(totalMgn);
-    $("t1sub").textContent = `${mgnPct.toFixed(1)}% of capital · ${instrType === "equity" ? leverageMultiplier + "× leverage" : orderType}`;
+    $("t1sub").textContent = `${mgnPct.toFixed(1)}% of capital · ${instrType === "equity" ? leverageMultiplier + "× leverage" : orderType}${instrType === "futures" ? " · approx., brokers vary" : ""}`;
   }
 
   // Tile 2: Max Risk
@@ -846,20 +850,21 @@ function showEmpty() {
 ["i_entry","i_sl","i_cap","i_rsk","i_flat","i_rr","i_lot","i_lev","i_fx"]
   .forEach(id => { const el = $(id); if (el) el.addEventListener("input", calc); });
 
-/* ── Instrument type tabs ── */
-["options","futures","equity"].forEach(t => {
-  const btn = $("instr_" + t);
-  if (btn) btn.addEventListener("click", () => { setInstrType(t); rememberInstr(); });
-});
-
 /* ── Options toggle and editable lot size ── */
 const optToggleEl = $("optToggle");
 if (optToggleEl) optToggleEl.addEventListener("change", () => {
   setInstrType(optToggleEl.checked ? "options" : "equity");
   rememberInstr();
 });
-function rememberInstr() {                          // options and crypto are mutually exclusive; remember which one is on
+/* ── Futures toggle (Pro) ── */
+const futToggleEl = $("futToggle");
+if (futToggleEl) futToggleEl.addEventListener("change", () => {
+  setInstrType(futToggleEl.checked ? "futures" : "equity");
+  rememberInstr();
+});
+function rememberInstr() {                          // options, futures and crypto are mutually exclusive; remember which one is on
   saveSetting("optionsOn", instrType === "options");
+  saveSetting("futuresOn", instrType === "futures");
   saveSetting("cryptoOn",  instrType === "crypto");
 }
 

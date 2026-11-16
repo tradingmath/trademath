@@ -29,7 +29,7 @@ I test with the local .html file first before deploying.
 | `alerts.js` | Header interval beep — candle-aligned (NSE 9:15 or clock), pre-scheduled on the audio clock |
 | `app.js` | App shell — settings, tab switching, theme, checklist, init |
 
-Script load order matters: calc.js, journal.js, projection.js, alerts.js, app.js. calc.js runs `calc()` at load
+Script load order matters: calc.js, journal.js, import.js, projection.js, alerts.js, app.js. calc.js runs `calc()` at load
 before journal.js exists, so anything it calls must live in calc.js or be guarded.
 
 ---
@@ -52,7 +52,7 @@ before journal.js exists, so anything it calls must live in calc.js or be guarde
 - Index symbols (NIFTY, BANKNIFTY etc.) auto-switch to Futures tab if Equity was selected
 - Key lot sizes: NIFTY=75, BANKNIFTY=35, FINNIFTY=25, MIDCPNIFTY=75
 
-### Zerodha Fee Calculation (`calcZerodhaFees` function)
+### Zerodha Fee Calculation (`calcFees` function)
 Accurate per segment:
 Rates live in one `FEE_RATES` table in calc.js. Verified against zerodha.com/charges (Nov 2026).
 F&O STT was raised by Budget 2026, effective 1 Apr 2026. Re-check these if SEBI/NSE revise.
@@ -148,6 +148,8 @@ Partial pushes to `t.exits[]`. Full exit sets `t.exit`.
 | `tm_trades` | JSON array of all trade objects |
 | `tm_settings` | JSON object: darkMode, accentColor, maxDailyLoss, maxDailyTrades, showFees, brokerage, gstPct |
 | `tm_checklist` | JSON array of checklist item strings |
+| `tm_alert` | beep settings; `tm_proj` projection inputs |
+| `tm_trades_corrupt` / `tm_prerestore` / `tm_last_backup` | rescue copy of unreadable data / copy kept before a restore / last backup time |
 
 ---
 
@@ -207,7 +209,7 @@ Netlify auto-deploys on push to main branch.
 - **When you add a feature, decide its level and tag it.** Rule of thumb: Quick = what you need for each single trade; Trader = daily toolkit (targets, fees, symbols, filters, tags, import); Pro = F&O, projection, checklist, partial exits, theme presets, custom fees.
 - Quick keeps: entry / stop / risk (₹) / target (R:R) + the options toggle, result tiles, one-click Log (even if the quick-log setting is off), today's list, journal list + calendar + Add Trade + Export, Beep (and its settings), theme and colours, trading defaults.
 - Safety is never hidden: the daily-loss banner and any saved risk rules apply at every level.
-- `setLevel()` (app.js) resets state owned by features that just became hidden (F&O mode, index symbol, flat-₹ risk, leverage, target R:R, symbol, journal filters) so a hidden control can't silently change results. Projection links redirect to `#journal` below Pro.
+- `setLevel()` (app.js) resets state owned by features that just became hidden (futures, index symbol, flat-₹ risk, leverage, target R:R, symbol, journal filters) so a hidden control can't silently change results. Projection links redirect to `#journal` below Pro.
 
 ## Options toggle and lot size (all levels)
 - Trade Setup has an **Options** toggle (`#optToggle`). On: sizing is in lots, a `1 lot = [65]` field (`#i_lot`) appears, and Entry/SL are option premiums. Default lot is 65 (`DEFAULT_LOT`, Nifty). The field is editable and the last value you type is remembered (`lotSize` in `tm_settings`); the toggle state is remembered too (`optionsOn`).
@@ -236,3 +238,25 @@ Netlify auto-deploys on push to main branch.
 - Journal: a crypto trade stores `instrument:"crypto"`, `ccy:"USDT"`, `fx` (rate at logging), `leverage`, `liq`, `qty` in coins, prices in USDT. `pnlForTrade` converts with `fxOf(t)`; `fees` and `funding` are in ₹. Closing a crypto trade auto-fills fees (round-trip taker + GST at the trade's fx) unless you type your own, and has a Funding (₹) field. The ✎ editor can change leverage and USD/INR.
 - Older trades with market "Crypto" but no `instrument` are treated as plain ₹, on purpose (no surprise conversion).
 - `fmtP` now puts commas on the whole part only; `fmtUsd` formats prices (2 decimals ≥ 1000, up to 4 below, up to 6 below 1, trailing zeros trimmed).
+
+## Broker import (import.js, broker-neutral)
+- UI says "Import broker data"; no broker is named anywhere in the app. Reads CSV/TSV/;/| files. Finds the header row (brokers put account details above the table), then columns by name (`IMPORT_CONCEPTS`). If symbol / buy-sell / quantity / price can't be found, a **column mapper** lets the user pick them.
+- Matching: fills of one order (or consecutive same-side fills on a day) are merged into one weighted-average fill, then matched FIFO per symbol across days. Scale-outs become one trade with `exits[]`, shorts-first are SHORT, partly closed positions stay open with a partial exit, flips split correctly.
+- Re-importing is safe: trades already in the journal (same symbol, date, direction, entry, quantity) are skipped and counted. Unrecognised rows are skipped and counted, never guessed. Preview text is escaped. Files over 8 MB are refused.
+- `contractInfo(symbol, exch)` classifies the symbol (index/stock options and futures, MCX, crypto). A bare CE/PE ending is not an option (RELIANCE ends in CE); it needs a digit before it or to stand alone as a word.
+- The fee schedule in calc.js (`calcFees`, `FEE_RATES`) was verified against a discount broker's published charges in Nov 2026; keep the source in these notes only, not in the UI.
+
+## Data safety (calc.js `tmSet`, journal.js)
+- **Every write goes through `tmSet(key, value)`** (calc.js, loaded first). It returns false and shows a persistent red banner if the browser refuses to store (full, blocked, private window). Never call `localStorage.setItem` directly.
+- **Escape on render, sanitise on load.** `normalizeTrade` forces ids (`[\w-]`), dates (`YYYY-MM-DD`), symbols, option type, currency and numeric fields into safe shapes; every user-supplied string drawn into `innerHTML` goes through `esc()` (app.js). `leverage` is NOT numeric (futures store "MIS"/"NRML").
+- **Unreadable journal:** if `tm_trades` is not a valid array (or has entries without LONG/SHORT), the raw text is kept in `tm_trades_corrupt` and a banner offers a download. It is never silently overwritten.
+- **Delete has Undo:** `deleteTrade(id)` removes then shows a toast with an Undo button (`showToast(msg, {label, fn})`). Today list and Journal report share it.
+- **Backup / restore** (Settings → Your data): `buildBackup()` = `{app:"TradeMath", version:1, trades, settings, checklist, alert, projection}`. Restore validates the file, asks to confirm, stores the current data in `tm_prerestore` first, then reloads. `tm_last_backup` holds the last download time.
+
+## Futures, lot sizes and margins
+- The Pro F&O tab bar is gone. Options (Trader+) and Futures (Pro) are separate toggles beside Crypto; `instrType` is one of equity / options / futures / crypto and only one is on. `rememberInstr()` saves `optionsOn` / `futuresOn` / `cryptoOn`. Below Pro, `setLevel()` switches futures back to equity. MIS/NRML only appears for futures.
+- `SYMBOLS[].verified:true` marks lot sizes checked against the exchange list (NIFTY, BANKNIFTY, FINNIFTY, MIDCPNIFTY). All other lot sizes show as "~N" / "approx." with a warning, and futures margin is always labelled approximate. Do not add `verified` without checking the exchange circular.
+
+## Themes and beep
+- Accent colours: Blue (default), Violet, Amber, Slate. Dark themes: Midnight, OLED. Old saved values fall back in `getAppSettings()`.
+- The beep **interval** (chips + custom minutes) is chosen only in the header 🔔 menu. Settings holds align / lead / sound / volume / hours and a Test button that previews unsaved choices.

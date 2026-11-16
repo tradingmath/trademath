@@ -49,12 +49,6 @@
   --card: #141416;
   --border: #242429;
 }
-:root[data-base-theme="slate"]:not([data-theme="light"]) {
-  --bg: #0b1120;
-  --surface: #141f36;
-  --card: #1e293b;
-  --border: #334155;
-}
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
@@ -108,33 +102,8 @@ body::before {
 .tab-btn:hover { color:var(--fg); }
 .tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
 
-/* ── Mode bar & F&O Toggle ── */
-.mode-bar { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:12px 0 8px; flex-wrap:wrap; }
-.mode-left { display:flex; align-items:center; gap:8px; }
-.mode-badge {
-  font-size:12px; font-weight:600; color:var(--fg); font-family:var(--sans);
-  background:var(--card); border:1px solid var(--border); padding:5px 12px; border-radius:20px;
-}
-.fo-toggle-btn {
-  font-size:11px; padding:5px 11px; border-radius:20px; border:1px solid var(--border);
-  background:var(--surface); color:var(--accent); font-family:var(--sans); font-weight:500;
-  cursor:pointer; display:inline-flex; align-items:center; gap:4px; transition:all .15s;
-}
-.fo-toggle-btn:hover { background:var(--accent-dim); border-color:var(--accent); }
-.fo-toggle-btn.active { background:var(--accent-solid); color:var(--on-accent); font-weight:600; border-color:var(--accent-solid); }
-
-/* ── Instrument type tabs ── */
-.fo-tabs-wrap { display:flex; align-items:center; gap:8px; flex-wrap:wrap; width:100%; margin-top:4px; margin-bottom:4px; }
-.instr-bar { display:flex; align-items:center; gap:8px; padding:14px 0 10px; flex-wrap:wrap; }
-.instr-tabs { display:flex; background:var(--card); border-radius:10px; padding:3px; gap:2px; border:1px solid var(--border); }
-.instr-tab {
-  padding:7px 16px; border-radius:7px; border:none; background:none;
-  color:var(--fg2); font-size:13px; font-weight:500; font-family:var(--sans);
-  cursor:pointer; transition:all .15s; white-space:nowrap;
-}
-.instr-tab:hover { color:var(--fg); }
-.instr-tab.active { background:var(--accent-solid); color:var(--on-accent); font-weight:600; }
-.mis-nrml { display:flex; gap:4px; margin-left:auto; }
+/* ── Futures: MIS / NRML ── */
+.mis-nrml { display:flex; gap:4px; margin-top:8px; }
 .mis-nrml-btn {
   padding:6px 14px; border-radius:7px; border:1px solid var(--border);
   background:var(--surface); color:var(--fg2); font-size:12px; font-weight:600;
@@ -161,6 +130,10 @@ body::before {
   transition:opacity .2s ease, transform .2s ease; white-space:nowrap;
 }
 .tm-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+.tm-toast.has-action { pointer-events:auto; display:flex; align-items:center; gap:12px; }
+.tm-toast-btn { background:none; border:0; color:var(--accent); font:inherit; font-weight:700; cursor:pointer; padding:2px 4px; text-decoration:underline; }
+.tm-banner { position:sticky; top:0; z-index:10000; background:var(--red, #ef4444); color:#fff; padding:10px 16px; font-size:13px; line-height:1.5; display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; }
+.tm-banner button { background:#fff; color:#111; border:0; border-radius:6px; padding:4px 10px; font:inherit; font-weight:600; cursor:pointer; }
 /* ── Symbol search ── */
 .sym-wrap { margin-bottom:12px; }
 .sym-input-wrap { position:relative; }
@@ -698,7 +671,7 @@ hr { border:none; border-top:1px solid var(--border); margin:14px 0; }
 .pl-chip.cap { box-shadow:0 0 0 2px var(--accent); }
 .pl-day-pnl { font:600 12px var(--mono); white-space:nowrap; }
 
-/* Author `display` rules (flex/grid) otherwise beat the hidden attribute, e.g. #fo_tabs_wrap */
+/* Author `display` rules (flex/grid) otherwise beat the hidden attribute */
 [hidden] { display:none !important; }
 
 /* ── Projection: day-wise calendar ── */
@@ -727,7 +700,8 @@ hr { border:none; border-top:1px solid var(--border); margin:14px 0; }
 .alert-link { display:block; margin-top:10px; padding:0; background:none; border:none; color:var(--accent); font:500 12px var(--sans); cursor:pointer; text-align:left; }
 .alert-link:hover { text-decoration:underline; }
 .field input[type=range] { padding:0; border:none; background:none; accent-color:var(--accent); }
-#beep_settings .alert-chips { margin-bottom:14px; }
+.alert-custom { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--fg2); margin-bottom:12px; }
+.alert-custom input { width:74px; padding:6px 8px; }
 
 /* Projection now lives inside the Journal tab */
 #jnl_projection { padding-top:0; }
@@ -787,3 +761,10 @@ html[data-ui="pro"]    [data-level="below-pro"] { display:none !important; }
 .cry-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
 .cry-lbl { display:flex; flex-direction:column; gap:3px; font-size:11px; color:var(--fg2); }
 .cry-lbl input { width:100%; min-width:0; }
+
+/* ── Your data (backup / restore) ── */
+.bk-info { font-size:12px; color:var(--fg2); }
+.bk-msg { font-size:12px; color:var(--fg2); margin-top:10px; line-height:1.5; }
+.bk-msg.bad { color:var(--red); }
+.bk-confirm { display:flex; gap:8px; margin-top:8px; }
+.bk-confirm[hidden] { display:none; }

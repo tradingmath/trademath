@@ -7,9 +7,26 @@ let editId   = null;
 /* Every trade has the same shape whichever level logged it: market (from the fixed MARKETS list), symbol,
    instrument ("equity" | "options" | "futures") and optType. Older trades stored a symbol name or "Options (CE)"
    in the market field, which broke the Market filter; this repairs them once on load. */
+const TRADE_NUM_KEYS = ["entry", "sl", "target", "exit", "qty", "lots", "lotSize", "fees", "fx", "funding"];
 function normalizeTrade(t) {
   let changed = false;
   const set = (k, v) => { if (t[k] !== v) { t[k] = v; changed = true; } };
+  /* Data can come from an old version, an imported file or a restored backup, so never trust its shape: ids, dates,
+     symbols and numbers are forced into safe forms here, and text is escaped again wherever it is drawn. */
+  if (typeof t.id !== "string" || !/^[\w-]{1,40}$/.test(t.id)) set("id", uid());
+  if (t.date != null && !/^\d{4}-\d{2}-\d{2}$/.test(t.date)) set("date", "");
+  if (t.symbol) set("symbol", cleanSymbol(String(t.symbol)) || null);
+  if (t.optType && !/^(CE|PE)$/.test(t.optType)) set("optType", null);
+  if (t.ccy && !/^[A-Z]{2,6}$/.test(t.ccy)) set("ccy", null);
+  ["setup", "notes", "market"].forEach(k => { if (t[k] != null && typeof t[k] !== "string") set(k, String(t[k])); });
+  const num = v => { if (v == null || v === "" || typeof v === "number") return v; const n = parseFloat(v); return isFinite(n) ? n : null; };
+  TRADE_NUM_KEYS.forEach(k => { if (t[k] != null) { const n = num(t[k]); if (n !== t[k]) set(k, n); } });
+  if (t.exits != null && !Array.isArray(t.exits)) { delete t.exits; changed = true; }
+  if (Array.isArray(t.exits)) t.exits = t.exits.filter(ex => ex && typeof ex === "object");
+  (t.exits || []).forEach(ex => {
+    ["price", "qty", "fees"].forEach(k => { if (ex[k] != null) { const n = num(ex[k]); if (n !== ex[k]) { ex[k] = n; changed = true; } } });
+    if (ex.date != null && !/^\d{4}-\d{2}-\d{2}$/.test(ex.date)) { ex.date = ""; changed = true; }
+  });
   const m = t.market || "";
   if (!MARKETS.includes(m)) {
     const sym = SYMBOLS.find(x => x.name === m.toUpperCase());
@@ -31,17 +48,96 @@ function normalizeTrade(t) {
 }
 function cleanSymbol(v) { return (v || "").toUpperCase().replace(/[^A-Z0-9&_.:-]/g, "").slice(0, 40); }
 
+/* If the saved journal cannot be read, the raw text is kept under its own key (never thrown away) and offered as a download. */
+function keepUnreadable(raw) {
+  tmSet("tm_trades_corrupt", raw);
+}
+function showRescueBanner() {
+  let raw = null;
+  try { raw = localStorage.getItem("tm_trades_corrupt"); } catch (e) {}
+  if (!raw) { tmBannerOff("tm_rescue_banner"); return; }
+  tmBanner("tm_rescue_banner", '<span><b>Part of your saved journal could not be read.</b> A copy of the original data was kept so nothing is lost.</span><button type="button" id="rescue_dl">Download copy</button><button type="button" id="rescue_dismiss">Dismiss</button>', b => {
+    b.querySelector("#rescue_dl").onclick = () => tmDownload("trademath-unreadable-journal.json", raw);
+    b.querySelector("#rescue_dismiss").onclick = () => {
+      if (confirm("Delete the kept copy? Download it first if you might need it.")) { try { localStorage.removeItem("tm_trades_corrupt"); } catch (e) {} tmBannerOff("tm_rescue_banner"); }
+    };
+  });
+}
 function loadTrades() {
-  try { trades = JSON.parse(localStorage.getItem("tm_trades") || "[]"); } catch(e) { trades = []; }
+  let raw = null, list = [];
+  try { raw = localStorage.getItem("tm_trades"); } catch (e) {}
+  if (raw) {
+    let parsed = null;
+    try { parsed = JSON.parse(raw); } catch (e) { parsed = null; }
+    if (!Array.isArray(parsed)) keepUnreadable(raw);
+    else {
+      list = parsed.filter(t => t && typeof t === "object" && (t.dir === "LONG" || t.dir === "SHORT"));
+      if (list.length !== parsed.length) keepUnreadable(raw);   // some entries were unusable; the original stays in the rescue copy
+    }
+  }
+  trades = list;
   let changed = false;
   trades.forEach(t => { if (normalizeTrade(t)) changed = true; });
-  if (changed) { try { localStorage.setItem("tm_trades", JSON.stringify(trades)); } catch(e) {} }
+  if (changed) tmSet("tm_trades", trades);
   window.trades = trades; // expose for calc.js checkDailyLimits
+  showRescueBanner();
+  renderBackupInfo();
 }
 function saveTrades() {
-  try { localStorage.setItem("tm_trades", JSON.stringify(trades)); } catch(e) {}
+  tmSet("tm_trades", trades);
   window.trades = trades;
   renderTodayTrades();
+  renderBackupInfo();
+}
+
+/* ── Backup & restore (Settings → Your data) ── */
+const BACKUP_KEYS = { settings: "tm_settings", checklist: "tm_checklist", alert: "tm_alert", projection: "tm_proj" };
+function buildBackup() {
+  const out = { app: "TradeMath", version: 1, exported: new Date().toISOString(), trades };
+  Object.keys(BACKUP_KEYS).forEach(k => { out[k] = tmGet(BACKUP_KEYS[k], null); });
+  return out;
+}
+function downloadBackup() {
+  tmDownload("trademath-backup-" + todayStr() + ".json", JSON.stringify(buildBackup(), null, 1));
+  tmSet("tm_last_backup", new Date().toISOString());
+  renderBackupInfo();
+}
+function renderBackupInfo() {
+  const el = $("bk_info"); if (!el) return;
+  const last = tmGet("tm_last_backup", null);
+  const when = last ? new Date(last).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : null;
+  el.textContent = trades.length + " trade" + (trades.length === 1 ? "" : "s") + " saved in this browser. " + (when ? "Last backup: " + when + "." : "You have never downloaded a backup.");
+}
+let pendingRestore = null;
+function readBackupFile(file) {
+  const msg = $("bk_msg"), box = $("bk_confirm");
+  box.hidden = true; pendingRestore = null;
+  const fail = t => { msg.textContent = t; msg.className = "bk-msg bad"; };
+  if (!file) return;
+  if (file.size > 20 * 1024 * 1024) return fail("That file is too large to be a TradeMath backup.");
+  const r = new FileReader();
+  r.onerror = () => fail("Could not read that file.");
+  r.onload = () => {
+    let data;
+    try { data = JSON.parse(r.result); } catch (e) { return fail("That file is not a valid backup (it is not readable JSON)."); }
+    if (!data || data.app !== "TradeMath" || !Array.isArray(data.trades)) return fail("That file is not a TradeMath backup.");
+    const good = data.trades.filter(t => t && typeof t === "object" && (t.dir === "LONG" || t.dir === "SHORT"));
+    if (!good.length && data.trades.length) return fail("No usable trades were found in that backup.");
+    pendingRestore = { data, good };
+    msg.className = "bk-msg";
+    msg.textContent = "This backup has " + good.length + " trade" + (good.length === 1 ? "" : "s") + (data.exported ? " (saved " + new Date(data.exported).toLocaleDateString("en-IN") + ")" : "") + ". Restoring replaces the " + trades.length + " trade" + (trades.length === 1 ? "" : "s") + " and the settings currently in this browser. A copy of what is here now is kept first.";
+    box.hidden = false;
+  };
+  r.readAsText(file);
+}
+function applyRestore() {
+  if (!pendingRestore) return;
+  const { data, good } = pendingRestore;
+  tmSet("tm_prerestore", JSON.stringify(buildBackup()));   // the way back: what was here before
+  const ok = tmSet("tm_trades", good) &&
+    Object.keys(BACKUP_KEYS).every(k => data[k] == null || typeof data[k] !== "object" || tmSet(BACKUP_KEYS[k], data[k]));
+  if (!ok) { $("bk_msg").textContent = "Restore failed: the browser would not store the data. Free some space and try again."; $("bk_msg").className = "bk-msg bad"; return; }
+  location.reload();
 }
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
@@ -151,20 +247,26 @@ $("showAddBtn").addEventListener("click", () => {
 });
 
 /* ── Toast notification helper ── */
-function showToast(msg) {
+function showToast(msg, action) {
   let toast = document.getElementById("tm_toast");
   if (!toast) {
     toast = document.createElement("div");
     toast.id = "tm_toast";
     toast.className = "tm-toast";
+    toast.setAttribute("role", "status");
     document.body.appendChild(toast);
   }
   toast.textContent = msg;
+  toast.classList.toggle("has-action", !!action);
+  if (action) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "tm-toast-btn"; b.textContent = action.label;
+    b.onclick = () => { toast.classList.remove("show"); clearTimeout(toast._timer); action.fn(); };
+    toast.appendChild(b);
+  }
   toast.classList.add("show");
   clearTimeout(toast._timer);
-  toast._timer = setTimeout(() => {
-    toast.classList.remove("show");
-  }, 2600);
+  toast._timer = setTimeout(() => { toast.classList.remove("show"); }, action ? 8000 : 2600);
 }
 
 /* ── Pre-log modal & Quick Log (from Calc) ── */
@@ -265,7 +367,7 @@ function renderPreLogChecklist() {
   el.innerHTML = `<div class="chk-list">${items.map((item, i) => `
     <div class="chk-item">
       <div class="chk-box" data-i="${i}" onclick="togglePreCheck(this)">✓</div>
-      <span class="chk-label">${item}</span>
+      <span class="chk-label">${esc(item)}</span>
     </div>`).join("")}</div>`;
 }
 
@@ -376,158 +478,6 @@ $("exportBtn").addEventListener("click", () => {
   a.click();
 });
 
-/* ══════════════ ZERODHA CSV IMPORT ══════════════ */
-let importedTrades = [];
-
-function parseCSV(text) {
-  const lines = text.trim().split(/\r?\n/);
-  if (lines.length < 2) return [];
-  const delim = lines[0].includes('\t') ? '\t' : ',';
-  const parseRow = line => {
-    const cols = []; let cur = '', inQ = false;
-    for (let i = 0; i < line.length; i++) {
-      const c = line[i];
-      if (c === '"') { inQ = !inQ; }
-      else if (c === delim && !inQ) { cols.push(cur.trim()); cur = ''; }
-      else { cur += c; }
-    }
-    cols.push(cur.trim()); return cols;
-  };
-  const headers = parseRow(lines[0]).map(h => h.toLowerCase().replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_'));
-  const rows = [];
-  for (let i = 1; i < lines.length; i++) {
-    if (!lines[i].trim()) continue;
-    const vals = parseRow(lines[i]);
-    const obj  = {};
-    headers.forEach((h, idx) => { obj[h] = (vals[idx] || '').trim(); });
-    rows.push(obj);
-  }
-  return rows;
-}
-
-function detectCol(headers, ...patterns) {
-  for (const p of patterns) { const f = headers.find(h => h.includes(p)); if (f) return f; }
-  return null;
-}
-
-function parseZerodhaDate(str) {
-  if (!str) return '';
-  str = str.replace(/\s+/g,' ').trim();
-  let m;
-  if ((m = str.match(/^(\d{4})-(\d{2})-(\d{2})/))) return m[1]+'-'+m[2]+'-'+m[3];
-  if ((m = str.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})/))) return m[3]+'-'+m[2]+'-'+m[1];
-  const months={jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12'};
-  if ((m = str.match(/^(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})/))) {
-    const mo = months[m[2].toLowerCase().slice(0,3)] || '01';
-    return m[3]+'-'+mo+'-'+m[1].padStart(2,'0');
-  }
-  return str.slice(0,10);
-}
-
-function processZerodhaRows(rows) {
-  if (!rows.length) return [];
-  const headers  = Object.keys(rows[0]);
-  const colDate  = detectCol(headers,'trade_date','date','order_exec','time');
-  const colSym   = detectCol(headers,'symbol','scrip','instrument','trading_symbol');
-  const colType  = detectCol(headers,'trade_type','type','buy_sell','side','order_type');
-  const colQty   = detectCol(headers,'quantity','qty','shares');
-  const colPrice = detectCol(headers,'price','gross_price','trade_price','rate','avg_price');
-  const colExch  = detectCol(headers,'exchange','exch','segment');
-  if (!colSym || !colType || !colQty || !colPrice) return null;
-
-  const txns = rows.map(r => ({
-    date:   parseZerodhaDate(r[colDate] || ''),
-    symbol: (r[colSym] || '').toUpperCase(),
-    type:   (r[colType] || '').toLowerCase().includes('buy') ? 'buy' : 'sell',
-    qty:    parseFloat(r[colQty])   || 0,
-    price:  parseFloat(r[colPrice]) || 0,
-    exch:   (r[colExch] || '').toUpperCase(),
-  })).filter(t => t.qty > 0 && t.price > 0 && t.symbol);
-
-  const byKey = {};
-  txns.forEach(t => {
-    const key = t.symbol + '|' + t.date;
-    if (!byKey[key]) byKey[key] = { buys:[], sells:[], symbol:t.symbol, date:t.date, exch:t.exch };
-    byKey[key][t.type === 'buy' ? 'buys' : 'sells'].push(t);
-  });
-
-  const result = [];
-  Object.values(byKey).forEach(g => {
-    const buys = [...g.buys], sells = [...g.sells];
-    while (buys.length && sells.length) {
-      const b = buys.shift(), s = sells.shift();
-      const qty = Math.min(b.qty, s.qty);
-      result.push({ date:b.date, symbol:g.symbol, dir:'LONG', entry:b.price, exit:s.price, qty, exch:g.exch });
-    }
-    sells.forEach(s => result.push({ date:s.date, symbol:g.symbol, dir:'SHORT', entry:s.price, exit:null, qty:s.qty, exch:g.exch }));
-    buys.forEach(b  => result.push({ date:b.date, symbol:g.symbol, dir:'LONG',  entry:b.price, exit:null, qty:b.qty, exch:g.exch }));
-  });
-  return result.sort((a,b) => a.date > b.date ? -1 : 1);
-}
-
-function contractInfo(symbol, exch) {
-  const s = (symbol || "").toUpperCase(), e = (exch || "").toUpperCase();
-  // Contract symbols end in digits + CE/PE (strike) or digits + MON + FUT (expiry); plain stocks like RELIANCE or PRICE do not.
-  const optM = s.match(/\d(CE|PE)$/), isFut = /\d[A-Z]{3}FUT$/.test(s);
-  const isFno = e.includes("NFO") || e.includes("BFO") || !!optM || isFut;
-  const instrument = optM ? "options" : isFut ? "futures" : isFno ? "options" : "equity";
-  let market;
-  if (e.includes("MCX") || (!e && /GOLD|CRUDE/.test(s))) market = s.includes("GOLD") ? "MCX Gold" : s.includes("CRUDE") ? "MCX Crude" : "Other";
-  else if (isFno) market = s.startsWith("BANKNIFTY") ? "BankNifty F&O" : s.startsWith("NIFTY") ? "Nifty F&O" : /^(FINNIFTY|MIDCPNIFTY|SENSEX|BANKEX)/.test(s) ? "Other Index F&O" : "Stock F&O";
-  else market = "NSE Equity";
-  return { market, instrument, optType: optM ? optM[1] : null };
-}
-
-$("importBtn").addEventListener("click", () => $("csvFileInput").click());
-
-$("csvFileInput").addEventListener("change", e => {
-  const file = e.target.files[0]; if (!file) return;
-  e.target.value = '';
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const rows   = parseCSV(ev.target.result);
-    const parsed = processZerodhaRows(rows);
-    if (!parsed || !parsed.length) {
-      $("importInfo").textContent = "Could not parse this CSV. Make sure it is a Zerodha Tradebook export.";
-      $("importPreviewBody").innerHTML = '';
-      importedTrades = [];
-      $("importPanel").hidden = false; return;
-    }
-    importedTrades = parsed;
-    $("importInfo").textContent = `Found ${parsed.length} trade(s) in ${file.name}. Review below and click Import.`;
-    $("importWarn").textContent = parsed.filter(t => !t.exit).length + ' open (no exit yet).';
-    $("importPreviewBody").innerHTML = parsed.map(t => {
-      const pnl    = t.exit ? ((t.dir==='LONG'?1:-1)*(t.exit-t.entry)*t.qty) : null;
-      const pnlStr = pnl !== null
-        ? `<span style="color:${pnl>=0?'var(--green)':'var(--red)'};">${pnl>=0?'+':''}₹${Math.abs(pnl).toFixed(0)}</span>`
-        : '<span style="color:var(--fg3)">Open</span>';
-      return `<tr>
-        <td class="td-muted">${t.date}</td>
-        <td style="font-weight:500">${t.symbol}</td>
-        <td><span class="badge ${t.dir.toLowerCase()}">${t.dir==='LONG'?'▲':'▼'} ${t.dir}</span></td>
-        <td class="td-mono">${t.entry}</td>
-        <td class="td-mono">${t.exit||'—'}</td>
-        <td class="td-mono">${t.qty}</td>
-        <td>${pnlStr}</td></tr>`;
-    }).join('');
-    $("importPanel").hidden = false;
-    $("importPanel").scrollIntoView({ behavior:'smooth', block:'nearest' });
-  };
-  reader.readAsText(file);
-});
-
-$("confirmImportBtn").addEventListener("click", () => {
-  importedTrades.forEach(t => {
-    const ci = contractInfo(t.symbol, t.exch);
-    trades.push({ id:uid(), date:t.date, market:ci.market, symbol:cleanSymbol(t.symbol), instrument:ci.instrument, optType:ci.optType,
-      dir:t.dir, entry:t.entry, sl:null, target:null, exit:t.exit||null,
-      qty:t.qty, fees:0, exits:[], notes:'Zerodha import · '+t.symbol, setup:'', mistakes:[] });
-  });
-  saveTrades(); $("importPanel").hidden = true; importedTrades = []; refreshJournal();
-});
-
-$("cancelImportBtn").addEventListener("click", () => { $("importPanel").hidden = true; importedTrades = []; });
-
 /* ══════════════ TRADE DETAILS: the one-tap way to tidy a trade you logged in a hurry ══════════════ */
 let detailsId = null;
 function openDetails(id) {
@@ -620,8 +570,8 @@ function renderPartialExitList(t) {
     t.exits.map(ex => {
       const pnl = dir * (ex.price - t.entry) * ex.qty * fxOf(t) - (ex.fees || 0);
       return `<div class="exit-item">
-        <span>${ex.date || ""}</span>
-        <span class="td-mono">Qty ${ex.qty} @ ${ex.price}</span>
+        <span>${esc(ex.date || "")}</span>
+        <span class="td-mono">Qty ${esc(ex.qty)} @ ${esc(ex.price)}</span>
         <span class="${pnl >= 0 ? "td-pos" : "td-neg"}">${fmtINR(pnl)}</span>
       </div>`;
     }).join("");
@@ -679,16 +629,18 @@ $("cm_confirm").addEventListener("click", () => {
 });
 
 /* ══════════════ TODAY'S TRADES ══════════════ */
-function deleteTodayTrade(id) {
-  trades = trades.filter(t => t.id !== id);
-  saveTrades();
-  renderTodayTrades();
-  if (typeof renderDailyBanner === "function") renderDailyBanner();
-  showToast("Trade removed");
+function deleteTrade(id) {
+  const i = trades.findIndex(t => t.id === id);
+  if (i < 0) return;
+  const removed = trades.splice(i, 1)[0];
+  const redraw = () => { saveTrades(); if (typeof refreshJournal === "function") refreshJournal(); if (typeof renderDailyBanner === "function") renderDailyBanner(); };
+  redraw();
+  showToast("Trade deleted", { label: "Undo", fn: () => { trades.splice(Math.min(i, trades.length), 0, removed); redraw(); showToast("Trade restored"); } });
 }
+const deleteTodayTrade = deleteTrade;
 
 function symChip(t) {
-  return t.symbol ? ` <span class="sym-chip">${t.symbol}${t.optType ? " " + t.optType : ""}</span>` : "";
+  return t.symbol ? ` <span class="sym-chip">${esc(t.symbol)}${t.optType ? " " + esc(t.optType) : ""}</span>` : "";
 }
 function editBtnFor(t) {
   return `<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px;color:var(--fg3)" onclick="openDetails('${t.id}')" title="Edit market, symbol and notes">✎</button>`;
@@ -697,7 +649,7 @@ function editBtnFor(t) {
 const px  = (t, v) => v ? (t.instrument === "crypto" ? "$" + fmtUsd(v) : v) : "—";          // table cells
 const pxs = (t, v) => v ? (t.instrument === "crypto" ? "$" + fmtUsd(v) : "₹" + v) : "—";   // with currency symbol
 function qtyLabel(t) {
-  if (t.instrument === "crypto") return `${t.qty}${t.leverage ? " · " + t.leverage + "× lev" : ""}`;
+  if (t.instrument === "crypto") return `${t.qty}${t.leverage ? " · " + esc(t.leverage) + "× lev" : ""}`;
   return t.lots ? `${t.lots} lot${t.lots === 1 ? "" : "s"} × ${t.lotSize} = ${t.qty}` : (t.qty || "—");
 }
 
@@ -728,11 +680,11 @@ function renderTodayTrades() {
       : `<span class="badge loss" style="font-size:10px">LOSS</span>`;
     const closeBtn = !closed ? `<button class="btn btn-danger btn-sm" style="font-size:11px;padding:3px 10px" onclick="openCloseModal('${t.id}')">Close</button>` : "";
     const delBtn   = `<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px;color:var(--fg3)" onclick="deleteTodayTrade('${t.id}')" title="Delete trade">✕</button>`;
-    const setupTag = t.setup ? `<span style="font-size:10px;color:var(--accent);background:var(--accent-dim);border-radius:3px;padding:1px 6px">${t.setup}</span>` : "";
+    const setupTag = t.setup ? `<span style="font-size:10px;color:var(--accent);background:var(--accent-dim);border-radius:3px;padding:1px 6px">${esc(t.setup)}</span>` : "";
     return `<div class="today-trade" data-id="${t.id}">
       <div class="today-trade-top">
         ${badge}
-        <span style="font-size:12px;font-weight:600">${t.market}</span>${symChip(t)}
+        <span style="font-size:12px;font-weight:600">${esc(t.market)}</span>${symChip(t)}
         ${res}
         ${setupTag}
         <span class="today-trade-pnl">${pnlStr}</span>
@@ -824,11 +776,11 @@ function repTradeRow(t, dayId, moKey) {
     const pc  = pnl === null ? "td-muted" : pnl > 0 ? "td-pos" : "td-neg";
     const gv  = pnl !== null ? fmtINR((t.exit - t.entry) * (t.dir === "LONG" ? 1 : -1) * t.qty * fxOf(t)) : "—";
     const gc  = pnl !== null ? (pnl > 0 ? "td-pos" : "td-neg") : "td-muted";
-    const setupTag = t.setup ? `<span style="font-size:10px;color:var(--accent)">${t.setup}</span>` : "—";
+    const setupTag = t.setup ? `<span style="font-size:10px;color:var(--accent)">${esc(t.setup)}</span>` : "—";
     const partialBadge = (!t.exit && t.exits && t.exits.length) ? ` <span style="font-size:10px;color:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 4px">partial</span>` : "";
     return `<tr class="tr-row" data-id="${t.id}" data-grp="${dayId}" data-mo="${moKey}">
-      <td class="td-muted td-mono">${t.date||"—"}</td>
-      <td>${t.market||"—"}${symChip(t)}</td>
+      <td class="td-muted td-mono">${esc(t.date||"—")}</td>
+      <td>${esc(t.market||"—")}${symChip(t)}</td>
       <td><span class="badge ${t.dir.toLowerCase()}">${t.dir==="LONG"?"▲":"▼"} ${t.dir}</span></td>
       <td class="td-mono">${px(t, t.entry)}</td><td class="td-mono">${px(t, t.sl)}</td>
       <td class="td-mono">${px(t, t.target)}</td><td class="td-mono">${px(t, t.exit)}${partialBadge}</td>
@@ -943,7 +895,7 @@ $("rep_body").addEventListener("click", e => {
   const close = e.target.closest(".rep-close-btn");
   if (close) { e.stopPropagation(); openCloseModal(close.dataset.id); return; }
   const del = e.target.closest(".rep-del-btn");
-  if (del) { e.stopPropagation(); trades = trades.filter(t => t.id !== del.dataset.id); saveTrades(); refreshJournal(); }
+  if (del) { e.stopPropagation(); deleteTrade(del.dataset.id); }
 });
 
 function drawEquityCurve(closed) {
@@ -1033,3 +985,11 @@ $("rc_download").addEventListener("click", () => {
   a.download = `trademath-${title.replace(/\s+/g,"-")}.svg`;
   a.click();
 });
+
+
+/* ── Your data: backup / restore wiring ── */
+$("bk_download").addEventListener("click", downloadBackup);
+$("bk_pick").addEventListener("click", () => $("bk_file").click());
+$("bk_file").addEventListener("change", e => { readBackupFile(e.target.files[0]); e.target.value = ""; });
+$("bk_apply").addEventListener("click", applyRestore);
+$("bk_cancel").addEventListener("click", () => { pendingRestore = null; $("bk_confirm").hidden = true; $("bk_msg").textContent = ""; });

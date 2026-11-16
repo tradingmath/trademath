@@ -132,7 +132,7 @@
   function saveInputs() {
     const o = {};
     Object.keys(FIELDS).forEach(k => { const el = $(FIELDS[k]); if (el) o[k] = el.value; });
-    try { localStorage.setItem(LS_KEY, JSON.stringify(o)); } catch (e) {}
+    tmSet(LS_KEY, o);
   }
 
   /* ── formatting ── */
