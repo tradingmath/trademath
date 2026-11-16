@@ -11,7 +11,8 @@
   // average win ₹1,452, average loss ₹1,694 (payoff 0.857), ~19 trading days a month, longest win streak 12.
   const REAL = { capital: 100000, win: 61, rr: 0.86, risk: 1694, riskmode: "abs", tpd: 1, days: 20, months: 12, cost: 0, vary: "5", maxw: "inf" };
 
-  let selMonth = 1, clampNotice = false, presetNote = false, lastRes = null;
+  const REAL_NOTE = "Loaded numbers from a real 2-year NIFTY SL-strangle backtest: 474 trading days, 61% winning days, average win ₹1,452, average loss ₹1,694. The streak limit is off because that backtest had a 12-win streak. A backtest is not a promise either.";
+  let selMonth = 1, clampNotice = false, noteText = "", lastRes = null;
 
   function mulberry32(a) {
     return function () {
@@ -162,7 +163,7 @@
       "Losing streaks are not capped, because real ones are not.";
 
     const msgs = [];
-    if (presetNote) msgs.push(["info", "Loaded numbers from a real 2-year NIFTY SL-strangle backtest: 474 trading days, 61% winning days, average win ₹1,452, average loss ₹1,694. The streak limit is off because that backtest had a 12-win streak. A backtest is not a promise either."]);
+    if (noteText) msgs.push(["info", noteText]);
     if (cfg.winClamped || clampNotice) msgs.push(["warn", isFinite(K) ? `With a maximum of ${K} wins in a row, the highest possible win rate is ${cfg.wmax}%. Using ${cfg.wmax}%.` : `The win rate is limited to ${cfg.wmax}%.`]);
     if (expTrade <= 0) msgs.push(["bad", `At ${cfg.win}% wins and 1 : ${cfg.rr} reward, each trade loses ${money(Math.abs(expTrade))} on average. You need a win rate above ${pct1(breakEven)} just to break even, so this strategy loses money over time.`]);
     if (res.blown) msgs.push(["bad", `Account wiped out in month ${res.blown.month}, day ${res.blown.day}. The simulation stops there.`]);
@@ -292,7 +293,7 @@
 
   /* ── events ── */
   let timer = null;
-  function schedule() { presetNote = false; clearTimeout(timer); timer = setTimeout(() => { saveInputs(); render(); }, 150); }
+  function schedule() { noteText = ""; clearTimeout(timer); timer = setTimeout(() => { saveInputs(); render(); }, 150); }
   Object.keys(FIELDS).forEach(k => {
     const el = $(FIELDS[k]); if (!el) return;
     el.addEventListener("input", schedule);
@@ -308,9 +309,54 @@
   });
   $("p_preset").addEventListener("click", () => {
     Object.keys(REAL).forEach(k => { const el = $(FIELDS[k]); if (el) el.value = REAL[k]; });
-    selMonth = 1; presetNote = true; clampNotice = false;
+    selMonth = 1; noteText = REAL_NOTE; clampNotice = false;
     saveInputs(); render();
   });
+
+  /* Fill the form from the user's own closed journal trades, then open the tab. */
+  function fromJournal() {
+    const closed = (window.trades || []).filter(t => t.date && isClosed(t) && pnlForTrade(t) != null)
+      .sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+    if (closed.length < 10) { showToast("Close at least 10 trades first. You have " + closed.length + "."); return; }
+    const pn = closed.map(pnlForTrade);
+    const W = pn.filter(x => x > 0), L = pn.filter(x => x < 0);
+    if (!W.length || !L.length) { showToast("Your trades need both wins and losses to project."); return; }
+    const sum = a => a.reduce((s, x) => s + x, 0);
+    const avgW = sum(W) / W.length, avgL = Math.abs(sum(L) / L.length);
+    const dates = [...new Set(closed.map(t => t.date))];
+    const spanDays = (new Date(dates[dates.length - 1]) - new Date(dates[0])) / 864e5 + 1;
+    const perMonth = Math.min(31, Math.max(1, Math.round(dates.length / Math.max(spanDays / 30.4375, 1))));
+    let run = 0, longest = 0;
+    pn.forEach(x => { run = x > 0 ? run + 1 : 0; if (run > longest) longest = run; });
+    const limit = [3, 4, 5, 6, 8, 12].find(k => k >= longest);
+    const winRate = W.length / pn.length * 100;
+    const cap = parseFloat($("i_cap").value);
+    const v = {
+      capital: cap > 0 ? cap : $("p_capital").value, win: Math.round(winRate * 10) / 10,
+      rr: Math.round(avgW / avgL * 100) / 100, risk: Math.round(avgL), riskmode: "abs",
+      tpd: Math.min(50, Math.max(1, Math.round(closed.length / dates.length))), days: perMonth,
+      cost: 0, maxw: limit ? String(limit) : "inf",
+    };
+    Object.keys(v).forEach(k => { const el = $(FIELDS[k]); if (el) el.value = v[k]; });
+    selMonth = 1; clampNotice = false;
+    noteText = `Loaded from your journal: ${closed.length} closed trades over ${dates.length} trading days. ${pct1(winRate)} wins, average win ${money(avgW)}, average loss ${money(avgL)}, longest win streak ${longest}.` +
+      (closed.length < 30 ? " That is a small sample, so treat it as a rough guide only." : " Past results do not guarantee future ones.");
+    saveInputs();
+    render();
+  }
+  $("p_from_journal").addEventListener("click", fromJournal);
+
+  /* Projection is a view inside the Journal tab: the 🎯 button opens it, "Back" returns to the trade list. */
+  function showJournalView(view) {
+    const proj = view === "projection";
+    $("jnl_main").hidden = proj;
+    $("jnl_projection").hidden = !proj;
+    if (proj) render();
+    window.scrollTo(0, 0);
+  }
+  $("projBtn").addEventListener("click", () => switchTab("journal", "projection"));
+  $("projBack").addEventListener("click", () => switchTab("journal"));
+  window.showJournalView = showJournalView;
   const pick = e => { const t = e.target.closest("[data-m]"); if (t) selectMonth(parseInt(t.dataset.m, 10)); };
   $("proj_months").addEventListener("click", pick);
   $("proj_cal").addEventListener("click", pick);

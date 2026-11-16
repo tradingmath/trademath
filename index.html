@@ -29,27 +29,12 @@
           <button type="button" class="alert-chip" data-min="30">30m</button>
           <button type="button" class="alert-chip" data-min="60">1h</button>
         </div>
-        <div class="alert-row">
-          <label for="alert_custom">Custom (minutes)</label>
-          <input type="number" id="alert_custom" min="1" max="720" step="1" placeholder="e.g. 45" autocomplete="off">
-        </div>
-        <div class="alert-row">
-          <label for="alert_anchor">Align beeps to</label>
-          <select id="alert_anchor">
-            <option value="555">NSE · from 9:15</option>
-            <option value="0">Clock · MCX / crypto</option>
-          </select>
-        </div>
-        <label class="alert-check"><input type="checkbox" id="alert_hours"> Only market hours (Mon–Fri, 9:15–15:30)</label>
-        <div class="alert-row">
-          <label for="alert_vol">Volume</label>
-          <input type="range" id="alert_vol" min="5" max="100" value="60">
-        </div>
         <div class="alert-actions">
           <button type="button" class="btn btn-primary btn-sm" id="alert_start">Start</button>
-          <button type="button" class="btn btn-ghost btn-sm" id="alert_test">Test sound</button>
+          <button type="button" class="btn btn-ghost btn-sm alert-test">Test sound</button>
         </div>
         <div class="alert-note" id="alert_note" aria-live="polite"></div>
+        <button type="button" class="alert-link" id="alert_more">⚙ Sound, timing &amp; volume settings</button>
       </div>
     </div>
     <button class="theme-btn" id="popBtn" title="Open compact calculator in a small window">⧉ Pop Out</button>
@@ -60,7 +45,6 @@
 <div class="tabs">
   <button class="tab-btn active" data-tab="calc">📐 Calc</button>
   <button class="tab-btn" data-tab="journal">📒 Journal</button>
-  <button class="tab-btn" data-tab="projection">🎯 Projection</button>
   <button class="tab-btn" data-tab="settings">⚙ Settings</button>
 </div>
 
@@ -239,150 +223,154 @@
 
 <!-- ══ TAB: JOURNAL ══ -->
 <div id="tab-journal" hidden>
-  <div class="jnl-top">
-    <div class="jnl-title">Trade Journal</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-ghost btn-sm" id="exportBtn">↓ Export CSV</button>
-      <button class="btn btn-ghost btn-sm" id="importBtn">↑ Import Zerodha CSV</button>
-      <input type="file" id="csvFileInput" accept=".csv" hidden>
-      <button class="btn btn-primary btn-sm" id="showAddBtn">+ Add Trade</button>
-    </div>
-  </div>
-  <div class="add-form-wrap" id="importPanel" hidden>
-    <div class="p-title">Zerodha CSV Import Preview</div>
-    <div id="importInfo" style="font-size:13px;color:var(--fg2);margin-bottom:12px;"></div>
-    <div class="tbl-wrap" style="max-height:260px;overflow-y:auto;margin-bottom:14px;">
-      <table id="importPreviewTable" style="min-width:560px;">
-        <thead><tr><th>Date</th><th>Symbol</th><th>Dir</th><th>Entry</th><th>Exit</th><th>Qty</th><th>Est. P&amp;L</th></tr></thead>
-        <tbody id="importPreviewBody"></tbody>
-      </table>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-      <button class="btn btn-primary" id="confirmImportBtn">Import All Trades</button>
-      <button class="btn btn-ghost" id="cancelImportBtn">Cancel</button>
-      <span id="importWarn" style="font-size:12px;color:var(--fg3);"></span>
-    </div>
-  </div>
-  <div class="stats-row" id="statsRow">
-    <div class="stat-card"><div class="stat-card-lbl">Total Trades</div><div class="stat-card-val acc" id="st_trades">0</div></div>
-    <div class="stat-card"><div class="stat-card-lbl">Win Rate</div><div class="stat-card-val acc" id="st_wr">—</div></div>
-    <div class="stat-card"><div class="stat-card-lbl">Net P&amp;L (₹)</div><div class="stat-card-val" id="st_pnl">₹0</div></div>
-    <div class="stat-card"><div class="stat-card-lbl">Avg R:R (closed)</div><div class="stat-card-val acc" id="st_rr">—</div></div>
-  </div>
-  <div class="add-form-wrap" id="addForm" hidden>
-    <div class="p-title" id="formTitle">New Trade</div>
-    <div class="field-row3">
-      <div class="field"><label for="j_date">Date</label><input type="date" id="j_date" autocomplete="off"></div>
-      <div class="field">
-        <label for="j_market">Market</label>
-        <select id="j_market">
-          <option>NSE Equity</option><option>Nifty F&amp;O</option><option>BankNifty F&amp;O</option>
-          <option>MCX Gold</option><option>MCX Crude</option><option>BTC Perp</option><option>Other</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="j_dir">Direction</label>
-        <select id="j_dir"><option value="LONG">▲ LONG</option><option value="SHORT">▼ SHORT</option></select>
+  <div id="jnl_main">
+    <div class="jnl-top">
+      <div class="jnl-title">Trade Journal</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" id="projBtn" title="Fill the Projection tab with your own closed trades (win rate, average win and loss, trades per day)">🎯 Projection</button>
+        <button class="btn btn-ghost btn-sm" id="exportBtn">↓ Export CSV</button>
+        <button class="btn btn-ghost btn-sm" id="importBtn">↑ Import Zerodha CSV</button>
+        <input type="file" id="csvFileInput" accept=".csv" hidden>
+        <button class="btn btn-primary btn-sm" id="showAddBtn">+ Add Trade</button>
       </div>
     </div>
-    <div class="field-row3">
-      <div class="field"><label for="j_entry">Entry Price</label><input type="number" id="j_entry" step="any" min="0" autocomplete="off" placeholder="0.00"></div>
-      <div class="field"><label for="j_sl">Stop Loss</label><input type="number" id="j_sl" step="any" min="0" autocomplete="off" placeholder="0.00"></div>
-      <div class="field"><label for="j_target">Target Price</label><input type="number" id="j_target" step="any" min="0" autocomplete="off" placeholder="0.00"></div>
+    <div class="add-form-wrap" id="importPanel" hidden>
+      <div class="p-title">Zerodha CSV Import Preview</div>
+      <div id="importInfo" style="font-size:13px;color:var(--fg2);margin-bottom:12px;"></div>
+      <div class="tbl-wrap" style="max-height:260px;overflow-y:auto;margin-bottom:14px;">
+        <table id="importPreviewTable" style="min-width:560px;">
+          <thead><tr><th>Date</th><th>Symbol</th><th>Dir</th><th>Entry</th><th>Exit</th><th>Qty</th><th>Est. P&amp;L</th></tr></thead>
+          <tbody id="importPreviewBody"></tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="confirmImportBtn">Import All Trades</button>
+        <button class="btn btn-ghost" id="cancelImportBtn">Cancel</button>
+        <span id="importWarn" style="font-size:12px;color:var(--fg3);"></span>
+      </div>
     </div>
-    <div class="field-row3">
-      <div class="field"><label for="j_qty">Qty / Lots</label><input type="number" id="j_qty" step="any" min="0" autocomplete="off" placeholder="0"></div>
-      <div class="field"><label for="j_exit">Exit Price (blank if open)</label><input type="number" id="j_exit" step="any" min="0" autocomplete="off" placeholder="—"></div>
-      <div class="field"><label for="j_fees">Fees (₹)</label><input type="number" id="j_fees" step="any" min="0" autocomplete="off" placeholder="0"></div>
+    <div class="stats-row" id="statsRow">
+      <div class="stat-card"><div class="stat-card-lbl">Total Trades</div><div class="stat-card-val acc" id="st_trades">0</div></div>
+      <div class="stat-card"><div class="stat-card-lbl">Win Rate</div><div class="stat-card-val acc" id="st_wr">—</div></div>
+      <div class="stat-card"><div class="stat-card-lbl">Net P&amp;L (₹)</div><div class="stat-card-val" id="st_pnl">₹0</div></div>
+      <div class="stat-card"><div class="stat-card-lbl">Avg R:R (closed)</div><div class="stat-card-val acc" id="st_rr">—</div></div>
     </div>
-    <div class="field">
-      <label>Setup / Strategy</label>
-      <div class="tag-chips" id="j_setup_chips"></div>
-      <input type="text" id="j_setup" placeholder="Custom setup name (or pick above)…" autocomplete="off">
-    </div>
-    <div class="field">
-      <label>Mistakes (optional)</label>
-      <div class="tag-chips" id="j_mistake_chips"></div>
-    </div>
-    <div class="field">
-      <label for="j_notes">Notes / Reason for entry</label>
-      <textarea id="j_notes" placeholder="e.g. EMA5 breakout, volume surge on 5m candle…"></textarea>
-    </div>
-    <div style="display:flex;gap:8px;margin-top:4px">
-      <button class="btn btn-primary" id="saveTradeBtn">Save Trade</button>
-      <button class="btn btn-ghost" id="cancelAddBtn">Cancel</button>
-    </div>
-  </div>
-  <div id="cal_wrap" style="margin-top:16px"></div>
-  <div class="filter-row" style="margin-top:12px">
-    <select class="filter-select" id="flt_market">
-      <option value="">All Markets</option>
-      <option>NSE Equity</option><option>Nifty F&amp;O</option><option>BankNifty F&amp;O</option>
-      <option>MCX Gold</option><option>MCX Crude</option><option>BTC Perp</option><option>Other</option>
-    </select>
-    <select class="filter-select" id="flt_dir">
-      <option value="">All Directions</option>
-      <option value="LONG">Long only</option><option value="SHORT">Short only</option>
-    </select>
-    <select class="filter-select" id="flt_result">
-      <option value="">All Results</option>
-      <option value="win">Wins</option><option value="loss">Losses</option><option value="open">Open</option>
-    </select>
-  </div>
-  <div id="rep_body" style="margin-top:10px"></div>
-  <div class="empty-state" id="jnl_empty" style="display:none"><strong>No trades yet</strong>Click "+ Add Trade" to log your first trade</div>
-</div>
-
-
-<!-- ══ TAB: PROJECTION ══ -->
-<div id="tab-projection" hidden>
-  <div class="proj-warn" role="note">
-    <strong>⚠ This is a projection, not a promise.</strong>
-    <span>It is a simulation built only from the numbers you type in. Real trading has slippage, missed stop-losses, emotions, changing markets and losing streaks that can push results far below this. Never risk money you cannot afford to lose.</span>
-  </div>
-
-  <div class="panel proj-inputs">
-    <div class="proj-title-row">
-      <div class="p-title" style="margin-bottom:0">Your strategy</div>
-      <button type="button" class="btn btn-ghost btn-sm" id="p_preset" title="Fill the form with numbers from a real 2-year NIFTY SL-strangle backtest">📊 Try real backtest numbers</button>
-    </div>
-    <div class="proj-grid">
-      <div class="field"><label for="p_capital">Starting capital (₹)</label><input type="number" id="p_capital" min="1000" step="1000" autocomplete="off"></div>
-      <div class="field"><label for="p_win">Win rate (%) <span class="proj-hint" id="p_win_hint">max 75</span></label><input type="number" id="p_win" min="1" max="75" step="any" autocomplete="off"></div>
-      <div class="field"><label for="p_rr">Reward per 1 risked <span class="proj-hint">R:R = 1 : x</span></label><input type="number" id="p_rr" min="0.1" max="20" step="any" autocomplete="off"></div>
-      <div class="field wide"><label for="p_risk">Risk per trade (stop-loss)</label>
-        <div class="proj-risk">
-          <input type="number" id="p_risk" min="1" step="any" autocomplete="off">
-          <select id="p_riskmode" aria-label="Risk unit"><option value="abs">₹ flat</option><option value="pct">% of balance</option></select>
+    <div class="add-form-wrap" id="addForm" hidden>
+      <div class="p-title" id="formTitle">New Trade</div>
+      <div class="field-row3">
+        <div class="field"><label for="j_date">Date</label><input type="date" id="j_date" autocomplete="off"></div>
+        <div class="field">
+          <label for="j_market">Market</label>
+          <select id="j_market">
+            <option>NSE Equity</option><option>Nifty F&amp;O</option><option>BankNifty F&amp;O</option>
+            <option>MCX Gold</option><option>MCX Crude</option><option>BTC Perp</option><option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="j_dir">Direction</label>
+          <select id="j_dir"><option value="LONG">▲ LONG</option><option value="SHORT">▼ SHORT</option></select>
         </div>
       </div>
-      <div class="field"><label for="p_tpd">Trades per day</label><input type="number" id="p_tpd" min="1" max="50" step="1" autocomplete="off"></div>
-      <div class="field"><label for="p_days">Trading days / month</label><input type="number" id="p_days" min="1" max="31" step="1" autocomplete="off"></div>
-      <div class="field"><label for="p_months">Months to simulate</label><input type="number" id="p_months" min="1" max="36" step="1" autocomplete="off"></div>
-      <div class="field"><label for="p_cost">Cost per trade (₹) <span class="proj-hint">fees &amp; taxes</span></label><input type="number" id="p_cost" min="0" step="any" autocomplete="off"></div>
-      <div class="field"><label for="p_var">Month-to-month luck</label>
-        <select id="p_var"><option value="0">Steady (same every month)</option><option value="5">Realistic (±5 pts)</option><option value="10">Choppy (±10 pts)</option></select>
+      <div class="field-row3">
+        <div class="field"><label for="j_entry">Entry Price</label><input type="number" id="j_entry" step="any" min="0" autocomplete="off" placeholder="0.00"></div>
+        <div class="field"><label for="j_sl">Stop Loss</label><input type="number" id="j_sl" step="any" min="0" autocomplete="off" placeholder="0.00"></div>
+        <div class="field"><label for="j_target">Target Price</label><input type="number" id="j_target" step="any" min="0" autocomplete="off" placeholder="0.00"></div>
       </div>
-      <div class="field"><label for="p_maxw">Max wins in a row</label>
-        <select id="p_maxw"><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="8">8</option><option value="12">12</option><option value="inf">No limit</option></select>
+      <div class="field-row3">
+        <div class="field"><label for="j_qty">Qty / Lots</label><input type="number" id="j_qty" step="any" min="0" autocomplete="off" placeholder="0"></div>
+        <div class="field"><label for="j_exit">Exit Price (blank if open)</label><input type="number" id="j_exit" step="any" min="0" autocomplete="off" placeholder="—"></div>
+        <div class="field"><label for="j_fees">Fees (₹)</label><input type="number" id="j_fees" step="any" min="0" autocomplete="off" placeholder="0"></div>
+      </div>
+      <div class="field">
+        <label>Setup / Strategy</label>
+        <div class="tag-chips" id="j_setup_chips"></div>
+        <input type="text" id="j_setup" placeholder="Custom setup name (or pick above)…" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Mistakes (optional)</label>
+        <div class="tag-chips" id="j_mistake_chips"></div>
+      </div>
+      <div class="field">
+        <label for="j_notes">Notes / Reason for entry</label>
+        <textarea id="j_notes" placeholder="e.g. EMA5 breakout, volume surge on 5m candle…"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn btn-primary" id="saveTradeBtn">Save Trade</button>
+        <button class="btn btn-ghost" id="cancelAddBtn">Cancel</button>
       </div>
     </div>
-    <div class="proj-seedrow">
-      <div class="field"><label for="p_seed">Seed <span class="proj-hint">same seed = same result</span></label><input type="number" id="p_seed" min="1" step="1" autocomplete="off"></div>
-      <button type="button" class="btn btn-ghost btn-sm" id="p_reroll">🎲 Re-roll luck</button>
+    <div id="cal_wrap" style="margin-top:16px"></div>
+    <div class="filter-row" style="margin-top:12px">
+      <select class="filter-select" id="flt_market">
+        <option value="">All Markets</option>
+        <option>NSE Equity</option><option>Nifty F&amp;O</option><option>BankNifty F&amp;O</option>
+        <option>MCX Gold</option><option>MCX Crude</option><option>BTC Perp</option><option>Other</option>
+      </select>
+      <select class="filter-select" id="flt_dir">
+        <option value="">All Directions</option>
+        <option value="LONG">Long only</option><option value="SHORT">Short only</option>
+      </select>
+      <select class="filter-select" id="flt_result">
+        <option value="">All Results</option>
+        <option value="win">Wins</option><option value="loss">Losses</option><option value="open">Open</option>
+      </select>
     </div>
-    <div class="proj-rule" id="proj_rule"></div>
+    <div id="rep_body" style="margin-top:10px"></div>
+    <div class="empty-state" id="jnl_empty" style="display:none"><strong>No trades yet</strong>Click "+ Add Trade" to log your first trade</div>
   </div>
 
-  <div id="proj_msgs"></div>
-  <div id="proj_tiles" class="tiles proj-tiles"></div>
-  <div id="proj_range" class="proj-range"></div>
+  <!-- Projection lives inside the Journal tab; opened from the 🎯 Projection button -->
+  <div id="jnl_projection" hidden>
+    <div class="proj-back"><button type="button" class="btn btn-ghost btn-sm" id="projBack">← Back to journal</button></div>
+    <div class="proj-warn" role="note">
+      <strong>⚠ This is a projection, not a promise.</strong>
+      <span>It is a simulation built only from the numbers you type in. Real trading has slippage, missed stop-losses, emotions, changing markets and losing streaks that can push results far below this. Never risk money you cannot afford to lose.</span>
+    </div>
 
-  <div class="panel proj-panel"><div class="p-title">Account balance</div><div id="proj_curve"></div></div>
-  <div class="panel proj-panel"><div class="p-title">Day-wise breakdown</div><div id="proj_cal"></div></div>
-  <div class="panel proj-panel"><div class="p-title">Month by month <span class="proj-hint">tap a month to see its trades</span></div><div id="proj_months" class="proj-scroll"></div></div>
-  <div class="panel proj-panel"><div class="p-title" id="proj_log_title">Trade log</div><div id="proj_log"></div></div>
-  <p class="note">Projection only. Not investment advice, not a forecast, and not a guarantee of any return.</p>
+    <div class="panel proj-inputs">
+      <div class="proj-title-row">
+        <div class="p-title" style="margin-bottom:0">Your strategy</div>
+        <button type="button" class="btn btn-ghost btn-sm" id="p_from_journal" title="Fill the form with your own closed journal trades (win rate, average win and loss, trades per day)">📒 Use my journal trades</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="p_preset" title="Fill the form with numbers from a real 2-year NIFTY SL-strangle backtest">📊 Try real backtest numbers</button>
+      </div>
+      <div class="proj-grid">
+        <div class="field"><label for="p_capital">Starting capital (₹)</label><input type="number" id="p_capital" min="1000" step="1000" autocomplete="off"></div>
+        <div class="field"><label for="p_win">Win rate (%) <span class="proj-hint" id="p_win_hint">max 75</span></label><input type="number" id="p_win" min="1" max="75" step="any" autocomplete="off"></div>
+        <div class="field"><label for="p_rr">Reward per 1 risked <span class="proj-hint">R:R = 1 : x</span></label><input type="number" id="p_rr" min="0.1" max="20" step="any" autocomplete="off"></div>
+        <div class="field wide"><label for="p_risk">Risk per trade (stop-loss)</label>
+          <div class="proj-risk">
+            <input type="number" id="p_risk" min="1" step="any" autocomplete="off">
+            <select id="p_riskmode" aria-label="Risk unit"><option value="abs">₹ flat</option><option value="pct">% of balance</option></select>
+          </div>
+        </div>
+        <div class="field"><label for="p_tpd">Trades per day</label><input type="number" id="p_tpd" min="1" max="50" step="1" autocomplete="off"></div>
+        <div class="field"><label for="p_days">Trading days / month</label><input type="number" id="p_days" min="1" max="31" step="1" autocomplete="off"></div>
+        <div class="field"><label for="p_months">Months to simulate</label><input type="number" id="p_months" min="1" max="36" step="1" autocomplete="off"></div>
+        <div class="field"><label for="p_cost">Cost per trade (₹) <span class="proj-hint">fees &amp; taxes</span></label><input type="number" id="p_cost" min="0" step="any" autocomplete="off"></div>
+        <div class="field"><label for="p_var">Month-to-month luck</label>
+          <select id="p_var"><option value="0">Steady (same every month)</option><option value="5">Realistic (±5 pts)</option><option value="10">Choppy (±10 pts)</option></select>
+        </div>
+        <div class="field"><label for="p_maxw">Max wins in a row</label>
+          <select id="p_maxw"><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="8">8</option><option value="12">12</option><option value="inf">No limit</option></select>
+        </div>
+      </div>
+      <div class="proj-seedrow">
+        <div class="field"><label for="p_seed">Seed <span class="proj-hint">same seed = same result</span></label><input type="number" id="p_seed" min="1" step="1" autocomplete="off"></div>
+        <button type="button" class="btn btn-ghost btn-sm" id="p_reroll">🎲 Re-roll luck</button>
+      </div>
+      <div class="proj-rule" id="proj_rule"></div>
+    </div>
+
+    <div id="proj_msgs"></div>
+    <div id="proj_tiles" class="tiles proj-tiles"></div>
+    <div id="proj_range" class="proj-range"></div>
+
+    <div class="panel proj-panel"><div class="p-title">Account balance</div><div id="proj_curve"></div></div>
+    <div class="panel proj-panel"><div class="p-title">Day-wise breakdown</div><div id="proj_cal"></div></div>
+    <div class="panel proj-panel"><div class="p-title">Month by month <span class="proj-hint">tap a month to see its trades</span></div><div id="proj_months" class="proj-scroll"></div></div>
+    <div class="panel proj-panel"><div class="p-title" id="proj_log_title">Trade log</div><div id="proj_log"></div></div>
+    <p class="note">Projection only. Not investment advice, not a forecast, and not a guarantee of any return.</p>
+  </div>
 </div>
 
 <!-- ══ TAB: SETTINGS ══ -->
@@ -523,6 +511,42 @@
       </div>
     </div>
     <div style="font-size:11px;color:var(--fg3);margin-top:6px">Brokerage is capped at 0.03% per order for equity intraday &amp; futures, flat for options, ₹0 for delivery. STT, exchange, SEBI and stamp duty use Zerodha's published NSE rates (F&amp;O STT as revised 1 Apr 2026).</div>
+  </div>
+
+  <!-- Interval beep -->
+  <div class="settings-section" id="beep_settings">
+    <div class="p-title">Interval Beep</div>
+    <div style="font-size:12px;color:var(--fg2);margin-bottom:14px">A reminder to check your chart on every candle. Start and stop it from the 🔔 button in the top bar; everything else is set here.</div>
+    <div style="font-size:12px;color:var(--fg2);font-weight:500;margin-bottom:6px">Interval</div>
+    <div class="alert-chips" role="group" aria-label="Beep interval">
+      <button type="button" class="alert-chip" data-min="1">1m</button>
+      <button type="button" class="alert-chip" data-min="3">3m</button>
+      <button type="button" class="alert-chip" data-min="5">5m</button>
+      <button type="button" class="alert-chip" data-min="10">10m</button>
+      <button type="button" class="alert-chip" data-min="15">15m</button>
+      <button type="button" class="alert-chip" data-min="30">30m</button>
+      <button type="button" class="alert-chip" data-min="60">1h</button>
+    </div>
+    <div class="field-row">
+      <div class="field"><label for="alert_custom">Custom interval (minutes)</label><input type="number" id="alert_custom" min="1" max="720" step="1" placeholder="e.g. 45" autocomplete="off"></div>
+      <div class="field"><label for="alert_anchor">Align beeps to</label>
+        <select id="alert_anchor"><option value="555">NSE candles (from 9:15)</option><option value="0">Clock (:00, for MCX / crypto)</option></select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label for="alert_lead">Beep before candle close</label>
+        <select id="alert_lead"><option value="0">At the close</option><option value="3">3 sec early</option><option value="5">5 sec early</option><option value="10">10 sec early</option><option value="15">15 sec early</option><option value="30">30 sec early</option><option value="60">1 min early</option></select>
+      </div>
+      <div class="field"><label for="alert_sound">Sound</label>
+        <select id="alert_sound"><option value="chime">Chime</option><option value="bell">Bell</option><option value="double">Double beep</option><option value="ticks">Triple tick</option><option value="alarm">Digital alarm</option><option value="soft">Soft pulse</option></select>
+      </div>
+    </div>
+    <div class="field"><label for="alert_vol">Volume</label><input type="range" id="alert_vol" min="5" max="100" value="60"></div>
+    <div class="toggle-row">
+      <div><div class="toggle-label">Only during market hours</div><div class="toggle-sub">Mon–Fri, 9:15–15:30. Turn off for MCX or crypto.</div></div>
+      <label class="toggle-switch"><input type="checkbox" id="alert_hours"><span class="toggle-track"></span></label>
+    </div>
+    <div style="margin-top:12px"><button type="button" class="btn btn-ghost btn-sm alert-test">▶ Test sound</button></div>
   </div>
 
   <!-- Daily risk rules -->

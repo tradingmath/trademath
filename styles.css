@@ -635,7 +635,7 @@ hr { border:none; border-top:1px solid var(--border); margin:14px 0; }
 }
 
 /* ── Projection tab ── */
-#tab-projection { padding-top:20px; }
+
 .proj-warn { display:flex; flex-direction:column; gap:4px; margin-bottom:14px; padding:12px 14px; border-radius:10px; border:1px solid rgba(239,68,68,.4); background:var(--red-dim); color:var(--fg); font-size:13px; line-height:1.5; }
 .proj-warn strong { color:var(--red); }
 .proj-inputs { margin-bottom:14px; }
@@ -722,3 +722,13 @@ hr { border:none; border-top:1px solid var(--border); margin:14px 0; }
 .pl-cal-legend { display:flex; flex-wrap:wrap; gap:6px 16px; margin-top:4px; font-size:11px; color:var(--fg2); }
 .pl-cal-legend span { display:inline-flex; align-items:center; gap:6px; }
 .pl-cal-legend .pl-cal-d { display:inline-block; width:12px; height:12px; aspect-ratio:auto; }
+
+/* Beep: link inside the popover, range input inside Settings fields */
+.alert-link { display:block; margin-top:10px; padding:0; background:none; border:none; color:var(--accent); font:500 12px var(--sans); cursor:pointer; text-align:left; }
+.alert-link:hover { text-decoration:underline; }
+.field input[type=range] { padding:0; border:none; background:none; accent-color:var(--accent); }
+#beep_settings .alert-chips { margin-bottom:14px; }
+
+/* Projection now lives inside the Journal tab */
+#jnl_projection { padding-top:0; }
+.proj-back { margin-bottom:14px; }

@@ -89,6 +89,17 @@ Script load order matters: `calc.js` → `journal.js` → `projection.js` → `a
 ```
 
 
+
+## Pages & routing
+- 3 top tabs: Calc, Journal, Settings. Projection is a view inside Journal (`#jnl_projection`, opened by the 🎯 button, `#jnl_main` is the trade list).
+- Hash routes: `#calc` (home), `#journal`, `#journal/projection`, `#settings`. Use `switchTab(tab, sub)` (app.js). It updates the URL and renders synchronously; `hashchange` handles back/forward and typed links.
+- Beep configuration lives in Settings → Interval Beep (sound, lead time, volume, alignment, hours). The header 🔔 popover only has interval chips, Start/Stop and Test.
+
+## Performance notes (measured)
+- calc() ≈ 0.03 ms, projection ≈ 2 ms (88 ms at 55,800 trades). No need to optimise these.
+- Journal reports build trade rows lazily (`repTradeRow`, `repDays`) when a day is first expanded: 1,920 trades = ~5k DOM nodes instead of ~43k. Keep it that way; don't pre-render hidden rows.
+- Event handling for report buttons is delegated on `#rep_body` (bind once, not per render).
+
 ## Colours
 - Default accent is **Calm Blue** (neutral, and it doesn't compete with the green/red used for profit and loss). Warm accents feel more urgent.
 - Tokens: `--accent` (text, borders), `--accent-solid` + `--on-accent` (fills that carry text; `bestOn()` in app.js picks black/white for contrast), `--warn` (warnings stay amber whatever the accent is).

@@ -171,8 +171,11 @@ Partial pushes to `t.exits[]`. Full exit sets `t.exit`.
 ---
 
 ## Tabs
-4 tabs: **Calc** / **Journal** / **Projection** / **Settings**
+3 tabs: **Calc** / **Journal** / **Settings**. Projection is a view INSIDE the Journal tab (the 🎯 Projection button in the Journal header), not a top-level tab.
 (Analytics tab was removed — do not re-add `renderAnalytics`.)
+
+### Routing (every page has its own link)
+`#calc` (home), `#journal`, `#journal/projection`, `#settings`. Hash routes, so they work on Netlify, localhost and file://. Navigate with `switchTab(tab, sub)` in app.js (never toggle `hidden` on tabs directly); back/forward buttons work via `hashchange`.
 
 ### Projection rules (do not break)
 - Max 3 wins in a row across the whole simulation; losing streaks are deliberately NOT capped.

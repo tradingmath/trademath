@@ -144,15 +144,40 @@ $("new_checklist_item").addEventListener("keydown", e => {
 });
 
 /* ══════════════ TABS ══════════════ */
-function switchTab(name) {
-  ["calc","journal","projection","settings"].forEach(t => {
-    $("tab-"+t).hidden = t !== name;
-    document.querySelector('.tab-btn[data-tab="'+t+'"]').classList.toggle("active", t === name);
-  });
-  if (name === "calc")       { renderTodayTrades(); renderDailyBanner(); }
-  if (name === "journal")    refreshJournal();
-  if (name === "projection") renderProjection();
+/* Every page has its own link: #calc (home), #journal, #journal/projection, #settings.
+   Hash links work on Netlify, on localhost and when index.html is opened straight from disk. */
+const PAGES = ["calc", "journal", "settings"];
+const PAGE_TITLES = { calc: "TradeMath", journal: "TradeMath · Journal", settings: "TradeMath · Settings" };
+let currentRoute = null;
+
+function parseRoute() {
+  const [tab, sub] = location.hash.replace(/^#\/?/, "").split("/");
+  return { tab: PAGES.includes(tab) ? tab : "calc", sub: sub || "" };
 }
+function showRoute(tab, sub) {
+  currentRoute = tab + "/" + sub;
+  PAGES.forEach(t => {
+    $("tab-"+t).hidden = t !== tab;
+    document.querySelector('.tab-btn[data-tab="'+t+'"]').classList.toggle("active", t === tab);
+  });
+  document.title = sub === "projection" && tab === "journal" ? "TradeMath · Projection" : PAGE_TITLES[tab];
+  if (tab === "calc")    { renderTodayTrades(); renderDailyBanner(); }
+  if (tab === "journal") {
+    const proj = sub === "projection";
+    showJournalView(proj ? "projection" : "main");
+    if (!proj) refreshJournal();
+  }
+}
+function switchTab(tab, sub) {
+  sub = sub || "";
+  const h = "#" + tab + (sub ? "/" + sub : "");
+  showRoute(tab, sub);                       // synchronous, so callers can act on the new page straight away
+  if (location.hash !== h) location.hash = h; // hashchange then fires, but showRoute is skipped (already on this route)
+}
+window.addEventListener("hashchange", () => {  // back/forward buttons, typed or bookmarked links
+  const { tab, sub } = parseRoute();
+  if (tab + "/" + sub !== currentRoute) showRoute(tab, sub);
+});
 document.querySelectorAll(".tab-btn").forEach(b => {
   b.addEventListener("click", () => switchTab(b.dataset.tab));
 });
@@ -274,7 +299,7 @@ if (new URLSearchParams(location.search).get("popout") === "1") {
   const style = document.createElement("style");
   style.textContent = `
     #popBtn,#themeBtn{display:none!important}
-    .tabs,#tab-journal,#tab-settings,#tab-projection,#rep_body,.calc-right,.note{display:none!important}
+    .tabs,#tab-journal,#tab-settings,#rep_body,.calc-right,.note{display:none!important}
     body{padding-bottom:16px}
     .header{padding:10px 0}
     .logo em{display:none}
@@ -287,3 +312,4 @@ loadTrades();
 loadSettings();
 calc();
 renderTodayTrades();
+{ const r = parseRoute(); showRoute(r.tab, r.sub); }   // open the page named in the link

@@ -646,16 +646,57 @@ function renderCalendar() {
 function toggleMonth(btn, moId) {
   const opening = !btn.querySelector('.rep-caret').classList.contains('open');
   document.querySelectorAll('tr.dy-row[data-mo="'+moId+'"]').forEach(r => { r.style.display = opening ? '' : 'none'; });
-  if (!opening) document.querySelectorAll('tr.tr-row[data-mo="'+moId+'"]').forEach(r => { r.style.display = 'none'; });
+  if (!opening) {
+    document.querySelectorAll('tr.tr-row[data-mo="'+moId+'"]').forEach(r => { r.style.display = 'none'; });
+    document.querySelectorAll('tr.dy-row[data-mo="'+moId+'"] .rep-caret').forEach(c => c.classList.remove('open'));
+  }
   btn.querySelector('.rep-caret').classList.toggle('open');
 }
 function toggleDay(btn, dayId) {
-  const opening = !btn.querySelector('.rep-caret').classList.contains('open');
+  const caret = btn.querySelector('.rep-caret');
+  const opening = !caret.classList.contains('open');
+  if (opening && !btn.dataset.loaded) {          // trade rows are only built the first time a day is opened
+    const d = repDays.get(dayId);
+    if (d) btn.insertAdjacentHTML("afterend", d.trades.map(t => repTradeRow(t, dayId, d.mo)).join(""));
+    btn.dataset.loaded = "1";
+  }
   document.querySelectorAll('tr.tr-row[data-grp="'+dayId+'"]').forEach(r => { r.style.display = opening ? '' : 'none'; });
-  btn.querySelector('.rep-caret').classList.toggle('open');
+  caret.classList.toggle('open');
 }
 
 /* ══════════════ REPORTS ══════════════ */
+function repTradeRow(t, dayId, moKey) {
+    const pnl = pnlForTrade(t);
+    const rr  = rrActual(t);
+    const closed = isClosed(t);
+    const res = !closed ? `<span class="badge open">OPEN</span>` : pnl > 0 ? `<span class="badge win">WIN</span>` : `<span class="badge loss">LOSS</span>`;
+    const pc  = pnl === null ? "td-muted" : pnl > 0 ? "td-pos" : "td-neg";
+    const gv  = pnl !== null ? fmtINR((t.exit - t.entry) * (t.dir === "LONG" ? 1 : -1) * t.qty) : "—";
+    const gc  = pnl !== null ? (pnl > 0 ? "td-pos" : "td-neg") : "td-muted";
+    const setupTag = t.setup ? `<span style="font-size:10px;color:var(--accent)">${t.setup}</span>` : "—";
+    const partialBadge = (!t.exit && t.exits && t.exits.length) ? ` <span style="font-size:10px;color:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 4px">partial</span>` : "";
+    return `<tr class="tr-row" data-id="${t.id}" data-grp="${dayId}" data-mo="${moKey}">
+      <td class="td-muted td-mono">${t.date||"—"}</td>
+      <td>${t.market||"—"}</td>
+      <td><span class="badge ${t.dir.toLowerCase()}">${t.dir==="LONG"?"▲":"▼"} ${t.dir}</span></td>
+      <td class="td-mono">${t.entry||"—"}</td><td class="td-mono">${t.sl||"—"}</td>
+      <td class="td-mono">${t.target||"—"}</td><td class="td-mono">${t.exit||"—"}${partialBadge}</td>
+      <td class="td-mono">${t.qty||"—"}</td>
+      <td class="td-mono ${gc}">${gv}</td>
+      <td class="td-mono td-muted">${t.fees ? fmtINR(t.fees) : "₹0"}</td>
+      <td class="td-mono ${pc}">${pnl !== null ? fmtINR(pnl) : "—"}</td>
+      <td class="td-mono td-muted">${rr !== null ? rr.toFixed(2) : "—"}</td>
+      <td>${setupTag}</td>
+      <td>${res}</td>
+      <td>
+        ${!closed ? `<button class="btn btn-danger btn-sm rep-close-btn" data-id="${t.id}" style="font-size:10px;padding:1px 6px">Close</button>` : ""}
+        <button class="btn btn-ghost btn-sm rep-del-btn" data-id="${t.id}" style="font-size:10px;padding:1px 5px;color:var(--fg3)">✕</button>
+      </td>
+    </tr>`;
+}
+
+const repDays = new Map();   // dayId -> { trades, mo } so a day's rows can be built when it is first opened
+
 function renderReports() {
   if (!trades.length) { $("rep_body").innerHTML = ""; return; }
 
@@ -675,6 +716,8 @@ function renderReports() {
   if (!filtered.length) { $("rep_body").innerHTML = ""; if (jEmpty) jEmpty.style.display = "block"; return; }
   if (jEmpty) jEmpty.style.display = "none";
 
+  const fset = new Set(filtered);
+  repDays.clear();
   const byMonth = {};
   [...trades].sort((a,b) => b.date > a.date ? 1 : -1).forEach(t => {
     const mo  = t.date ? t.date.slice(0,7) : "unknown";
@@ -685,7 +728,7 @@ function renderReports() {
   });
 
   $("rep_body").innerHTML = Object.entries(byMonth).map(([mo, {days}]) => {
-    const allTrades = Object.values(days).flat().filter(t => filtered.includes(t));
+    const allTrades = Object.values(days).flat().filter(t => fset.has(t));
     if (!allTrades.length) return "";
     const moClosed = allTrades.filter(t => isClosed(t));
     const moWins   = moClosed.filter(t => (pnlForTrade(t)||0) > 0);
@@ -694,7 +737,7 @@ function renderReports() {
     const pnlCls   = moPnl > 0 ? "td-pos" : moPnl < 0 ? "td-neg" : "";
 
     const daysHTML = Object.entries(days).map(([day, dayTrades]) => {
-      const filteredDay = dayTrades.filter(t => filtered.includes(t));
+      const filteredDay = dayTrades.filter(t => fset.has(t));
       if (!filteredDay.length) return "";
       const dayClosed = filteredDay.filter(t => isClosed(t));
       const dayPnlVal = dayClosed.reduce((s,t) => s + (pnlForTrade(t)||0), 0);
@@ -705,35 +748,7 @@ function renderReports() {
       const dayId     = `d${mo}${day}`.replace(/[^a-z0-9]/gi,"");
       const wl        = `${dayWins.length}W / ${dayLosses.length}L`;
 
-      const dayTradeRows = filteredDay.map(t => {
-        const pnl = pnlForTrade(t);
-        const rr  = rrActual(t);
-        const closed = isClosed(t);
-        const res = !closed ? `<span class="badge open">OPEN</span>` : pnl > 0 ? `<span class="badge win">WIN</span>` : `<span class="badge loss">LOSS</span>`;
-        const pc  = pnl === null ? "td-muted" : pnl > 0 ? "td-pos" : "td-neg";
-        const gv  = pnl !== null ? fmtINR((t.exit - t.entry) * (t.dir === "LONG" ? 1 : -1) * t.qty) : "—";
-        const gc  = pnl !== null ? (pnl > 0 ? "td-pos" : "td-neg") : "td-muted";
-        const setupTag = t.setup ? `<span style="font-size:10px;color:var(--accent)">${t.setup}</span>` : "—";
-        const partialBadge = (!t.exit && t.exits && t.exits.length) ? ` <span style="font-size:10px;color:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 4px">partial</span>` : "";
-        return `<tr class="tr-row" data-id="${t.id}" data-grp="${dayId}" data-mo="${mo.replace(/[^a-z0-9]/gi,'')}" style="display:none">
-          <td class="td-muted td-mono">${t.date||"—"}</td>
-          <td>${t.market||"—"}</td>
-          <td><span class="badge ${t.dir.toLowerCase()}">${t.dir==="LONG"?"▲":"▼"} ${t.dir}</span></td>
-          <td class="td-mono">${t.entry||"—"}</td><td class="td-mono">${t.sl||"—"}</td>
-          <td class="td-mono">${t.target||"—"}</td><td class="td-mono">${t.exit||"—"}${partialBadge}</td>
-          <td class="td-mono">${t.qty||"—"}</td>
-          <td class="td-mono ${gc}">${gv}</td>
-          <td class="td-mono td-muted">${t.fees ? fmtINR(t.fees) : "₹0"}</td>
-          <td class="td-mono ${pc}">${pnl !== null ? fmtINR(pnl) : "—"}</td>
-          <td class="td-mono td-muted">${rr !== null ? rr.toFixed(2) : "—"}</td>
-          <td>${setupTag}</td>
-          <td>${res}</td>
-          <td>
-            ${!closed ? `<button class="btn btn-danger btn-sm rep-close-btn" data-id="${t.id}" style="font-size:10px;padding:1px 6px">Close</button>` : ""}
-            <button class="btn btn-ghost btn-sm rep-del-btn" data-id="${t.id}" style="font-size:10px;padding:1px 5px;color:var(--fg3)">✕</button>
-          </td>
-        </tr>`;
-      }).join("");
+      repDays.set(dayId, { trades: filteredDay, mo: mo.replace(/[^a-z0-9]/gi, "") });
 
       return `<tr class="dy-row" data-mo="${mo.replace(/[^a-z0-9]/gi,'')}" data-grp="${dayId}" onclick="toggleDay(this,'${dayId}')">
         <td><span class="rep-caret">▶</span>${dayLabel}</td>
@@ -741,7 +756,7 @@ function renderReports() {
         <td colspan="2"></td>
         <td class="td-mono ${pCls}" style="font-weight:600">${dayClosed.length ? fmtINR(dayPnlVal) : "—"}</td>
         <td></td><td class="td-muted" style="font-size:11px">${wl}</td><td></td>
-      </tr>${dayTradeRows}`;
+      </tr>`;
     }).join("");
 
     const moId = mo.replace(/[^a-z0-9]/gi,"");
@@ -768,13 +783,14 @@ function renderReports() {
     </div>`;
   }).join("");
 
-  $("rep_body").querySelectorAll(".rep-close-btn").forEach(b => {
-    b.addEventListener("click", e => { e.stopPropagation(); openCloseModal(b.dataset.id); });
-  });
-  $("rep_body").querySelectorAll(".rep-del-btn").forEach(b => {
-    b.addEventListener("click", e => { e.stopPropagation(); trades = trades.filter(t => t.id !== b.dataset.id); saveTrades(); refreshJournal(); });
-  });
 }
+
+$("rep_body").addEventListener("click", e => {
+  const close = e.target.closest(".rep-close-btn");
+  if (close) { e.stopPropagation(); openCloseModal(close.dataset.id); return; }
+  const del = e.target.closest(".rep-del-btn");
+  if (del) { e.stopPropagation(); trades = trades.filter(t => t.id !== del.dataset.id); saveTrades(); refreshJournal(); }
+});
 
 function drawEquityCurve(closed) {
   if (!closed.length) return '<div class="an-empty">Not enough data</div>';
