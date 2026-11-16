@@ -388,6 +388,9 @@ if (new URLSearchParams(location.search).get("popout") === "1") {
   document.head.appendChild(style);
 }
 
+/* The Settings save bar sticks just under the header, so it needs the header's real height. */
+{ const hdr = document.querySelector(".header"), setH = () => document.documentElement.style.setProperty("--hdr-h", hdr.offsetHeight + "px"); setH(); window.addEventListener("resize", setH); }
+
 /* ══════════════ INIT ══════════════ */
 loadTrades();
 loadSettings();

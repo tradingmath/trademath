@@ -400,6 +400,14 @@
 
 <!-- ══ TAB: SETTINGS ══ -->
 <div id="tab-settings" hidden>
+  <div class="set-bar" id="set_bar" role="region" aria-label="Save settings">
+    <span class="set-status" id="set_status" aria-live="polite">All changes saved</span>
+    <div class="set-actions">
+      <button type="button" class="btn btn-ghost btn-sm" id="set_discard" disabled>Discard</button>
+      <button type="button" class="btn btn-primary btn-sm" id="set_save" disabled>Save changes</button>
+    </div>
+  </div>
+
   <div class="lvl-note" data-level="below-pro">Some settings are hidden at this level. Open the <b>level menu</b> in the top bar and choose <b>Pro</b> to see everything.</div>
 
   <!-- Theme & Colors -->
@@ -590,14 +598,6 @@
     <div id="bk_confirm" class="bk-confirm" hidden>
       <button type="button" class="btn btn-danger btn-sm" id="bk_apply">Replace my data</button>
       <button type="button" class="btn btn-ghost btn-sm" id="bk_cancel">Cancel</button>
-    </div>
-  </div>
-
-  <div class="set-bar" id="set_bar" role="region" aria-label="Save settings">
-    <span class="set-status" id="set_status" aria-live="polite">All changes saved</span>
-    <div class="set-actions">
-      <button type="button" class="btn btn-ghost btn-sm" id="set_discard" disabled>Discard</button>
-      <button type="button" class="btn btn-primary btn-sm" id="set_save" disabled>Save changes</button>
     </div>
   </div>
 </div>

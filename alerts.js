@@ -10,6 +10,7 @@
 
   const cfg = { min: 5, anchor: 555, hours: false, vol: 60, sound: "chime", lead: 0 };
   let running = false, ctx = null, nextAt = null, timer = null, played = 0;
+  let keep = null, warned = false;               // keep = silent tone that stops the browser idling the audio device
   let noteMsg = "", noteUntil = 0;                // short-lived message shown in place of the normal note
   const sched = new Map();                        // beep time (ms) → gain node, so it can be cancelled
 
@@ -127,6 +128,26 @@
       t = nextBeep(t);
     }
   }
+  /* A browser can suspend audio on its own (computer slept, headphones switched, tab idle). Test works because a click
+     resumes it; timer beeps cannot. So: keep a silent tone playing while running, resume on any click/key/tab focus, and
+     say so loudly if sound is stuck, instead of failing silently. */
+  function startKeepAlive() {
+    if (keep || !ctx) return;
+    try {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.value = 30; g.gain.value = 0.0002;
+      o.connect(g); g.connect(ctx.destination); o.start();
+      keep = o;
+    } catch (e) {}
+  }
+  function stopKeepAlive() { try { if (keep) keep.stop(); } catch (e) {} keep = null; }
+  function wake() { if (running && ctx && ctx.state !== "running") ctx.resume().catch(() => {}); }
+  function warnStuck() {
+    if (warned) return;
+    warned = true;
+    flashNote("🔇 Sound was paused by the browser, so beeps are silent. Click anywhere on the page to turn it back on.", 20000);
+    if (typeof showToast === "function") showToast("🔇 Beep paused by the browser. Click anywhere to resume.");
+  }
   function cancelAll() {
     sched.forEach(g => { try { g.disconnect(); } catch (e) {} });
     sched.clear();
@@ -144,6 +165,8 @@
     if (!c) { flashNote("This browser can't play sound.", 9000); return; }
     if (c.state !== "running") { soundBlocked(); return; }
     running = true;
+    warned = false;
+    startKeepAlive();
     resync();
     clearInterval(timer);
     timer = setInterval(onTick, 1000);
@@ -152,6 +175,7 @@
   }
   function stop() {
     running = false;
+    stopKeepAlive();
     clearInterval(timer);
     cancelAll();
     nextAt = null;
@@ -166,6 +190,7 @@
   function onTick() {
     if (!running) return;
     const now = Date.now();
+    if (ctx && ctx.state !== "running") { wake(); warnStuck(); } else warned = false;
     if (nextAt && now >= nextAt) {
       sched.delete(nextAt);                       // its sound was already queued on the audio clock
       flash();
@@ -225,6 +250,8 @@
 
   function init() {
     unlockOnFirstInteraction();
+    ["pointerdown", "keydown", "touchend"].forEach(ev => document.addEventListener(ev, wake, true));
+    document.addEventListener("visibilitychange", () => { if (!document.hidden && running) { wake(); resync(); } });
     try { Object.assign(cfg, JSON.parse(localStorage.getItem(LS_KEY) || "{}")); } catch (e) {}
     Object.assign(cfg, sanitize(cfg));
     paintChips();
