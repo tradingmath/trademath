@@ -37,7 +37,7 @@ function loadSettings() {
   if ($("tog_dark")) $("tog_dark").checked = s.darkMode !== false;
   applyDarkToggle(s.darkMode !== false);
   applyBaseTheme(s.baseTheme || "midnight");
-  applyAccent(s.accentColor || "amber");
+  applyAccent(s.accentColor || "blue");
   renderChecklistSettings();
 }
 
@@ -162,21 +162,33 @@ const ACCENT_COLORS = {
   amber:      { dark:"#f59e0b", light:"#d97706", dim:"rgba(245,158,11,.15)" },
   cyan:       { dark:"#06b6d4", light:"#0891b2", dim:"rgba(6,182,212,.15)"  },
   emerald:    { dark:"#10b981", light:"#059669", dim:"rgba(16,185,129,.15)" },
-  blue:       { dark:"#3b82f6", light:"#2563eb", dim:"rgba(59,130,246,.15)" },
-  purple:     { dark:"#8b5cf6", light:"#7c3aed", dim:"rgba(139,92,246,.15)" },
-  rose:       { dark:"#f43f5e", light:"#e11d48", dim:"rgba(244,63,94,.15)"  },
+  blue:       { dark:"#3b82f6", light:"#2563eb", dim:"rgba(59,130,246,.15)", solid:"#2563eb" },
+  purple:     { dark:"#8b5cf6", light:"#7c3aed", dim:"rgba(139,92,246,.15)", solid:"#7c3aed" },
+  rose:       { dark:"#f43f5e", light:"#e11d48", dim:"rgba(244,63,94,.15)",  solid:"#e11d48" },
   sunset:     { dark:"#f97316", light:"#ea580c", dim:"rgba(249,115,22,.15)" },
   lime:       { dark:"#84cc16", light:"#65a30d", dim:"rgba(132,204,22,.15)" },
   gold:       { dark:"#eab308", light:"#ca8a04", dim:"rgba(234,179,8,.15)"  },
   monochrome: { dark:"#94a3b8", light:"#475569", dim:"rgba(148,163,184,.15)" }
 };
 
+// Black or white text, whichever has the higher contrast on the given hex fill.
+function bestOn(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  const [r, g, b] = [n >> 16 & 255, n >> 8 & 255, n & 255].map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+  const L = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return 1.05 / (L + 0.05) >= (L + 0.05) / 0.05 ? "#ffffff" : "#000000";
+}
+
 function applyAccent(name) {
-  const c = ACCENT_COLORS[name] || ACCENT_COLORS.amber;
+  const c = ACCENT_COLORS[name] || ACCENT_COLORS.blue;
   const isDark = document.documentElement.dataset.theme !== "light";
   const val = isDark ? c.dark : c.light;
-  document.documentElement.style.setProperty("--accent",     val);
-  document.documentElement.style.setProperty("--accent-dim", c.dim);
+  const solid = c.solid || val;
+  const root = document.documentElement.style;
+  root.setProperty("--accent",       val);
+  root.setProperty("--accent-dim",   c.dim);
+  root.setProperty("--accent-solid", solid);
+  root.setProperty("--on-accent",    bestOn(solid));
   document.querySelectorAll(".palette-card").forEach(s => s.classList.toggle("active", s.dataset.color === name));
 }
 
@@ -206,7 +218,7 @@ function applyDarkToggle(dark) {
   }
   const s = getAppSettings();
   applyBaseTheme(s.baseTheme || "midnight");
-  applyAccent(s.accentColor || "amber");
+  applyAccent(s.accentColor || "blue");
 }
 
 // Header theme button (quick toggle)

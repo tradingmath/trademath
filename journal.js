@@ -841,10 +841,11 @@ $("rc_download").addEventListener("click", () => {
     ["Avg R:R", $("rc_rr").textContent],
     ["Record",  $("rc_wins").textContent],
   ];
+  const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#3b82f6";
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="480" height="300" style="font-family:monospace">
     <rect width="480" height="300" fill="#0f1623" rx="12"/>
     <rect x="1" y="1" width="478" height="298" fill="none" stroke="#1e2d45" stroke-width="2" rx="12"/>
-    <text x="240" y="44" text-anchor="middle" font-size="22" font-weight="bold" fill="#f0a030">TradeMath</text>
+    <text x="240" y="44" text-anchor="middle" font-size="22" font-weight="bold" fill="${accent}">TradeMath</text>
     <text x="240" y="68" text-anchor="middle" font-size="14" fill="#94a3b8">${title}</text>
     <line x1="24" y1="80" x2="456" y2="80" stroke="#1e2d45" stroke-width="1"/>
     ${stats.map((s,i) => {

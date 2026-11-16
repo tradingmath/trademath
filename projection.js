@@ -1,16 +1,17 @@
 "use strict";
 /* ══════════════ EARNINGS PROJECTION ══════════════
-   Seeded, trade-by-trade simulation. A 4th win in a row is never allowed.
+   Seeded, trade-by-trade simulation. A win streak longer than the chosen limit is never allowed,
+   and each month's win rate wobbles around the target so some months turn red, like real trading.
    This is an illustration built from user inputs, not a forecast. */
 (function () {
-  const MAX_WIN_STREAK = 3;
-  const MAX_WIN_RATE   = 75;            // with ≤3 wins in a row, 3 of every 4 trades is the ceiling
   const LS_KEY = "tm_proj";
-  const DEFAULTS = { capital: 100000, win: 40, rr: 2, risk: 1000, riskmode: "abs", tpd: 3, days: 22, months: 6, cost: 0, seed: 0 };
-  const FIELDS = { capital: "p_capital", win: "p_win", rr: "p_rr", risk: "p_risk", riskmode: "p_riskmode", tpd: "p_tpd", days: "p_days", months: "p_months", cost: "p_cost", seed: "p_seed" };
+  const DEFAULTS = { capital: 100000, win: 40, rr: 2, risk: 1000, riskmode: "abs", tpd: 3, days: 22, months: 6, cost: 0, vary: "5", maxw: "3", seed: 0 };
+  const FIELDS = { capital: "p_capital", win: "p_win", rr: "p_rr", risk: "p_risk", riskmode: "p_riskmode", tpd: "p_tpd", days: "p_days", months: "p_months", cost: "p_cost", vary: "p_var", maxw: "p_maxw", seed: "p_seed" };
+  // Calibrated from a real 2-year NIFTY SL-strangle backtest: 474 trading days, 291 winning days (61%),
+  // average win ₹1,452, average loss ₹1,694 (payoff 0.857), ~19 trading days a month, longest win streak 12.
+  const REAL = { capital: 100000, win: 61, rr: 0.86, risk: 1694, riskmode: "abs", tpd: 1, days: 20, months: 12, cost: 0, vary: "5", maxw: "inf" };
 
-  let selMonth = 1;
-  let clampNotice = false;               // user typed a win rate above the ceiling and it was snapped back
+  let selMonth = 1, clampNotice = false, presetNote = false, lastRes = null;
 
   function mulberry32(a) {
     return function () {
@@ -20,38 +21,57 @@
       return ((t ^ t >>> 14) >>> 0) / 4294967296;
     };
   }
+  function gauss(rng) { return Math.sqrt(-2 * Math.log(1 - rng())) * Math.cos(2 * Math.PI * rng()); }
+
+  // K = most wins allowed in a row (Infinity = no limit). With a limit of K the win rate can never exceed K/(K+1).
+  function maxWinRate(K) { return isFinite(K) ? Math.floor(K / (K + 1) * 100) : 95; }
 
   // Long-run win rate of the capped chain when each free trade wins with probability p.
-  // States = current win streak 0..3; P(state k) ∝ p^k; wins are only possible from states 0..2.
-  function effectiveRate(p) {
-    const s = 1 + p + p * p;
-    return p * s / (s + p * p * p);
+  // States = current win streak 0..K; P(state j) ∝ p^j; a win is only possible from states 0..K-1.
+  function effectiveRate(p, K) {
+    if (!isFinite(K)) return p;
+    let num = 0, den = 0, pw = 1;
+    for (let j = 0; j <= K; j++) { den += pw; if (j < K) num += pw; pw *= p; }
+    return p * num / den;
   }
-  // Per-trade probability that makes the capped chain hit the target win rate.
-  function adjustedP(target) {
-    if (target >= MAX_WIN_RATE / 100) return 1;
+  // Forcing a loss after K wins lowers the win rate, so solve for the per-trade probability
+  // that makes the capped sequence land on the target rate.
+  const adjCache = new Map();
+  function adjustedP(target, K) {
+    if (!isFinite(K)) return target;
+    if (target >= K / (K + 1)) return 1;
+    const key = K + "|" + Math.round(target * 10000);
+    if (adjCache.has(key)) return adjCache.get(key);
     let lo = 0, hi = 1;
     for (let i = 0; i < 50; i++) {
       const mid = (lo + hi) / 2;
-      if (effectiveRate(mid) < target) lo = mid; else hi = mid;
+      if (effectiveRate(mid, K) < target) lo = mid; else hi = mid;
     }
-    return (lo + hi) / 2;
+    const p = (lo + hi) / 2;
+    adjCache.set(key, p);
+    return p;
   }
 
   function run(cfg, seed, keep) {
-    const rng = mulberry32(seed), p = adjustedP(cfg.win / 100);
+    const rng = mulberry32(seed), K = cfg.maxWins, wmax = maxWinRate(K);
+    let p = adjustedP(cfg.win / 100, K);
     let cap = cfg.capital, ws = 0, ls = 0, maxW = 0, maxL = 0, peak = cap, maxDD = 0, maxDDp = 0;
     let wins = 0, losses = 0, blown = null, stop = false;
     const months = [], curve = keep ? [cap] : null;
 
     for (let m = 0; m < cfg.months && !stop; m++) {
-      const mo = { n: m + 1, startCap: cap, endCap: cap, pnl: 0, trades: 0, wins: 0, losses: 0, days: keep ? [] : null };
+      let tw = cfg.win;
+      if (cfg.vary > 0) {                         // this month's "luck": win rate drifts around the target
+        tw = Math.min(wmax - 1, Math.max(2, cfg.win + cfg.vary * gauss(rng)));
+        p = adjustedP(tw / 100, K);
+      }
+      const mo = { n: m + 1, tw, startCap: cap, endCap: cap, pnl: 0, trades: 0, wins: 0, losses: 0, days: keep ? [] : null };
       for (let d = 0; d < cfg.days && !stop; d++) {
         const day = keep ? { n: d + 1, pnl: 0, t: [] } : null;
         for (let t = 0; t < cfg.tpd; t++) {
           if (cap <= 0) { blown = { month: m + 1, day: d + 1 }; stop = true; break; }
           const risk = cfg.riskmode === "pct" ? cap * cfg.risk / 100 : Math.min(cfg.risk, cap);
-          const win = ws >= MAX_WIN_STREAK ? false : rng() < p;
+          const win = ws >= K ? false : rng() < p;
           ws = win ? ws + 1 : 0;
           ls = win ? 0 : ls + 1;
           if (ws > maxW) maxW = ws;
@@ -69,7 +89,7 @@
       mo.endCap = cap;
       if (mo.trades) months.push(mo);
     }
-    return { months, curve, wins, losses, trades: wins + losses, endCap: cap, pnl: cap - cfg.capital, maxW, maxL, maxDD, maxDDp, blown };
+    return { months, curve, wins, losses, trades: wins + losses, endCap: cap, pnl: cap - cfg.capital, maxW, maxL, maxDD, maxDDp, blown, K };
   }
 
   /* ── inputs ── */
@@ -79,10 +99,13 @@
     return Math.min(hi, Math.max(lo, v));
   }
   function readCfg() {
+    const maxw = $("p_maxw").value;
+    const K = maxw === "inf" ? Infinity : (parseInt(maxw, 10) || 3);
+    const wmax = maxWinRate(K);
     const rawWin = parseFloat($("p_win").value);
     const cfg = {
       capital: num("p_capital", DEFAULTS.capital, 1, 1e10),
-      win:     num("p_win", DEFAULTS.win, 1, MAX_WIN_RATE),
+      win:     num("p_win", DEFAULTS.win, 1, wmax),
       rr:      num("p_rr", DEFAULTS.rr, 0.1, 20),
       risk:    num("p_risk", DEFAULTS.risk, 0.01, 1e9),
       riskmode: $("p_riskmode").value === "pct" ? "pct" : "abs",
@@ -91,9 +114,11 @@
       months:  Math.round(num("p_months", DEFAULTS.months, 1, 36)),
       cost:    num("p_cost", DEFAULTS.cost, 0, 1e9),
       seed:    Math.round(num("p_seed", 1, 1, 2147483646)),
+      vary:    Math.max(0, parseFloat($("p_var").value) || 0),
+      maxWins: K, wmax,
     };
     if (cfg.riskmode === "pct") cfg.risk = Math.min(cfg.risk, 100);
-    cfg.winClamped = !isNaN(rawWin) && rawWin > MAX_WIN_RATE;
+    cfg.winClamped = !isNaN(rawWin) && rawWin > wmax;
     return cfg;
   }
   function loadInputs() {
@@ -121,57 +146,69 @@
 
   /* ── render ── */
   function render() {
-    const cfg = readCfg();
+    const cfg = readCfg(), K = cfg.maxWins;
     const res = run(cfg, cfg.seed, true);
+    lastRes = res;
     const risk0 = cfg.riskmode === "pct" ? cfg.capital * cfg.risk / 100 : Math.min(cfg.risk, cfg.capital);
     const p = cfg.win / 100;
     const expTrade = (p * cfg.rr - (1 - p)) * risk0 - cfg.cost;
     const tradesPerMonth = cfg.tpd * cfg.days;
     const breakEven = (risk0 + cfg.cost) / (risk0 * (cfg.rr + 1)) * 100;
 
-    // messages
+    $("p_win").max = cfg.wmax;
+    $("p_win_hint").textContent = "max " + cfg.wmax;
+    $("proj_rule").innerHTML = (isFinite(K) ? `Never more than <strong>${K} wins in a row</strong>. ` : "No limit on win streaks. ") +
+      (cfg.vary > 0 ? `Each month's luck varies around your win rate (±${cfg.vary} pts), so some months turn red. ` : "Every month uses the same win rate. ") +
+      "Losing streaks are not capped, because real ones are not.";
+
     const msgs = [];
-    if (cfg.winClamped || clampNotice) msgs.push(["warn", `With a maximum of ${MAX_WIN_STREAK} wins in a row, the highest possible win rate is ${MAX_WIN_RATE}%. Using ${MAX_WIN_RATE}%.`]);
+    if (presetNote) msgs.push(["info", "Loaded numbers from a real 2-year NIFTY SL-strangle backtest: 474 trading days, 61% winning days, average win ₹1,452, average loss ₹1,694. The streak limit is off because that backtest had a 12-win streak. A backtest is not a promise either."]);
+    if (cfg.winClamped || clampNotice) msgs.push(["warn", isFinite(K) ? `With a maximum of ${K} wins in a row, the highest possible win rate is ${cfg.wmax}%. Using ${cfg.wmax}%.` : `The win rate is limited to ${cfg.wmax}%.`]);
     if (expTrade <= 0) msgs.push(["bad", `At ${cfg.win}% wins and 1 : ${cfg.rr} reward, each trade loses ${money(Math.abs(expTrade))} on average. You need a win rate above ${pct1(breakEven)} just to break even, so this strategy loses money over time.`]);
     if (res.blown) msgs.push(["bad", `Account wiped out in month ${res.blown.month}, day ${res.blown.day}. The simulation stops there.`]);
     if (cfg.riskmode === "pct" && cfg.risk > 5 || cfg.riskmode === "abs" && cfg.risk > cfg.capital * 0.05) msgs.push(["warn", "Risking more than 5% of your balance per trade makes deep drawdowns and wipe-outs very likely."]);
-    $("proj_msgs").innerHTML = msgs.map(m => `<div class="proj-msg ${m[0]}" role="alert">${m[1]}</div>`).join("");
+    $("proj_msgs").innerHTML = msgs.map(m => `<div class="proj-msg ${m[0]}" role="${m[0] === "info" ? "note" : "alert"}">${m[1]}</div>`).join("");
 
-    // tiles
     const mp = res.months.map(m => m.pnl);
     const avg = mp.length ? mp.reduce((a, b) => a + b, 0) / mp.length : 0;
     const best = mp.length ? Math.max.apply(null, mp) : 0, worst = mp.length ? Math.min.apply(null, mp) : 0;
     const bestM = mp.indexOf(best) + 1, worstM = mp.indexOf(worst) + 1;
+    const redMonths = mp.filter(x => x < 0).length;
     const retPct = res.pnl / cfg.capital * 100;
     const eff = res.trades ? res.wins / res.trades * 100 : 0;
     $("proj_tiles").innerHTML =
       tile("Expected / month", signed(expTrade * tradesPerMonth), `${tradesPerMonth} trades × ${signed(expTrade)} avg${cfg.riskmode === "pct" ? " (month 1)" : ""}`, cls(expTrade), true) +
-      tile("This run: avg / month", signed(avg), `over ${res.months.length} month${res.months.length === 1 ? "" : "s"}`, cls(avg)) +
+      tile("This run: avg / month", signed(avg), `${res.months.length - redMonths} green · ${redMonths} red month${redMonths === 1 ? "" : "s"}`, cls(avg)) +
       tile("Best month", signed(best), `Month ${bestM}`, cls(best)) +
       tile("Worst month", signed(worst), `Month ${worstM}`, cls(worst)) +
       tile("Ending balance", money(res.endCap), `${signed(res.pnl)} · ${retPct >= 0 ? "+" : "−"}${Math.abs(retPct).toFixed(1)}%`, cls(res.pnl)) +
       tile("Max drawdown", "−" + money(res.maxDD), `${pct1(res.maxDDp)} from peak`, "neg") +
       tile("Win rate (this run)", pct1(eff), `${res.wins} W · ${res.losses} L`) +
-      tile("Longest streaks", `${res.maxW}W · ${res.maxL}L`, `win streak capped at ${MAX_WIN_STREAK}`);
+      tile("Longest streaks", `${res.maxW}W · ${res.maxL}L`, isFinite(K) ? `win streak limited to ${K}` : "no win-streak limit");
 
-    // range of outcomes across other seeds
     const runs = res.trades > 20000 ? 60 : 200;
-    const ends = [];
-    for (let i = 1; i <= runs; i++) ends.push(run(cfg, cfg.seed + i * 7919, false).endCap);
+    const ends = [], redShare = [];
+    for (let i = 1; i <= runs; i++) {
+      const r = run(cfg, cfg.seed + i * 7919, false);
+      ends.push(r.endCap);
+      if (r.months.length) redShare.push(r.months.filter(m => m.pnl < 0).length / r.months.length);
+    }
     ends.sort((a, b) => a - b);
     const q = f => ends[Math.min(ends.length - 1, Math.floor(f * ends.length))];
     const profitable = ends.filter(e => e > cfg.capital).length / ends.length * 100;
+    const avgRed = redShare.length ? redShare.reduce((a, b) => a + b, 0) / redShare.length * 100 : 0;
     $("proj_range").innerHTML = `<strong>Same strategy, ${runs} different lucky/unlucky paths</strong>
       <span>Bad luck (10th pct) <b class="${cls(q(0.1) - cfg.capital)}">${money(q(0.1))}</b></span>
       <span>Middle <b class="${cls(q(0.5) - cfg.capital)}">${money(q(0.5))}</b></span>
       <span>Good luck (90th pct) <b class="${cls(q(0.9) - cfg.capital)}">${money(q(0.9))}</b></span>
-      <span><b>${Math.round(profitable)}%</b> of paths ended in profit</span>`;
+      <span><b>${Math.round(profitable)}%</b> of paths ended in profit</span>
+      <span>About <b>${Math.round(avgRed)}%</b> of months were red</span>`;
 
     $("proj_curve").innerHTML = curveSvg(res, cfg);
-    $("proj_months").innerHTML = monthsTable(res);
     if (selMonth > res.months.length) selMonth = res.months.length || 1;
+    $("proj_cal").innerHTML = calendarHtml(res);
+    $("proj_months").innerHTML = monthsTable(res);
     renderLog(res);
-    $("proj_months").__res = res;
   }
 
   function curveSvg(res, cfg) {
@@ -195,6 +232,28 @@
       <div class="pl-axis"><span>Start ${money(cfg.capital)}</span><span>Low ${money(lo)} · High ${money(hi)}</span><span>End ${money(res.endCap)}</span></div>`;
   }
 
+  /* One card per month: Sun–Sat grid, trading days fill Mon–Fri in order, coloured by that day's net result. */
+  function calendarHtml(res) {
+    const head = "SMTWTFS".split("").map(c => `<div class="pl-cal-h">${c}</div>`).join("");
+    const cards = res.months.map(m => {
+      const rows = Math.ceil(m.days.length / 5);
+      let cells = "";
+      for (let r = 0; r < rows; r++) for (let c = 0; c < 7; c++) {
+        const i = r * 5 + (c - 1);
+        if (c >= 1 && c <= 5 && i < m.days.length) {
+          const d = m.days[i], w = d.t.filter(t => t.w).length;
+          const k = d.pnl > 0 ? "up" : d.pnl < 0 ? "down" : "flat";
+          cells += `<div class="pl-cal-d ${k}" title="Day ${d.n}: ${signed(d.pnl)} (${w}W ${d.t.length - w}L)"></div>`;
+        } else cells += `<div class="pl-cal-d e"></div>`;
+      }
+      return `<div class="pl-cal-card${m.n === selMonth ? " sel" : ""}" data-m="${m.n}" role="button" tabindex="0" aria-pressed="${m.n === selMonth}" aria-label="Month ${m.n}, net ${signed(m.pnl)}">
+        <div class="pl-cal-grid">${head}${cells}</div>
+        <div class="pl-cal-name">Month ${m.n}</div><div class="pl-cal-net ${cls(m.pnl)}">${signed(m.pnl)}</div></div>`;
+    }).join("");
+    return `<div class="pl-cal-scroll">${cards}</div>
+      <div class="pl-cal-legend"><span><i class="pl-cal-d up"></i> profit day</span><span><i class="pl-cal-d down"></i> loss day</span><span><i class="pl-cal-d flat"></i> flat day</span><span>tap a month to see its trades</span></div>`;
+  }
+
   function monthsTable(res) {
     const maxAbs = Math.max.apply(null, res.months.map(m => Math.abs(m.pnl)).concat(1));
     const rows = res.months.map(m => {
@@ -213,21 +272,33 @@
     if (!m) { $("proj_log").innerHTML = ""; $("proj_log_title").textContent = "Trade log"; return; }
     $("proj_log_title").innerHTML = `Trade log · Month ${m.n} <span class="proj-hint">${m.trades} trades · ${signed(m.pnl)} · every chip is one trade (hover for amount)</span>`;
     $("proj_log").innerHTML = m.days.map(d => {
-      const chips = d.t.map((t, i) => `<span class="pl-chip ${t.w ? "w" : "l"}${t.s === MAX_WIN_STREAK ? " cap" : ""}" title="Trade ${i + 1}: ${t.w ? "win" : "loss"} ${signed(t.pnl)}${t.s === MAX_WIN_STREAK ? " (3rd win in a row, next trade must lose)" : ""}">${t.w ? "W" : "L"}</span>`).join("");
+      const chips = d.t.map((t, i) => `<span class="pl-chip ${t.w ? "w" : "l"}${isFinite(res.K) && t.s === res.K ? " cap" : ""}" title="Trade ${i + 1}: ${t.w ? "win" : "loss"} ${signed(t.pnl)}">${t.w ? "W" : "L"}</span>`).join("");
       const label = d.t.map(t => t.w ? "win" : "loss").join(", ");
       return `<div class="pl-day"><div class="pl-day-n">Day ${d.n}</div><div class="pl-chips" role="img" aria-label="Day ${d.n}: ${label}">${chips}</div><div class="pl-day-pnl ${cls(d.pnl)}">${signed(d.pnl)}</div></div>`;
     }).join("");
   }
 
+  function selectMonth(n) {
+    if (!lastRes) return;
+    selMonth = n;
+    document.querySelectorAll("#proj_months tr[data-m], #proj_cal .pl-cal-card").forEach(el => {
+      const on = parseInt(el.dataset.m, 10) === selMonth;
+      el.classList.toggle("sel", on);
+      const b = el.matches("tr") ? el.querySelector(".pl-mbtn") : el;
+      if (b) b.setAttribute("aria-pressed", on);
+    });
+    renderLog(lastRes);
+  }
+
   /* ── events ── */
   let timer = null;
-  function schedule() { clearTimeout(timer); timer = setTimeout(() => { saveInputs(); render(); }, 150); }
+  function schedule() { presetNote = false; clearTimeout(timer); timer = setTimeout(() => { saveInputs(); render(); }, 150); }
   Object.keys(FIELDS).forEach(k => {
     const el = $(FIELDS[k]); if (!el) return;
     el.addEventListener("input", schedule);
     el.addEventListener("change", () => {
-      const c = readCfg();
-      if (k === "win") { clampNotice = parseFloat(el.value) > MAX_WIN_RATE; el.value = c.win; }
+      if (k === "win") { const c = readCfg(); clampNotice = parseFloat(el.value) > c.wmax; el.value = c.win; }
+      if (k === "maxw") { const c = readCfg(); $("p_win").value = Math.min(parseFloat($("p_win").value) || c.win, c.wmax); }
       schedule();
     });
   });
@@ -235,19 +306,17 @@
     $("p_seed").value = Math.floor(Math.random() * 900000) + 100000;
     saveInputs(); render();
   });
-  $("proj_months").addEventListener("click", e => {
-    const row = e.target.closest("[data-m]"); if (!row) return;
-    selMonth = parseInt(row.dataset.m, 10);
-    const res = $("proj_months").__res; if (!res) return;
-    $("proj_months").querySelectorAll("tr[data-m]").forEach(r => {
-      const on = parseInt(r.dataset.m, 10) === selMonth;
-      r.classList.toggle("sel", on);
-      r.querySelector(".pl-mbtn").setAttribute("aria-pressed", on);
-    });
-    renderLog(res);
+  $("p_preset").addEventListener("click", () => {
+    Object.keys(REAL).forEach(k => { const el = $(FIELDS[k]); if (el) el.value = REAL[k]; });
+    selMonth = 1; presetNote = true; clampNotice = false;
+    saveInputs(); render();
   });
+  const pick = e => { const t = e.target.closest("[data-m]"); if (t) selectMonth(parseInt(t.dataset.m, 10)); };
+  $("proj_months").addEventListener("click", pick);
+  $("proj_cal").addEventListener("click", pick);
+  $("proj_cal").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(e); } });
 
   loadInputs();
   window.renderProjection = render;
-  window.tmProjection = { run, adjustedP, effectiveRate, readCfg };   // exposed for testing
+  window.tmProjection = { run, adjustedP, effectiveRate, maxWinRate, readCfg, REAL };   // exposed for testing
 })();

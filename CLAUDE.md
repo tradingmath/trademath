@@ -88,6 +88,12 @@ Script load order matters: `calc.js` → `journal.js` → `projection.js` → `a
 }
 ```
 
+
+## Colours
+- Default accent is **Calm Blue** (neutral, and it doesn't compete with the green/red used for profit and loss). Warm accents feel more urgent.
+- Tokens: `--accent` (text, borders), `--accent-solid` + `--on-accent` (fills that carry text; `bestOn()` in app.js picks black/white for contrast), `--warn` (warnings stay amber whatever the accent is).
+- Never hard-code `color:#000` on an accent background; use `--on-accent`. Keep green/red for P&L only.
+
 ## Git
 ```bash
 # Deploy

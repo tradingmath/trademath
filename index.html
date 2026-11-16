@@ -342,11 +342,14 @@
   </div>
 
   <div class="panel proj-inputs">
-    <div class="p-title">Your strategy</div>
+    <div class="proj-title-row">
+      <div class="p-title" style="margin-bottom:0">Your strategy</div>
+      <button type="button" class="btn btn-ghost btn-sm" id="p_preset" title="Fill the form with numbers from a real 2-year NIFTY SL-strangle backtest">📊 Try real backtest numbers</button>
+    </div>
     <div class="proj-grid">
       <div class="field"><label for="p_capital">Starting capital (₹)</label><input type="number" id="p_capital" min="1000" step="1000" autocomplete="off"></div>
-      <div class="field"><label for="p_win">Win rate (%) <span class="proj-hint">max 75</span></label><input type="number" id="p_win" min="1" max="75" step="1" autocomplete="off"></div>
-      <div class="field"><label for="p_rr">Reward per 1 risked <span class="proj-hint">R:R = 1 : x</span></label><input type="number" id="p_rr" min="0.1" max="20" step="0.1" autocomplete="off"></div>
+      <div class="field"><label for="p_win">Win rate (%) <span class="proj-hint" id="p_win_hint">max 75</span></label><input type="number" id="p_win" min="1" max="75" step="any" autocomplete="off"></div>
+      <div class="field"><label for="p_rr">Reward per 1 risked <span class="proj-hint">R:R = 1 : x</span></label><input type="number" id="p_rr" min="0.1" max="20" step="any" autocomplete="off"></div>
       <div class="field wide"><label for="p_risk">Risk per trade (stop-loss)</label>
         <div class="proj-risk">
           <input type="number" id="p_risk" min="1" step="any" autocomplete="off">
@@ -357,12 +360,18 @@
       <div class="field"><label for="p_days">Trading days / month</label><input type="number" id="p_days" min="1" max="31" step="1" autocomplete="off"></div>
       <div class="field"><label for="p_months">Months to simulate</label><input type="number" id="p_months" min="1" max="36" step="1" autocomplete="off"></div>
       <div class="field"><label for="p_cost">Cost per trade (₹) <span class="proj-hint">fees &amp; taxes</span></label><input type="number" id="p_cost" min="0" step="any" autocomplete="off"></div>
+      <div class="field"><label for="p_var">Month-to-month luck</label>
+        <select id="p_var"><option value="0">Steady (same every month)</option><option value="5">Realistic (±5 pts)</option><option value="10">Choppy (±10 pts)</option></select>
+      </div>
+      <div class="field"><label for="p_maxw">Max wins in a row</label>
+        <select id="p_maxw"><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="8">8</option><option value="12">12</option><option value="inf">No limit</option></select>
+      </div>
     </div>
     <div class="proj-seedrow">
       <div class="field"><label for="p_seed">Seed <span class="proj-hint">same seed = same result</span></label><input type="number" id="p_seed" min="1" step="1" autocomplete="off"></div>
       <button type="button" class="btn btn-ghost btn-sm" id="p_reroll">🎲 Re-roll luck</button>
     </div>
-    <div class="proj-rule">Randomised trade by trade, but never more than <strong>3 wins in a row</strong>. Losing streaks are not capped, because real ones are not.</div>
+    <div class="proj-rule" id="proj_rule"></div>
   </div>
 
   <div id="proj_msgs"></div>
@@ -370,6 +379,7 @@
   <div id="proj_range" class="proj-range"></div>
 
   <div class="panel proj-panel"><div class="p-title">Account balance</div><div id="proj_curve"></div></div>
+  <div class="panel proj-panel"><div class="p-title">Day-wise breakdown</div><div id="proj_cal"></div></div>
   <div class="panel proj-panel"><div class="p-title">Month by month <span class="proj-hint">tap a month to see its trades</span></div><div id="proj_months" class="proj-scroll"></div></div>
   <div class="panel proj-panel"><div class="p-title" id="proj_log_title">Trade log</div><div id="proj_log"></div></div>
   <p class="note">Projection only. Not investment advice, not a forecast, and not a guarantee of any return.</p>
@@ -401,9 +411,10 @@
 
     <!-- Accent Color Palette -->
     <div style="margin-top:16px">
-      <div style="font-size:12px;color:var(--fg2);font-weight:500;margin-bottom:8px">Accent Color Palette</div>
+      <div style="font-size:12px;color:var(--fg2);font-weight:500;margin-bottom:4px">Accent Color Palette</div>
+      <div style="font-size:11px;color:var(--fg3);margin-bottom:10px;line-height:1.5">Default is a calm blue: it stays neutral and doesn't compete with the green and red you read profit and loss by. Warm colours like amber and orange feel more urgent.</div>
       <div class="palette-grid">
-        <div class="palette-card active" data-color="amber">
+        <div class="palette-card" data-color="amber">
           <span class="palette-dot" style="background:#f59e0b"></span>
           <span class="palette-name">Amber Gold</span>
         </div>
@@ -415,9 +426,9 @@
           <span class="palette-dot" style="background:#10b981"></span>
           <span class="palette-name">Emerald Pro</span>
         </div>
-        <div class="palette-card" data-color="blue">
+        <div class="palette-card active" data-color="blue">
           <span class="palette-dot" style="background:#3b82f6"></span>
-          <span class="palette-name">Cobalt Blue</span>
+          <span class="palette-name">Calm Blue · default</span>
         </div>
         <div class="palette-card" data-color="purple">
           <span class="palette-dot" style="background:#8b5cf6"></span>
