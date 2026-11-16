@@ -14,6 +14,44 @@
 <header class="header">
   <div class="logo">TradeMath <em>/ Calculator + Journal</em></div>
   <div class="hdr-right">
+    <div class="alert-wrap" id="alert_wrap">
+      <button class="theme-btn alert-btn" id="alert_btn" type="button" aria-haspopup="true" aria-expanded="false" title="Interval beep: reminds you to check the chart">
+        <span aria-hidden="true">🔔</span> <span id="alert_label">Beep</span>
+      </button>
+      <div class="alert-pop" id="alert_pop" hidden>
+        <div class="alert-pop-title">Interval beep</div>
+        <div class="alert-chips" id="alert_chips" role="group" aria-label="Beep interval">
+          <button type="button" class="alert-chip" data-min="1">1m</button>
+          <button type="button" class="alert-chip" data-min="3">3m</button>
+          <button type="button" class="alert-chip active" data-min="5">5m</button>
+          <button type="button" class="alert-chip" data-min="10">10m</button>
+          <button type="button" class="alert-chip" data-min="15">15m</button>
+          <button type="button" class="alert-chip" data-min="30">30m</button>
+          <button type="button" class="alert-chip" data-min="60">1h</button>
+        </div>
+        <div class="alert-row">
+          <label for="alert_custom">Custom (minutes)</label>
+          <input type="number" id="alert_custom" min="1" max="720" step="1" placeholder="e.g. 45" autocomplete="off">
+        </div>
+        <div class="alert-row">
+          <label for="alert_anchor">Align beeps to</label>
+          <select id="alert_anchor">
+            <option value="555">NSE · from 9:15</option>
+            <option value="0">Clock · MCX / crypto</option>
+          </select>
+        </div>
+        <label class="alert-check"><input type="checkbox" id="alert_hours"> Only market hours (Mon–Fri, 9:15–15:30)</label>
+        <div class="alert-row">
+          <label for="alert_vol">Volume</label>
+          <input type="range" id="alert_vol" min="5" max="100" value="60">
+        </div>
+        <div class="alert-actions">
+          <button type="button" class="btn btn-primary btn-sm" id="alert_start">Start</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="alert_test">Test sound</button>
+        </div>
+        <div class="alert-note" id="alert_note" aria-live="polite"></div>
+      </div>
+    </div>
     <button class="theme-btn" id="popBtn" title="Open compact calculator in a small window">⧉ Pop Out</button>
     <button class="theme-btn" id="themeBtn">☀ Light</button>
   </div>
@@ -22,6 +60,7 @@
 <div class="tabs">
   <button class="tab-btn active" data-tab="calc">📐 Calc</button>
   <button class="tab-btn" data-tab="journal">📒 Journal</button>
+  <button class="tab-btn" data-tab="projection">🎯 Projection</button>
   <button class="tab-btn" data-tab="settings">⚙ Settings</button>
 </div>
 
@@ -295,6 +334,47 @@
 </div>
 
 
+<!-- ══ TAB: PROJECTION ══ -->
+<div id="tab-projection" hidden>
+  <div class="proj-warn" role="note">
+    <strong>⚠ This is a projection, not a promise.</strong>
+    <span>It is a simulation built only from the numbers you type in. Real trading has slippage, missed stop-losses, emotions, changing markets and losing streaks that can push results far below this. Never risk money you cannot afford to lose.</span>
+  </div>
+
+  <div class="panel proj-inputs">
+    <div class="p-title">Your strategy</div>
+    <div class="proj-grid">
+      <div class="field"><label for="p_capital">Starting capital (₹)</label><input type="number" id="p_capital" min="1000" step="1000" autocomplete="off"></div>
+      <div class="field"><label for="p_win">Win rate (%) <span class="proj-hint">max 75</span></label><input type="number" id="p_win" min="1" max="75" step="1" autocomplete="off"></div>
+      <div class="field"><label for="p_rr">Reward per 1 risked <span class="proj-hint">R:R = 1 : x</span></label><input type="number" id="p_rr" min="0.1" max="20" step="0.1" autocomplete="off"></div>
+      <div class="field wide"><label for="p_risk">Risk per trade (stop-loss)</label>
+        <div class="proj-risk">
+          <input type="number" id="p_risk" min="1" step="any" autocomplete="off">
+          <select id="p_riskmode" aria-label="Risk unit"><option value="abs">₹ flat</option><option value="pct">% of balance</option></select>
+        </div>
+      </div>
+      <div class="field"><label for="p_tpd">Trades per day</label><input type="number" id="p_tpd" min="1" max="50" step="1" autocomplete="off"></div>
+      <div class="field"><label for="p_days">Trading days / month</label><input type="number" id="p_days" min="1" max="31" step="1" autocomplete="off"></div>
+      <div class="field"><label for="p_months">Months to simulate</label><input type="number" id="p_months" min="1" max="36" step="1" autocomplete="off"></div>
+      <div class="field"><label for="p_cost">Cost per trade (₹) <span class="proj-hint">fees &amp; taxes</span></label><input type="number" id="p_cost" min="0" step="any" autocomplete="off"></div>
+    </div>
+    <div class="proj-seedrow">
+      <div class="field"><label for="p_seed">Seed <span class="proj-hint">same seed = same result</span></label><input type="number" id="p_seed" min="1" step="1" autocomplete="off"></div>
+      <button type="button" class="btn btn-ghost btn-sm" id="p_reroll">🎲 Re-roll luck</button>
+    </div>
+    <div class="proj-rule">Randomised trade by trade, but never more than <strong>3 wins in a row</strong>. Losing streaks are not capped, because real ones are not.</div>
+  </div>
+
+  <div id="proj_msgs"></div>
+  <div id="proj_tiles" class="tiles proj-tiles"></div>
+  <div id="proj_range" class="proj-range"></div>
+
+  <div class="panel proj-panel"><div class="p-title">Account balance</div><div id="proj_curve"></div></div>
+  <div class="panel proj-panel"><div class="p-title">Month by month <span class="proj-hint">tap a month to see its trades</span></div><div id="proj_months" class="proj-scroll"></div></div>
+  <div class="panel proj-panel"><div class="p-title" id="proj_log_title">Trade log</div><div id="proj_log"></div></div>
+  <p class="note">Projection only. Not investment advice, not a forecast, and not a guarantee of any return.</p>
+</div>
+
 <!-- ══ TAB: SETTINGS ══ -->
 <div id="tab-settings" hidden>
 
@@ -431,7 +511,7 @@
         <input type="number" id="s_gst_pct" value="18" min="0" step="1" autocomplete="off" placeholder="18">
       </div>
     </div>
-    <div style="font-size:11px;color:var(--fg3);margin-top:6px">STT, exchange charges, SEBI fee, and stamp duty are calculated at SEBI-mandated rates per segment.</div>
+    <div style="font-size:11px;color:var(--fg3);margin-top:6px">Brokerage is capped at 0.03% per order for equity intraday &amp; futures, flat for options, ₹0 for delivery. STT, exchange, SEBI and stamp duty use Zerodha's published NSE rates (F&amp;O STT as revised 1 Apr 2026).</div>
   </div>
 
   <!-- Daily risk rules -->
@@ -565,6 +645,8 @@
 
 <script src="calc.js"></script>
 <script src="journal.js"></script>
+<script src="projection.js"></script>
+<script src="alerts.js"></script>
 <script src="app.js"></script>
 
 </body>

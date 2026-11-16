@@ -3,7 +3,8 @@
 
 let instrType          = "equity"; // "options" | "futures" | "equity" (default simple equity)
 let optType            = "CE";      // "CE" | "PE"
-let orderType          = "MIS";     // "MIS" | "NRML"
+let orderType          = "MIS";     // derived: equity → from leverage, F&O → foOrderType
+let foOrderType        = "NRML";    // user's MIS/NRML pick for futures & options
 let leverageMultiplier = 5;         // default 5x intraday
 let leverageMode       = "5";       // "5" | "1" | "custom"
 let showFOMode         = false;     // hidden by default for maximum simplicity
@@ -20,6 +21,12 @@ function fmtINR(n) {
   return s + "₹" + a.toFixed(2);
 }
 function fmtP(n, dec) { return Math.abs(n).toFixed(dec).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+// Local calendar date (not UTC, which is "yesterday" in India before 5:30 AM).
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
 
 /* ══════════════ SYMBOL DATABASE ══════════════ */
 // lot = F&O lot size, marginNRML = approx SPAN+exposure per lot (₹), equityOnly = no F&O
@@ -248,6 +255,7 @@ function selectSymbol(name) {
   drop.hidden = true;
   // Auto-switch: index symbols → suggest futures/options
   if (sym && sym.indexOnly && instrType === "equity") {
+    if (!showFOMode) toggleFOMode(true);
     setInstrType("futures");
   }
   updateLotLabel();
@@ -314,12 +322,10 @@ function setLeverage(mode, customVal) {
 
   if (mode === "5") {
     leverageMultiplier = 5;
-    orderType = "MIS";
     if (customWrap) customWrap.style.display = "none";
     if (infoBadge) infoBadge.textContent = "5× Intraday MIS (20% margin)";
   } else if (mode === "1") {
     leverageMultiplier = 1;
-    orderType = "NRML";
     if (customWrap) customWrap.style.display = "none";
     if (infoBadge) infoBadge.textContent = "1× Cash Delivery (100% margin)";
   } else {
@@ -327,12 +333,20 @@ function setLeverage(mode, customVal) {
     const inp = $("i_custom_lev");
     const val = customVal || (inp ? parseFloat(inp.value) : 5) || 5;
     leverageMultiplier = Math.max(1, val);
-    orderType = leverageMultiplier > 1 ? "MIS" : "NRML";
     const marginPct = (100 / leverageMultiplier).toFixed(1);
     if ($("custom_margin_pct")) $("custom_margin_pct").textContent = marginPct + "%";
     if (infoBadge) infoBadge.textContent = `${leverageMultiplier}× Leverage (${marginPct}% margin)`;
   }
+  applyOrderType();
   calc();
+}
+
+// Single source of truth for orderType; keeps the MIS/NRML buttons in sync with it.
+function applyOrderType() {
+  orderType = instrType === "equity" ? (leverageMultiplier > 1 ? "MIS" : "NRML") : foOrderType;
+  const mis = $("mis_btn"), nrml = $("nrml_btn");
+  if (mis)  mis.classList.toggle("active",  orderType === "MIS");
+  if (nrml) nrml.classList.toggle("active", orderType === "NRML");
 }
 
 ["5", "1", "custom"].forEach(m => {
@@ -372,7 +386,7 @@ function setInstrType(type) {
 
   updateLotLabel();
   updateTypeOptions();
-  updateMISNRML();
+  applyOrderType();
   calc();
 }
 
@@ -384,16 +398,14 @@ function updateTypeOptions() {
   else t0lbl.textContent = "Position (Lots)";
 }
 
-function updateMISNRML() {
-  const misBtnEl = $("mis_btn");
-  if (!misBtnEl) return;
-}
-
 /* ── MIS / NRML ── */
 function setOrderType(type) {
-  orderType = type;
-  $("mis_btn").classList.toggle("active",  type === "MIS");
-  $("nrml_btn").classList.toggle("active", type === "NRML");
+  if (instrType === "equity") {
+    setLeverage(type === "MIS" ? "5" : "1");
+    return;
+  }
+  foOrderType = type;
+  applyOrderType();
   calc();
 }
 
@@ -420,48 +432,49 @@ function getLotSize(sym) {
 }
 
 /* ══════════════ ZERODHA FEE CALCULATOR ══════════════ */
+// Source: zerodha.com/charges (NSE rates). F&O STT per Budget 2026, effective 1 Apr 2026.
+// stt is charged on the sell side only, except delivery (both sides). Re-check these when SEBI/NSE revise.
+const FEE_RATES = {
+  eqDelivery: { stt: 0.001,   exch: 0.0000307, stamp: 0.00015 },
+  eqIntraday: { stt: 0.00025, exch: 0.0000307, stamp: 0.00003 },
+  futures:    { stt: 0.0005,  exch: 0.0000183, stamp: 0.00002 },
+  options:    { stt: 0.0015,  exch: 0.0003553, stamp: 0.00003 },
+  sebi: 0.000001,                     // ₹10 per crore
+};
+
+function feeSettings() {
+  const s = typeof getAppSettings === "function" ? getAppSettings() : {};
+  const brok = parseFloat(s.brokerage), gst = parseFloat(s.gstPct);
+  return {
+    brok:   isNaN(brok) || brok < 0 ? 20 : brok,
+    gstPct: isNaN(gst)  || gst  < 0 ? 18 : gst,
+  };
+}
+
+function feeSegment() {
+  if (instrType === "futures") return "futures";
+  if (instrType === "options") return "options";
+  return orderType === "NRML" ? "eqDelivery" : "eqIntraday";
+}
+
 function calcZerodhaFees(entry, exit, qty, lotSize, isLong) {
-  const totalUnits = qty * lotSize;
-  const buyPx  = isLong ? entry : exit;
-  const sellPx = isLong ? exit  : entry;
-  const buyVal  = buyPx  * totalUnits;
-  const sellVal = sellPx * totalUnits;
-  const totalVal = buyVal + sellVal;
+  const units    = qty * lotSize;
+  const buyVal   = (isLong ? entry : exit)  * units;
+  const sellVal  = (isLong ? exit  : entry) * units;
+  const turnover = buyVal + sellVal;
+  const seg = feeSegment(), r = FEE_RATES[seg];
+  const { brok, gstPct } = feeSettings();
 
-  let brokerage, stt, exchange, sebi, stamp, gst;
+  let brokerage;
+  if (seg === "eqDelivery")    brokerage = 0;
+  else if (seg === "options")  brokerage = brok * 2;
+  else brokerage = Math.min(brok, buyVal * 0.0003) + Math.min(brok, sellVal * 0.0003);
 
-  if (instrType === "equity" && orderType === "NRML") {
-    // Delivery: Zerodha = 0 brokerage for delivery
-    brokerage = 0;
-    stt       = (buyVal + sellVal) * 0.001;   // 0.1% both sides
-    exchange  = totalVal * 0.0000345;
-    sebi      = totalVal * 0.000001;
-    stamp     = buyVal   * 0.00015;           // 0.015% on buy
-    gst       = (brokerage + exchange + sebi) * 0.18;
-  } else if (instrType === "equity" && orderType === "MIS") {
-    // Intraday equity
-    brokerage = Math.min(20, buyVal * 0.0003) + Math.min(20, sellVal * 0.0003);
-    stt       = sellVal * 0.00025;            // 0.025% sell
-    exchange  = totalVal * 0.0000345;
-    sebi      = totalVal * 0.000001;
-    stamp     = buyVal   * 0.00003;           // 0.003% buy
-    gst       = (brokerage + exchange + sebi) * 0.18;
-  } else if (instrType === "futures") {
-    brokerage = 20 * 2;                       // ₹20 × 2 orders
-    stt       = sellVal * 0.0000125;          // 0.00125% sell
-    exchange  = totalVal * 0.000019;          // NSE futures
-    sebi      = totalVal * 0.000001;
-    stamp     = buyVal   * 0.00002;           // 0.002% buy
-    gst       = (brokerage + exchange + sebi) * 0.18;
-  } else {
-    // Options (buying)
-    brokerage = 20 * 2;                       // ₹20 × 2 orders
-    stt       = sellVal * 0.000625;           // 0.0625% on sell (premium)
-    exchange  = totalVal * 0.00053;           // NSE options
-    sebi      = totalVal * 0.000001;
-    stamp     = buyVal   * 0.00003;           // 0.003% buy
-    gst       = (brokerage + exchange + sebi) * 0.18;
-  }
+  const stt      = (seg === "eqDelivery" ? turnover : sellVal) * r.stt;
+  const exchange = turnover * r.exch;
+  const sebi     = turnover * FEE_RATES.sebi;
+  const stamp    = buyVal * r.stamp;
+  const gst      = (brokerage + exchange + sebi) * gstPct / 100;
 
   const total = brokerage + stt + exchange + sebi + stamp + gst;
   return { brokerage, stt, exchange, sebi, stamp, gst, total };
@@ -469,7 +482,7 @@ function calcZerodhaFees(entry, exit, qty, lotSize, isLong) {
 
 /* ── Daily limit checker ── */
 function checkDailyLimits() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayStr();
   const todayTrades = (window.trades || []).filter(t => t.date === today);
   const todayClosed = todayTrades.filter(t => t.exit || (t.exits && t.exits.length));
   const todayLoss   = todayClosed.reduce((s, t) => s + (typeof pnlForTrade === "function" ? (pnlForTrade(t) || 0) : 0), 0);
@@ -515,8 +528,11 @@ function renderFeeBreakdown() {
   const tp2    = isLong ? entry + slDist * 2 : entry - slDist * 2;
   const fees   = calcZerodhaFees(entry, tp2, units, lotSize, isLong);
 
-  let label1 = "Brokerage (₹20×2)";
-  if (instrType === "equity" && orderType === "NRML") label1 = "Brokerage (₹0 delivery)";
+  const { brok, gstPct } = feeSettings();
+  const seg = feeSegment();
+  const label1 = seg === "eqDelivery" ? "Brokerage (₹0 delivery)"
+               : seg === "options"    ? `Brokerage (₹${brok} × 2 orders)`
+               :                        `Brokerage (≤₹${brok} × 2 orders)`;
 
   fb.innerHTML = `
     <div class="fee-row"><span class="fee-lbl">${label1}</span><span class="fee-val">${fmtINR(fees.brokerage)}</span></div>
@@ -524,7 +540,7 @@ function renderFeeBreakdown() {
     <div class="fee-row"><span class="fee-lbl">Exchange charges</span><span class="fee-val">${fmtINR(fees.exchange)}</span></div>
     <div class="fee-row"><span class="fee-lbl">SEBI fee</span><span class="fee-val">${fmtINR(fees.sebi)}</span></div>
     <div class="fee-row"><span class="fee-lbl">Stamp duty</span><span class="fee-val">${fmtINR(fees.stamp)}</span></div>
-    <div class="fee-row"><span class="fee-lbl">GST (18%)</span><span class="fee-val">${fmtINR(fees.gst)}</span></div>
+    <div class="fee-row"><span class="fee-lbl">GST (${gstPct}%)</span><span class="fee-val">${fmtINR(fees.gst)}</span></div>
     <div class="fee-row total"><span class="fee-lbl">Total fees (1:2 trade)</span><span class="fee-val">${fmtINR(fees.total)}</span></div>`;
 }
 

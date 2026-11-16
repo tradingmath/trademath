@@ -53,8 +53,8 @@ function saveSettings() {
 
   if ($("s_max_loss"))     s.maxDailyLoss   = $("s_max_loss").value   || "";
   if ($("s_max_trades"))   s.maxDailyTrades = $("s_max_trades").value || "";
-  if ($("s_brokerage"))    s.brokerage      = parseFloat($("s_brokerage").value) || 20;
-  if ($("s_gst_pct"))      s.gstPct         = parseFloat($("s_gst_pct").value)   || 18;
+  if ($("s_brokerage")) { const b = parseFloat($("s_brokerage").value); s.brokerage = isNaN(b) || b < 0 ? 20 : b; }
+  if ($("s_gst_pct"))   { const g = parseFloat($("s_gst_pct").value);   s.gstPct    = isNaN(g) || g < 0 ? 18 : g; }
   if ($("tog_show_fees"))  s.showFees       = $("tog_show_fees").checked;
   try { localStorage.setItem("tm_settings", JSON.stringify(s)); } catch(e) {}
 }
@@ -145,12 +145,13 @@ $("new_checklist_item").addEventListener("keydown", e => {
 
 /* ══════════════ TABS ══════════════ */
 function switchTab(name) {
-  ["calc","journal","settings"].forEach(t => {
+  ["calc","journal","projection","settings"].forEach(t => {
     $("tab-"+t).hidden = t !== name;
     document.querySelector('.tab-btn[data-tab="'+t+'"]').classList.toggle("active", t === name);
   });
-  if (name === "calc")    { renderTodayTrades(); renderDailyBanner(); }
-  if (name === "journal") refreshJournal();
+  if (name === "calc")       { renderTodayTrades(); renderDailyBanner(); }
+  if (name === "journal")    refreshJournal();
+  if (name === "projection") renderProjection();
 }
 document.querySelectorAll(".tab-btn").forEach(b => {
   b.addEventListener("click", () => switchTab(b.dataset.tab));
@@ -261,7 +262,7 @@ if (new URLSearchParams(location.search).get("popout") === "1") {
   const style = document.createElement("style");
   style.textContent = `
     #popBtn,#themeBtn{display:none!important}
-    .tabs,#tab-journal,#tab-settings,#tab-analytics,#rep_body,.calc-right,.note{display:none!important}
+    .tabs,#tab-journal,#tab-settings,#tab-projection,#rep_body,.calc-right,.note{display:none!important}
     body{padding-bottom:16px}
     .header{padding:10px 0}
     .logo em{display:none}

@@ -25,7 +25,12 @@ I test with the local .html file first before deploying.
 | `styles.css` | All CSS. Dark-first theme with CSS variables for colors. |
 | `calc.js` | Calculator logic — instrument tabs, symbol autocomplete, margin, Zerodha fees |
 | `journal.js` | Trade journal — log trades, close, partial exits, tags, report card |
+| `projection.js` | Projection tab — seeded earnings simulation, never more than 3 wins in a row, monthly table, trade log |
+| `alerts.js` | Header interval beep — candle-aligned (NSE 9:15 or clock), pre-scheduled on the audio clock |
 | `app.js` | App shell — settings, tab switching, theme, checklist, init |
+
+Script load order matters: calc.js, journal.js, projection.js, alerts.js, app.js. calc.js runs `calc()` at load
+before journal.js exists, so anything it calls must live in calc.js or be guarded.
 
 ---
 
@@ -49,14 +54,17 @@ I test with the local .html file first before deploying.
 
 ### Zerodha Fee Calculation (`calcZerodhaFees` function)
 Accurate per segment:
+Rates live in one `FEE_RATES` table in calc.js. Verified against zerodha.com/charges (Nov 2026).
+F&O STT was raised by Budget 2026, effective 1 Apr 2026. Re-check these if SEBI/NSE revise.
 ```
-Equity Delivery:  brokerage=₹0,  STT=0.1% both,  exchange=0.00345%, stamp=0.015% buy
-Equity Intraday:  brokerage=₹20, STT=0.025% sell, exchange=0.00345%, stamp=0.003% buy
-Futures:          brokerage=₹20, STT=0.00125% sell,exchange=0.0019%, stamp=0.002% buy
-Options (buy):    brokerage=₹20, STT=0.0625% sell, exchange=0.053%,  stamp=0.003% buy
+Equity Delivery:  brokerage=₹0,              STT=0.1% buy+sell, NSE=0.00307%, stamp=0.015% buy
+Equity Intraday:  brokerage=min(₹20,0.03%),  STT=0.025% sell,   NSE=0.00307%, stamp=0.003% buy
+Futures:          brokerage=min(₹20,0.03%),  STT=0.05% sell,    NSE=0.00183%, stamp=0.002% buy
+Options (buy):    brokerage=₹20 flat,        STT=0.15% sell,    NSE=0.03553% (on premium), stamp=0.003% buy
 GST 18% on (brokerage + exchange + SEBI fee)
-SEBI fee: 0.0001% all segments
+SEBI fee: ₹10 per crore (0.0001%) all segments
 ```
+Settings `brokerage` (₹ per order) and `gstPct` override the defaults; 0 is a valid value.
 
 ### Daily Risk Banner
 Reads `maxDailyLoss` and `maxDailyTrades` from `tm_settings` in localStorage.
@@ -163,8 +171,13 @@ Partial pushes to `t.exits[]`. Full exit sets `t.exit`.
 ---
 
 ## Tabs
-3 tabs: **Calc** / **Journal** / **Settings**
-(Analytics tab was removed)
+4 tabs: **Calc** / **Journal** / **Projection** / **Settings**
+(Analytics tab was removed — do not re-add `renderAnalytics`.)
+
+### Projection rules (do not break)
+- Max 3 wins in a row across the whole simulation; losing streaks are deliberately NOT capped.
+- A forced loss after 3 wins lowers the win rate, so `adjustedP()` corrects the per-trade probability. Win rate is capped at 75% (the mathematical ceiling).
+- Seeded PRNG: same seed gives the same result. Always keep the "projection, not a promise" warning visible.
 Tab switching handled by `switchTab(name)` in app.js.
 
 ---

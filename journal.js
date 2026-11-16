@@ -63,7 +63,6 @@ function renderStats() {
 
 function refreshJournal() { renderStats(); renderReports(); renderCalendar(); }
 
-function todayStr() { return new Date().toISOString().slice(0, 10); }
 
 /* ── Setup tags quick chips ── */
 const SETUP_PRESETS   = ["Breakout","Pullback","Reversal","Trend Follow","Gap Play","Range","EMA Cross","VWAP"];
@@ -775,101 +774,6 @@ function renderReports() {
   $("rep_body").querySelectorAll(".rep-del-btn").forEach(b => {
     b.addEventListener("click", e => { e.stopPropagation(); trades = trades.filter(t => t.id !== b.dataset.id); saveTrades(); refreshJournal(); });
   });
-}
-
-/* ══════════════ ANALYTICS ══════════════ */
-function renderAnalytics() {
-  const closed = trades.filter(t => isClosed(t)).sort((a,b) => a.date > b.date ? 1 : -1);
-  const el = $("an_content");
-  if (!el) return;
-  if (!closed.length) { el.innerHTML = '<div class="an-empty">No closed trades yet. Close some trades to see analytics.</div>'; return; }
-
-  const wins   = closed.filter(t => (pnlForTrade(t)||0) > 0);
-  const losses = closed.filter(t => (pnlForTrade(t)||0) <= 0);
-  const grossW = wins.reduce((s,t) => s + (pnlForTrade(t)||0), 0);
-  const grossL = Math.abs(losses.reduce((s,t) => s + (pnlForTrade(t)||0), 0));
-  const pf     = grossL > 0 ? (grossW / grossL) : null;
-  const expect = closed.reduce((s,t) => s + (pnlForTrade(t)||0), 0) / closed.length;
-
-  let peak = 0, cum = 0, maxDD = 0;
-  closed.forEach(t => {
-    cum += pnlForTrade(t) || 0;
-    if (cum > peak) peak = cum;
-    const dd = peak - cum; if (dd > maxDD) maxDD = dd;
-  });
-
-  let bestStreak = 0, curStreak = 0;
-  closed.forEach(t => {
-    if ((pnlForTrade(t)||0) > 0) { curStreak++; bestStreak = Math.max(bestStreak, curStreak); } else curStreak = 0;
-  });
-
-  // Stats row
-  $("an_pf").textContent  = pf !== null ? pf.toFixed(2) : "—";
-  $("an_exp").textContent = fmtINR(expect) + "/trade";
-  $("an_dd").textContent  = fmtINR(maxDD);
-  $("an_str").textContent = bestStreak + " W";
-
-  // Equity curve
-  $("an_equity").innerHTML = drawEquityCurve(closed);
-
-  // P&L by market
-  const byMkt = {};
-  closed.forEach(t => {
-    if (!byMkt[t.market]) byMkt[t.market] = { pnl:0, count:0 };
-    byMkt[t.market].pnl += pnlForTrade(t)||0;
-    byMkt[t.market].count++;
-  });
-  const mktMax = Math.max(...Object.values(byMkt).map(v => Math.abs(v.pnl)), 1);
-  $("an_market").innerHTML = Object.entries(byMkt).sort((a,b) => b[1].pnl - a[1].pnl).map(([mkt, v]) => {
-    const pct  = Math.abs(v.pnl) / mktMax * 100;
-    const col  = v.pnl >= 0 ? "var(--green)" : "var(--red)";
-    return `<div class="an-bar-row">
-      <div class="an-bar-lbl" title="${mkt}">${mkt}</div>
-      <div class="an-bar-track"><div class="an-bar-fill" style="width:${pct}%;background:${col}"></div></div>
-      <div class="an-bar-val ${v.pnl >= 0 ? "td-pos" : "td-neg"}">${fmtINR(v.pnl)}</div>
-    </div>`;
-  }).join("");
-
-  // P&L by day of week
-  const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-  const byDow = {};
-  closed.forEach(t => {
-    if (!t.date) return;
-    const dow = new Date(t.date+"T00:00:00").getDay();
-    if (!byDow[dow]) byDow[dow] = { pnl:0, count:0 };
-    byDow[dow].pnl += pnlForTrade(t)||0;
-    byDow[dow].count++;
-  });
-  const dowMax = Math.max(...Object.values(byDow).map(v => Math.abs(v.pnl)), 1);
-  $("an_dow").innerHTML = [1,2,3,4,5].map(d => {
-    const v = byDow[d] || { pnl:0, count:0 };
-    const pct = Math.abs(v.pnl) / dowMax * 100;
-    const col = v.pnl >= 0 ? "var(--green)" : v.pnl < 0 ? "var(--red)" : "var(--border)";
-    return `<div class="an-bar-row">
-      <div class="an-bar-lbl">${DAYS[d]}</div>
-      <div class="an-bar-track"><div class="an-bar-fill" style="width:${Math.max(pct,2)}%;background:${col}"></div></div>
-      <div class="an-bar-val ${v.pnl > 0 ? "td-pos" : v.pnl < 0 ? "td-neg" : "td-muted"}">${v.count ? fmtINR(v.pnl) : "—"}</div>
-    </div>`;
-  }).join("");
-
-  // P&L by setup
-  const bySetup = {};
-  closed.forEach(t => {
-    const s = t.setup || "Untagged";
-    if (!bySetup[s]) bySetup[s] = { pnl:0, count:0, wins:0 };
-    bySetup[s].pnl += pnlForTrade(t)||0;
-    bySetup[s].count++;
-    if ((pnlForTrade(t)||0) > 0) bySetup[s].wins++;
-  });
-  $("an_setup").innerHTML = `
-    <div class="an-setup-row an-setup-head"><span>Setup</span><span>Net P&L</span><span>Trades</span><span>Win %</span></div>
-    ${Object.entries(bySetup).sort((a,b) => b[1].pnl - a[1].pnl).map(([s,v]) => `
-    <div class="an-setup-row">
-      <span style="font-size:12px">${s}</span>
-      <span class="td-mono ${v.pnl>=0?"td-pos":"td-neg"}">${fmtINR(v.pnl)}</span>
-      <span class="td-muted">${v.count}</span>
-      <span class="td-muted">${v.count ? Math.round(v.wins/v.count*100)+"%" : "—"}</span>
-    </div>`).join("")}`;
 }
 
 function drawEquityCurve(closed) {
