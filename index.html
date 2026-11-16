@@ -8,12 +8,24 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="styles.css">
+<script>try{var s=JSON.parse(localStorage.getItem("tm_settings")||"{}");document.documentElement.dataset.ui=["quick","trader","pro"].indexOf(s.uiLevel)>=0?s.uiLevel:"trader"}catch(e){document.documentElement.dataset.ui="trader"}</script>
 </head>
 <body>
 
 <header class="header">
   <div class="logo">TradeMath <em>/ Calculator + Journal</em></div>
   <div class="hdr-right">
+    <div class="lvl-wrap" id="lvl_wrap">
+      <button class="theme-btn lvl-btn" id="lvl_btn" type="button" aria-haspopup="menu" aria-expanded="false" title="Choose how much of the app you see">
+        <span aria-hidden="true" id="lvl_icon">📈</span> <span id="lvl_label">Trader</span> <span class="lvl-caret" aria-hidden="true">▾</span>
+      </button>
+      <div class="alert-pop lvl-pop" id="lvl_pop" role="menu" aria-label="Interface level" hidden>
+        <div class="alert-pop-title">How much do you want to see?</div>
+        <button type="button" role="menuitemradio" aria-checked="false" class="lvl-item" data-ui="quick"><span class="lvl-ico" aria-hidden="true">⚡</span><span class="lvl-txt"><b>Quick</b><small>Entry, stop-loss, risk and target, an options toggle, and the beep.</small></span></button>
+        <button type="button" role="menuitemradio" aria-checked="false" class="lvl-item" data-ui="trader"><span class="lvl-ico" aria-hidden="true">📈</span><span class="lvl-txt"><b>Trader</b><small>Adds targets, fees, symbols, filters, tags and Zerodha import.</small></span></button>
+        <button type="button" role="menuitemradio" aria-checked="false" class="lvl-item" data-ui="pro"><span class="lvl-ico" aria-hidden="true">🛠</span><span class="lvl-txt"><b>Pro</b><small>Everything: F&amp;O lots, projection, checklist, partial exits, themes.</small></span></button>
+      </div>
+    </div>
     <div class="alert-wrap" id="alert_wrap">
       <button class="theme-btn alert-btn" id="alert_btn" type="button" aria-haspopup="true" aria-expanded="false" title="Interval beep: reminds you to check the chart">
         <span aria-hidden="true">🔔</span> <span id="alert_label">Beep</span>
@@ -37,7 +49,7 @@
         <button type="button" class="alert-link" id="alert_more">⚙ Sound, timing &amp; volume settings</button>
       </div>
     </div>
-    <button class="theme-btn" id="popBtn" title="Open compact calculator in a small window">⧉ Pop Out</button>
+    <button class="theme-btn" id="popBtn" data-level="trader" title="Open compact calculator in a small window">⧉ Pop Out</button>
     <button class="theme-btn" id="themeBtn">☀ Light</button>
   </div>
 </header>
@@ -57,7 +69,7 @@
     <div class="calc-left">
 
       <!-- Top control: Mode switch & F&O toggle -->
-      <div class="mode-bar">
+      <div class="mode-bar" data-level="pro">
         <div class="mode-left">
           <span class="mode-badge" id="mode_badge">🏢 Equity / Stocks</span>
           <button class="fo-toggle-btn" id="fo_toggle_btn" type="button" title="Toggle F&amp;O (Options / Futures / Lot Sizing)">
@@ -78,7 +90,7 @@
       </div>
 
       <!-- Symbol search (Optional) -->
-      <div class="sym-wrap">
+      <div class="sym-wrap" data-level="trader">
         <div class="sym-input-wrap">
           <input type="text" id="sym_input" placeholder="Stock / Symbol (optional) … e.g. RELIANCE, TCS, NIFTY" autocomplete="off" autocorrect="off" spellcheck="false">
           <div id="sym_dropdown" class="sym-dropdown" hidden></div>
@@ -136,14 +148,14 @@
           </div>
         </div>
         <div class="field-row">
-          <div class="field">
+          <div class="field" data-level="trader">
             <label for="i_cap">Capital (₹)</label>
             <input type="number" id="i_cap" value="100000" step="1000" min="1" autocomplete="off">
           </div>
           <div class="field">
             <label style="display:flex;align-items:center;justify-content:space-between">
               <span id="rsk_label">Risk %</span>
-              <span style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:400;color:var(--fg3)">
+              <span style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:400;color:var(--fg3)" data-level="trader">
                 Flat ₹
                 <label class="toggle-switch" style="width:32px;height:17px;flex-shrink:0">
                   <input type="checkbox" id="flatRiskToggle">
@@ -154,10 +166,25 @@
             <input type="number" id="i_rsk" value="1" step="0.1" min="0.01" max="100" autocomplete="off">
             <input type="number" id="i_flat" value="" step="100" min="1" autocomplete="off" placeholder="e.g. ₹1000" style="display:none;margin-top:6px">
           </div>
+          <div class="field">
+            <label for="i_rr">Target (R:R) <span class="proj-hint">1 : x</span></label>
+            <input type="number" id="i_rr" value="2" step="any" min="0.1" max="50" autocomplete="off" placeholder="e.g. 2">
+          </div>
+          <div class="field opt-field" id="opt_field">
+            <div class="opt-head">
+              <span class="opt-title">Options <span class="proj-hint">trade in lots</span></span>
+              <label class="toggle-switch" style="width:32px;height:17px;flex-shrink:0"><input type="checkbox" id="optToggle" aria-label="Trade options in lots"><span class="toggle-track"></span></label>
+            </div>
+            <div class="lot-row" id="lot_row" hidden>
+              <span class="lot-eq">1 lot =</span>
+              <input type="number" id="i_lot" value="65" min="1" step="1" autocomplete="off" aria-label="Units in one lot">
+            </div>
+            <div class="lot-hint" id="lot_hint" hidden>Enter option premiums for Entry and SL.</div>
+          </div>
         </div>
 
         <!-- Leverage Selector (for Equity) -->
-        <div class="field" id="lev_field">
+        <div class="field" id="lev_field" data-level="trader">
           <label style="display:flex;align-items:center;justify-content:space-between">
             <span>Leverage / Margin Mode</span>
             <span id="lev_info_badge" style="font-size:11px;color:var(--accent);font-family:var(--mono)">5× Intraday MIS</span>
@@ -175,17 +202,12 @@
             </div>
           </div>
         </div>
-
-        <div class="field" style="margin-top:2px">
-          <label for="i_rr">Target R:R (for Profit tile)</label>
-          <input type="number" id="i_rr" value="2" step="0.5" min="0.5" max="20" autocomplete="off">
-        </div>
         <hr>
         <button class="btn btn-primary" id="logTradeBtn" style="width:100%;padding:10px 14px;font-size:14px;font-weight:600">+ Log This Trade to Journal</button>
       </div>
 
       <!-- R:R Targets -->
-      <div class="panel" style="margin-top:14px">
+      <div class="panel" style="margin-top:14px" data-level="trader">
         <div class="p-title">Risk : Reward Targets</div>
         <div id="tgt_empty" style="color:var(--fg3);font-size:13px;text-align:center;padding:24px 0">Enter values to see targets</div>
         <div id="tgt_wrap" hidden>
@@ -197,7 +219,7 @@
           </div>
           <div id="tgt_body"></div>
         </div>
-        <div class="fee-section" id="fee_section" style="margin-top:10px">
+        <div class="fee-section" id="fee_section" data-level="pro" style="margin-top:10px">
           <button class="fee-toggle" id="fee_toggle_btn">
             <span>📋 Zerodha Charges Breakdown (1:2 trade)</span>
             <span class="fee-arrow">▼</span>
@@ -227,9 +249,9 @@
     <div class="jnl-top">
       <div class="jnl-title">Trade Journal</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-ghost btn-sm" id="projBtn" title="Fill the Projection tab with your own closed trades (win rate, average win and loss, trades per day)">🎯 Projection</button>
+        <button class="btn btn-ghost btn-sm" id="projBtn" data-level="pro" title="Fill the Projection tab with your own closed trades (win rate, average win and loss, trades per day)">🎯 Projection</button>
         <button class="btn btn-ghost btn-sm" id="exportBtn">↓ Export CSV</button>
-        <button class="btn btn-ghost btn-sm" id="importBtn">↑ Import Zerodha CSV</button>
+        <button class="btn btn-ghost btn-sm" id="importBtn" data-level="trader">↑ Import Zerodha CSV</button>
         <input type="file" id="csvFileInput" accept=".csv" hidden>
         <button class="btn btn-primary btn-sm" id="showAddBtn">+ Add Trade</button>
       </div>
@@ -281,12 +303,12 @@
         <div class="field"><label for="j_exit">Exit Price (blank if open)</label><input type="number" id="j_exit" step="any" min="0" autocomplete="off" placeholder="—"></div>
         <div class="field"><label for="j_fees">Fees (₹)</label><input type="number" id="j_fees" step="any" min="0" autocomplete="off" placeholder="0"></div>
       </div>
-      <div class="field">
+      <div class="field" data-level="trader">
         <label>Setup / Strategy</label>
         <div class="tag-chips" id="j_setup_chips"></div>
         <input type="text" id="j_setup" placeholder="Custom setup name (or pick above)…" autocomplete="off">
       </div>
-      <div class="field">
+      <div class="field" data-level="trader">
         <label>Mistakes (optional)</label>
         <div class="tag-chips" id="j_mistake_chips"></div>
       </div>
@@ -300,7 +322,7 @@
       </div>
     </div>
     <div id="cal_wrap" style="margin-top:16px"></div>
-    <div class="filter-row" style="margin-top:12px">
+    <div class="filter-row" style="margin-top:12px" data-level="trader">
       <select class="filter-select" id="flt_market">
         <option value="">All Markets</option>
         <option>NSE Equity</option><option>Nifty F&amp;O</option><option>BankNifty F&amp;O</option>
@@ -375,6 +397,7 @@
 
 <!-- ══ TAB: SETTINGS ══ -->
 <div id="tab-settings" hidden>
+  <div class="lvl-note" data-level="below-pro">Some settings are hidden at this level. Open the <b>level menu</b> in the top bar and choose <b>Pro</b> to see everything.</div>
 
   <!-- Theme & Colors -->
   <div class="settings-section" style="margin-top:20px">
@@ -388,7 +411,7 @@
     </div>
 
     <!-- Base Terminal Background -->
-    <div id="base_theme_wrap" style="margin-top:16px">
+    <div id="base_theme_wrap" data-level="pro" style="margin-top:16px">
       <div style="font-size:12px;color:var(--fg2);font-weight:500;margin-bottom:6px">Dark Terminal Theme</div>
       <div class="theme-presets">
         <button type="button" class="theme-preset-btn active" data-base="midnight">🌌 Midnight</button>
@@ -477,30 +500,30 @@
   </div>
 
   <!-- Workflow & Simplicity Preferences -->
-  <div class="settings-section">
+  <div class="settings-section" data-level="trader">
     <div class="p-title">Calculator Preferences</div>
-    <div class="toggle-row">
+    <div class="toggle-row" data-level="trader">
       <div>
         <div class="toggle-label">One-Click Quick Log</div>
         <div class="toggle-sub">Instantly log trade to today's list &amp; journal without opening a modal</div>
       </div>
       <label class="toggle-switch"><input type="checkbox" id="tog_quick_log" checked><span class="toggle-track"></span></label>
     </div>
-    <div class="toggle-row">
+    <div class="toggle-row" data-level="pro">
       <div>
         <div class="toggle-label">Enable F&amp;O Mode by Default</div>
         <div class="toggle-sub">Show Options, Futures, and lot sizes directly when opening the calculator</div>
       </div>
       <label class="toggle-switch"><input type="checkbox" id="tog_show_fo"><span class="toggle-track"></span></label>
     </div>
-    <div class="toggle-row">
+    <div class="toggle-row" data-level="trader">
       <div>
         <div class="toggle-label">Show Zerodha Fee Breakdown</div>
         <div class="toggle-sub">Show net P&amp;L after broker charges and taxes in targets and breakdown</div>
       </div>
       <label class="toggle-switch"><input type="checkbox" id="tog_show_fees" checked><span class="toggle-track"></span></label>
     </div>
-    <div class="fee-settings-row" id="fee_inputs_row" style="margin-top:14px">
+    <div class="fee-settings-row" id="fee_inputs_row" data-level="pro" style="margin-top:14px">
       <div class="field">
         <label for="s_brokerage">Brokerage per order (₹)</label>
         <input type="number" id="s_brokerage" value="20" min="0" step="1" autocomplete="off" placeholder="20">
@@ -550,7 +573,7 @@
   </div>
 
   <!-- Daily risk rules -->
-  <div class="settings-section">
+  <div class="settings-section" data-level="trader">
     <div class="p-title">Daily Risk Rules</div>
     <div style="font-size:12px;color:var(--fg2);margin-bottom:14px">The calculator shows a warning banner when today's trades approach or hit these limits.</div>
     <div class="field-row">
@@ -566,7 +589,7 @@
   </div>
 
   <!-- Pre-trade checklist -->
-  <div class="settings-section">
+  <div class="settings-section" data-level="pro">
     <div class="p-title">Pre-Trade Checklist</div>
     <div style="font-size:12px;color:var(--fg3);margin-bottom:12px">These items appear in the "Log Trade" modal before entering a trade.</div>
     <div id="settings_checklist"></div>
@@ -583,7 +606,7 @@
   <div class="modal">
     <div class="modal-title">Close Trade</div>
     <div class="modal-sub" id="cm_info"></div>
-    <div style="display:flex;gap:6px;margin-bottom:14px">
+    <div style="display:flex;gap:6px;margin-bottom:14px" data-level="pro">
       <button class="opt-mode-btn active" id="cm_full_btn" style="flex:1;padding:7px">Full Exit</button>
       <button class="opt-mode-btn" id="cm_partial_btn" style="flex:1;padding:7px">Partial Exit</button>
     </div>
@@ -637,7 +660,7 @@
         <button class="star-btn"    type="button">★</button>
       </div>
     </div>
-    <div class="field" style="margin-bottom:12px">
+    <div class="field" style="margin-bottom:12px" data-level="pro">
       <label>Pre-Trade Checklist</label>
       <div id="pl_checklist"></div>
     </div>

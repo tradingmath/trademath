@@ -732,3 +732,32 @@ hr { border:none; border-top:1px solid var(--border); margin:14px 0; }
 /* Projection now lives inside the Journal tab */
 #jnl_projection { padding-top:0; }
 .proj-back { margin-bottom:14px; }
+
+/* ── Interface level: Quick ⊂ Trader ⊂ Pro. data-level="trader" shows at Trader and Pro; "pro" only at Pro. ── */
+html[data-ui="quick"]  [data-level="trader"],
+html[data-ui="quick"]  [data-level="pro"],
+html[data-ui="trader"] [data-level="pro"],
+html[data-ui="pro"]    [data-level="below-pro"] { display:none !important; }
+
+.lvl-wrap { position:relative; }
+.lvl-btn { display:inline-flex; align-items:center; gap:6px; }
+.lvl-caret { font-size:10px; opacity:.7; }
+.lvl-pop { width:min(310px, calc(100vw - 32px)); }
+.lvl-item { display:flex; align-items:flex-start; gap:10px; width:100%; padding:10px; background:none; border:1px solid transparent; border-radius:10px; color:var(--fg); text-align:left; font-family:var(--sans); cursor:pointer; }
+.lvl-item + .lvl-item { margin-top:4px; }
+.lvl-item:hover { background:var(--card); }
+.lvl-item:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+.lvl-item[aria-checked="true"] { background:var(--accent-dim); border-color:var(--accent); }
+.lvl-ico { font-size:18px; line-height:1.2; }
+.lvl-txt b { display:block; font-size:13px; }
+.lvl-txt small { display:block; margin-top:2px; font-size:11px; line-height:1.4; color:var(--fg2); }
+.lvl-note { margin:20px 0 -4px; padding:10px 12px; border:1px dashed var(--border); border-radius:10px; font-size:12px; line-height:1.5; color:var(--fg2); }
+@media (max-width:560px) { .lvl-wrap { position:static; } }
+
+/* Options toggle + lot size (Trade Setup) */
+.opt-head { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:18px; font-size:12px; font-weight:500; color:var(--fg2); }
+.opt-title { display:inline-flex; align-items:baseline; gap:6px; }
+.lot-row { display:flex; align-items:center; gap:8px; }
+.lot-eq { font-size:12px; color:var(--fg2); white-space:nowrap; }
+.lot-row input { flex:1; min-width:0; }
+.lot-hint { font-size:11px; color:var(--fg3); line-height:1.4; }

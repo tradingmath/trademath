@@ -9,7 +9,8 @@
   const LOOKAHEAD_MS = 125000;
 
   const cfg = { min: 5, anchor: 555, hours: false, vol: 60, sound: "chime", lead: 0 };
-  let running = false, ctx = null, nextAt = null, timer = null;
+  let running = false, ctx = null, nextAt = null, timer = null, played = 0;
+  let noteMsg = "", noteUntil = 0;                // short-lived message shown in place of the normal note
   const sched = new Map();                        // beep time (ms) → gain node, so it can be cancelled
 
   /* ── sounds: each schedules its oscillators on `out` starting at audio time `t` ── */
@@ -20,6 +21,7 @@
     e.gain.exponentialRampToValueAtTime(gain || 1, t + (attack || 0.015));
     e.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     o.connect(e); e.connect(out);
+    o.onended = () => { played++; };              // counts tones the audio thread really rendered
     o.start(t); o.stop(t + dur + 0.02);
   }
   const SOUNDS = {
@@ -72,9 +74,41 @@
 
   /* ── audio ── */
   function ensureCtx() {
-    if (!ctx) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; ctx = new AC(); }
-    if (ctx.state === "suspended") ctx.resume();
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+      ctx.addEventListener("statechange", () => {
+        // The audio clock freezes while suspended, so anything queued meanwhile is wrong: queue it again once running.
+        if (ctx.state === "running" && running) resync(); else paint();
+      });
+    }
+    if (ctx.state !== "running") ctx.resume().catch(() => {});
     return ctx;
+  }
+  // Resolves with the context once it is really running (or null / a non-running context if the browser refuses).
+  function resumeCtx() {
+    const c = ensureCtx();                        // runs synchronously, inside the user's click
+    if (!c) return Promise.resolve(null);
+    return (c.state === "running" ? Promise.resolve() : c.resume().catch(() => {})).then(() => c);
+  }
+  /* Browsers only allow sound after the page has been clicked or typed on. Do that unlock on the very first
+     interaction anywhere, so later timer-driven beeps work until the page is reloaded. */
+  function unlockOnFirstInteraction() {
+    const evs = ["mousedown", "pointerup", "keydown", "touchend"];
+    const unlock = () => {
+      evs.forEach(ev => document.removeEventListener(ev, unlock, true));
+      const c = ensureCtx();
+      if (!c) return;
+      try { const s = c.createBufferSource(); s.buffer = c.createBuffer(1, 1, 22050); s.connect(c.destination); s.start(0); } catch (e) {}
+    };
+    evs.forEach(ev => document.addEventListener(ev, unlock, true));
+  }
+  function flashNote(text, ms) { noteMsg = text; noteUntil = Date.now() + ms; paint(); }
+  function soundBlocked() {
+    const text = "🔇 The browser is blocking sound. Click Test sound once, then press Start again.";
+    flashNote(text, 9000);
+    if (typeof showToast === "function") showToast(text);
   }
   function beepGroup(when) {
     const g = ctx.createGain();
@@ -84,6 +118,7 @@
     return g;
   }
   function scheduleAhead() {
+    if (!ctx || ctx.state !== "running") { if (ctx) ctx.resume().catch(() => {}); return; }
     const now = Date.now();
     let t = nextAt;
     while (t && t - now < LOOKAHEAD_MS) {
@@ -103,12 +138,16 @@
     if (running) scheduleAhead();
     paint();
   }
-  function start() {
-    if (!ensureCtx()) { $("alert_note").textContent = "This browser can't play sound."; return; }
+  async function start() {
+    const c = await resumeCtx();
+    if (!c) { flashNote("This browser can't play sound.", 9000); return; }
+    if (c.state !== "running") { soundBlocked(); return; }
     running = true;
     resync();
     clearInterval(timer);
     timer = setInterval(onTick, 1000);
+    beepGroup(c.currentTime + 1);                  // proof the speakers work, in the user's chosen sound and volume
+    flashNote("🔊 Test beep in 1 second. If you don't hear it, check your speaker volume and that this tab isn't muted.", 7000);
   }
   function stop() {
     running = false;
@@ -154,12 +193,17 @@
       note.textContent = "No more beeps in the selected window.";
     } else {
       label.textContent = "Beep";
-      note.textContent = "Press Start (the browser needs one click to allow sound)." + clamped;
+      note.textContent = "Press Start. You'll hear a test beep a second later to confirm your speakers work." + clamped;
     }
+    if (Date.now() < noteUntil) note.textContent = noteMsg;
+    else if (running && ctx && ctx.state !== "running") note.textContent = "🔇 Sound is paused by the browser. Click Test sound once to turn it back on.";
   }
   function save() { try { localStorage.setItem(LS_KEY, JSON.stringify(cfg)); } catch (e) {} }
   function changed() { save(); if (running) resync(); else paint(); }
-  function preview() { if (ensureCtx()) beepGroup(ctx.currentTime + 0.02); }
+  async function preview() {
+    const c = await resumeCtx();
+    if (c && c.state === "running") beepGroup(c.currentTime + 0.02); else soundBlocked();
+  }
 
   function setMinutes(n, fromCustom) {
     cfg.min = n;
@@ -169,6 +213,7 @@
   }
 
   function init() {
+    unlockOnFirstInteraction();
     try { Object.assign(cfg, JSON.parse(localStorage.getItem(LS_KEY) || "{}")); } catch (e) {}
     cfg.min = Math.min(720, Math.max(1, Math.round(+cfg.min) || 5));
     if (!SOUNDS[cfg.sound]) cfg.sound = "chime";
@@ -197,7 +242,7 @@
 
     const btn = $("alert_btn"), pop = $("alert_pop");
     const setOpen = open => { pop.hidden = !open; btn.setAttribute("aria-expanded", open); };
-    btn.addEventListener("click", e => { e.stopPropagation(); setOpen(pop.hidden); });
+    btn.addEventListener("click", () => setOpen(pop.hidden));
     document.addEventListener("click", e => { if (!pop.hidden && !$("alert_wrap").contains(e.target)) setOpen(false); });
     $("alert_more").addEventListener("click", () => {
       setOpen(false);
@@ -210,5 +255,5 @@
 
   init();
   window.tmNextBeep = nextBeepAfter;               // exposed for testing
-  window.tmAlert = { nextBeepLead, SOUNDS };
+  window.tmAlert = { nextBeepLead, SOUNDS, stats: () => ({ state: ctx ? ctx.state : "none", played, running }), stop, isRunning: () => running };
 })();

@@ -4,6 +4,10 @@
 function getAppSettings() {
   try { return JSON.parse(localStorage.getItem("tm_settings") || "{}"); } catch(e) { return {}; }
 }
+function saveSetting(key, value) {
+  const s = getAppSettings(); s[key] = value;
+  try { localStorage.setItem("tm_settings", JSON.stringify(s)); } catch(e) {}
+}
 
 function loadSettings() {
   const s = getAppSettings();
@@ -12,6 +16,8 @@ function loadSettings() {
   if ($("s_default_risk")) $("s_default_risk").value = s.defaultRisk != null ? s.defaultRisk : 1;
   if ($("s_default_lev"))  $("s_default_lev").value  = s.defaultLev  != null ? s.defaultLev  : "5";
   if ($("s_default_rr"))   $("s_default_rr").value   = s.defaultRR   != null ? s.defaultRR   : 2;
+
+  if ($("i_lot")) $("i_lot").value = rememberedLot();
 
   // Apply defaults to calculator inputs if not already modified
   if ($("i_cap") && s.defaultCap)   $("i_cap").value = s.defaultCap;
@@ -155,6 +161,10 @@ function parseRoute() {
   return { tab: PAGES.includes(tab) ? tab : "calc", sub: sub || "" };
 }
 function showRoute(tab, sub) {
+  if (tab === "journal" && sub === "projection" && getLevel() !== "pro") {   // Projection belongs to Pro
+    sub = "";
+    if (location.hash !== "#journal") location.hash = "#journal";
+  }
   currentRoute = tab + "/" + sub;
   PAGES.forEach(t => {
     $("tab-"+t).hidden = t !== tab;
@@ -181,6 +191,63 @@ window.addEventListener("hashchange", () => {  // back/forward buttons, typed or
 document.querySelectorAll(".tab-btn").forEach(b => {
   b.addEventListener("click", () => switchTab(b.dataset.tab));
 });
+
+/* ══════════════ INTERFACE LEVEL: Quick ⊂ Trader ⊂ Pro ══════════════
+   Visibility is pure CSS (data-level attributes, see styles.css). This code only remembers the choice and
+   resets state owned by features that just became hidden, so a control you can't see never changes results.
+   Safety features (the daily-loss banner and your risk rules) stay visible at every level. */
+const LEVELS = {
+  quick:  { icon: "⚡", name: "Quick" },
+  trader: { icon: "📈", name: "Trader" },
+  pro:    { icon: "🛠", name: "Pro" },
+};
+const LEVEL_ORDER = ["quick", "trader", "pro"];
+
+function getLevel() {
+  const l = document.documentElement.dataset.ui;
+  return LEVEL_ORDER.includes(l) ? l : "trader";
+}
+
+function setLevel(level, init) {
+  if (!LEVEL_ORDER.includes(level)) level = "trader";
+  document.documentElement.dataset.ui = level;
+  const s = getAppSettings(); s.uiLevel = level;
+  try { localStorage.setItem("tm_settings", JSON.stringify(s)); } catch (e) {}
+
+  $("lvl_icon").textContent  = LEVELS[level].icon;
+  $("lvl_label").textContent = LEVELS[level].name;
+  document.querySelectorAll(".lvl-item").forEach(b => b.setAttribute("aria-checked", String(b.dataset.ui === level)));
+
+  const rank = LEVEL_ORDER.indexOf(level);
+  if (rank < 2) {                                   // Pro features are now hidden
+    if (showFOMode) {
+      const keepOptions = instrType === "options";  // options have their own toggle at every level
+      toggleFOMode(false);                          // futures and the F&O tabs are Pro only
+      if (keepOptions) setInstrType("options");
+      else { const sym = getSelectedSymbol(); if (sym && sym.indexOnly) { $("sym_input").value = ""; updateLotLabel(); } }
+    }
+    if (currentRoute === "journal/projection") switchTab("journal");
+  }
+  if (rank < 1) {                                   // Trader features are now hidden: back to the plain defaults
+    const d = getAppSettings();
+    if (!$("flatRiskToggle").checked) { $("flatRiskToggle").checked = true; $("flatRiskToggle").dispatchEvent(new Event("change")); }
+    if (!parseFloat($("i_flat").value)) $("i_flat").value = Math.round((d.defaultCap || 100000) * (d.defaultRisk || 1) / 100);
+    setLeverage(d.defaultLev || "5");
+    if ($("sym_input").value) { $("sym_input").value = ""; updateLotLabel(); }
+    ["flt_market", "flt_dir", "flt_result"].forEach(id => { $(id).value = ""; });
+    if (typeof renderReports === "function") renderReports();
+  }
+  calc();
+}
+
+(function initLevelMenu() {
+  const btn = $("lvl_btn"), pop = $("lvl_pop");
+  const setOpen = o => { pop.hidden = !o; btn.setAttribute("aria-expanded", String(o)); };
+  btn.addEventListener("click", () => setOpen(pop.hidden));
+  document.addEventListener("click", e => { if (!pop.hidden && !$("lvl_wrap").contains(e.target)) setOpen(false); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !pop.hidden) { setOpen(false); btn.focus(); } });
+  document.querySelectorAll(".lvl-item").forEach(b => b.addEventListener("click", () => { setLevel(b.dataset.ui); setOpen(false); btn.focus(); }));
+})();
 
 /* ══════════════ THEME & PALETTES ══════════════ */
 const ACCENT_COLORS = {
@@ -312,4 +379,6 @@ loadTrades();
 loadSettings();
 calc();
 renderTodayTrades();
+setLevel(getLevel(), true);                              // apply the saved level (and reset anything it hides)
+if (getAppSettings().optionsOn) setInstrType("options"); // reopen in options mode if that is how you left it
 { const r = parseRoute(); showRoute(r.tab, r.sub); }   // open the page named in the link

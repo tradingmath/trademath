@@ -9,6 +9,7 @@ let leverageMultiplier = 5;         // default 5x intraday
 let leverageMode       = "5";       // "5" | "1" | "custom"
 let showFOMode         = false;     // hidden by default for maximum simplicity
 let lastCalc           = null;
+const DEFAULT_LOT      = 65;        // Nifty; the lot field is editable and remembers the last value you typed
 
 const $ = id => document.getElementById(id);
 const comma = n => Math.abs(n).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -32,10 +33,10 @@ function todayStr() {
 // lot = F&O lot size, marginNRML = approx SPAN+exposure per lot (₹), equityOnly = no F&O
 const SYMBOLS = [
   // Index derivatives (F&O only)
-  {name:"NIFTY",       lot:75,   sector:"Index",    marginNRML:130000, indexOnly:true},
-  {name:"BANKNIFTY",   lot:35,   sector:"Index",    marginNRML:60000,  indexOnly:true},
-  {name:"FINNIFTY",    lot:25,   sector:"Index",    marginNRML:38000,  indexOnly:true},
-  {name:"MIDCPNIFTY",  lot:75,   sector:"Index",    marginNRML:55000,  indexOnly:true},
+  {name:"NIFTY",       lot:65,   sector:"Index",    marginNRML:112000, indexOnly:true},
+  {name:"BANKNIFTY",   lot:30,   sector:"Index",    marginNRML:51000,  indexOnly:true},
+  {name:"FINNIFTY",    lot:60,   sector:"Index",    marginNRML:91000,  indexOnly:true},
+  {name:"MIDCPNIFTY",  lot:120,  sector:"Index",    marginNRML:88000,  indexOnly:true},
   {name:"SENSEX",      lot:10,   sector:"Index",    marginNRML:90000,  indexOnly:true},
   {name:"BANKEX",      lot:15,   sector:"Index",    marginNRML:58000,  indexOnly:true},
   // Stocks
@@ -255,9 +256,10 @@ function selectSymbol(name) {
   drop.hidden = true;
   // Auto-switch: index symbols → suggest futures/options
   if (sym && sym.indexOnly && instrType === "equity") {
-    if (!showFOMode) toggleFOMode(true);
-    setInstrType("futures");
+    if (typeof getLevel === "function" && getLevel() === "pro") { if (!showFOMode) toggleFOMode(true); setInstrType("futures"); }
+    else setInstrType("options");
   }
+  if (instrType !== "equity") autoLot(sym);       // the moment you pick an option/future its lot size is filled in
   updateLotLabel();
   updateTypeOptions();
   calc();
@@ -273,7 +275,7 @@ function updateLotLabel() {
   const el = $("lot_label");
   if (!el) return;
   if (sym && sym.lot && instrType !== "equity") {
-    el.textContent = `1 lot = ${sym.lot.toLocaleString()}`;
+    el.textContent = `1 lot = ${getLotSize(sym).toLocaleString()}`;
     el.hidden = false;
   } else {
     el.hidden = true;
@@ -364,6 +366,7 @@ if (customLevInp) {
 
 /* ── Instrument type tabs ── */
 function setInstrType(type) {
+  const prev = instrType;
   instrType = type;
   ["options","futures","equity"].forEach(t => {
     const btn = $("instr_" + t);
@@ -384,10 +387,28 @@ function setInstrType(type) {
       : instrType === "options" ? `⚡ Options (${optType})` : "📈 Futures";
   }
 
+  syncOptionsUI(prev);
   updateLotLabel();
   updateTypeOptions();
   applyOrderType();
   calc();
+}
+
+/* ── Options toggle + lot size (available at every level) ── */
+function rememberedLot() {
+  const v = parseInt(typeof getAppSettings === "function" ? getAppSettings().lotSize : 0, 10);
+  return v >= 1 ? v : DEFAULT_LOT;
+}
+function autoLot(sym) {
+  const el = $("i_lot");
+  if (el) el.value = sym && sym.lot ? sym.lot : rememberedLot();
+}
+function syncOptionsUI(prev) {
+  const t = $("optToggle"), row = $("lot_row"), hint = $("lot_hint");
+  if (t)    t.checked = instrType === "options";
+  if (row)  row.hidden = instrType === "equity";
+  if (hint) hint.hidden = instrType !== "options";
+  if (prev === "equity" && instrType !== "equity") autoLot(getSelectedSymbol());   // switching on picks the lot size
 }
 
 function updateTypeOptions() {
@@ -428,7 +449,8 @@ function getMarginPerUnit(sym, entry) {
 
 function getLotSize(sym) {
   if (instrType === "equity") return 1;
-  return sym ? sym.lot : 75;
+  const v = parseInt($("i_lot") ? $("i_lot").value : "", 10);
+  return v >= 1 ? v : (sym && sym.lot ? sym.lot : DEFAULT_LOT);
 }
 
 /* ══════════════ ZERODHA FEE CALCULATOR ══════════════ */
@@ -563,7 +585,7 @@ $("flatRiskToggle").addEventListener("change", () => {
   const on = $("flatRiskToggle").checked;
   $("i_rsk").style.display  = on ? "none" : "";
   $("i_flat").style.display = on ? ""     : "none";
-  $("rsk_label").textContent = on ? "Flat Risk (₹)" : "Risk %";
+  $("rsk_label").textContent = on ? "Risk (₹)" : "Risk %";
   calc();
 });
 
@@ -615,7 +637,7 @@ function calc() {
   const profitGross = slDist * defRR * lotSize * units;
 
   const symName   = sym ? sym.name : (($("sym_input") ? $("sym_input").value.trim().toUpperCase() : "") || "Equity");
-  const marketStr = sym ? sym.name : (instrType === "equity" ? "NSE Equity" : instrType === "options" ? `Options (${optType})` : "Futures");
+  const marketStr = sym ? sym.name : (instrType === "equity" ? "NSE Equity" : instrType === "options" ? (($("type_row") && $("type_row").offsetParent !== null) ? `Options (${optType})` : "Options") : "Futures");
 
   lastCalc = {
     entry, sl, isLong, units, lotSize, actualRisk, targets, sym,
@@ -711,13 +733,26 @@ function showEmpty() {
 }
 
 /* ── Input listeners ── */
-["i_entry","i_sl","i_cap","i_rsk","i_flat","i_rr"]
+["i_entry","i_sl","i_cap","i_rsk","i_flat","i_rr","i_lot"]
   .forEach(id => { const el = $(id); if (el) el.addEventListener("input", calc); });
 
 /* ── Instrument type tabs ── */
 ["options","futures","equity"].forEach(t => {
   const btn = $("instr_" + t);
-  if (btn) btn.addEventListener("click", () => setInstrType(t));
+  if (btn) btn.addEventListener("click", () => { setInstrType(t); saveSetting("optionsOn", t === "options"); });
+});
+
+/* ── Options toggle and editable lot size ── */
+const optToggleEl = $("optToggle");
+if (optToggleEl) optToggleEl.addEventListener("change", () => {
+  setInstrType(optToggleEl.checked ? "options" : "equity");
+  saveSetting("optionsOn", optToggleEl.checked);
+});
+const lotEl = $("i_lot");
+if (lotEl) lotEl.addEventListener("input", () => {
+  const v = parseInt(lotEl.value, 10);
+  if (v >= 1) saveSetting("lotSize", v);          // remembered for next time
+  updateLotLabel();
 });
 
 /* ── CE / PE dropdown ── */

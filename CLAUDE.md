@@ -55,6 +55,7 @@ Script load order matters: `calc.js` → `journal.js` → `projection.js` → `a
 - Header widget. Beeps align to candle closes: NSE anchor 9:15 (10m → 9:25, 9:35…, 1h → 10:15…) or clock :00 for MCX/crypto. Optional Mon–Fri 9:15–15:30 window.
 - Next ~2 min of beeps are scheduled on the Web Audio clock so a throttled background tab still beeps on time.
 - Config in `tm_alert`. Needs one click (Start) to unlock audio; does not auto-resume after reload.
+- Audio unlock: browsers block sound until the page is clicked. alerts.js creates/resumes the AudioContext on the first click/key anywhere (`unlockOnFirstInteraction`), Start plays a confirmation beep 1 s later, and scheduling waits while the context isn't `running` (its clock freezes when suspended). If the browser still refuses, the UI says so and Start does not begin.
 
 ## Journal (journal.js)
 - `isClosed(t)` — checks `t.exit` OR sum of `t.exits[].qty >= t.qty` (partial exits)
@@ -89,6 +90,21 @@ Script load order matters: `calc.js` → `journal.js` → `projection.js` → `a
 ```
 
 
+
+## Interface levels (Quick / Trader / Pro)
+- Header drop-down (`#lvl_btn`) picks how much of the app is visible. Levels are nested: Quick ⊂ Trader ⊂ Pro. Saved as `uiLevel` in `tm_settings`; default Trader. A tiny inline script in `<head>` sets `<html data-ui>` before first paint.
+- Visibility is CSS only: tag an element `data-level="trader"` (shown at Trader and Pro) or `data-level="pro"` (Pro only). `data-level="below-pro"` is the inverse (hint text). Untagged = shown at every level. Rules are at the end of styles.css.
+- **When you add a feature, decide its level and tag it.** Rule of thumb: Quick = what you need for each single trade; Trader = daily toolkit (targets, fees, symbols, filters, tags, import); Pro = F&O, projection, checklist, partial exits, theme presets, custom fees.
+- Quick keeps: entry / stop / risk (₹) / target (R:R) + the options toggle, result tiles, one-click Log (even if the quick-log setting is off), today's list, journal list + calendar + Add Trade + Export, Beep (and its settings), theme and colours, trading defaults.
+- Safety is never hidden: the daily-loss banner and any saved risk rules apply at every level.
+- `setLevel()` (app.js) resets state owned by features that just became hidden (F&O mode, index symbol, flat-₹ risk, leverage, target R:R, symbol, journal filters) so a hidden control can't silently change results. Projection links redirect to `#journal` below Pro.
+
+## Options toggle and lot size (all levels)
+- Trade Setup has an **Options** toggle (`#optToggle`). On: sizing is in lots, a `1 lot = [65]` field (`#i_lot`) appears, and Entry/SL are option premiums. Default lot is 65 (`DEFAULT_LOT`, Nifty). The field is editable and the last value you type is remembered (`lotSize` in `tm_settings`); the toggle state is remembered too (`optionsOn`).
+- Picking a symbol (or switching to options/futures) auto-fills that symbol's lot from `SYMBOLS` (`autoLot`). `getLotSize()` reads `#i_lot`. Below Pro, picking an index like NIFTY switches to options; at Pro it switches to futures.
+- Index lot sizes verified against NSE circulars effective 30 Dec 2025: NIFTY 65, BANKNIFTY 30, FINNIFTY 60, MIDCPNIFTY 120. Stock lots and SENSEX/BANKEX are NOT verified and may be stale; the editable field covers that. Per-lot margins in `SYMBOLS` are rough estimates.
+- **Journal quantity:** one-click log stores `qty` = lots × lot size (real units) plus `lots` and `lotSize` for display, because P&L is `(exit - entry) × qty`. Trades logged before this change stored lots in `qty` and understate P&L.
+- Quick shows only: Entry, SL, Risk (flat ₹, `#i_flat`), Target (R:R, `#i_rr`) and the Options toggle. Capital (default from Settings) is hidden, and Quick forces flat-₹ risk.
 
 ## Pages & routing
 - 3 top tabs: Calc, Journal, Settings. Projection is a view inside Journal (`#jnl_projection`, opened by the 🎯 button, `#jnl_main` is the trade list).

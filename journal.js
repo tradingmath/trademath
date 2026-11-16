@@ -131,7 +131,7 @@ $("logTradeBtn").addEventListener("click", () => {
   }
   const s = typeof getAppSettings === "function" ? getAppSettings() : {};
   // If quickLog is enabled (default), log directly without popup
-  if (s.quickLog !== false) {
+  if (s.quickLog !== false || document.documentElement.dataset.ui === "quick") {
     quickLogTrade();
     return;
   }
@@ -153,7 +153,9 @@ function quickLogTrade() {
     entry: lc.entry,
     sl: lc.sl,
     target: parseFloat(targetPx.toFixed(2)),
-    qty: lc.units,
+    qty: lc.units * (lc.isLots ? lc.lotSize : 1),
+    lots: lc.isLots ? lc.units : null,
+    lotSize: lc.isLots ? lc.lotSize : null,
     exit: null,
     exits: [],
     fees: 0,
@@ -236,7 +238,9 @@ $("pl_confirm").addEventListener("click", () => {
     entry:  lc.entry,
     sl:     lc.sl,
     target: parseFloat(targetPx.toFixed(2)),
-    qty:    lc.units,
+    qty:    lc.units * (lc.isLots ? lc.lotSize : 1),
+    lots:   lc.isLots ? lc.units : null,
+    lotSize: lc.isLots ? lc.lotSize : null,
     exit:   null,
     exits:  [],
     fees:   0,
@@ -244,14 +248,14 @@ $("pl_confirm").addEventListener("click", () => {
     setup:  selectedSetupTags.join(", ") || "",
     mistakes: [...selectedMistakeTags],
     confidence,
-    checklistSkipped: unchecked > 0,
+    checklistSkipped: unchecked > 0 && document.documentElement.dataset.ui === "pro",
   };
   trades.push(t);
   saveTrades();
   $("preLogModal").hidden = true;
   renderTodayTrades();
   if (typeof renderDailyBanner === "function") renderDailyBanner();
-  showToast(`✓ Logged ${t.qty} ${lc.isLots ? "lots" : "shares"} to Journal`);
+  showToast(`✓ Logged ${lc.units} ${lc.isLots ? (lc.units === 1 ? "lot" : "lots") : "shares"} to Journal`);
 });
 
 $("pl_cancel").addEventListener("click", () => { $("preLogModal").hidden = true; });
@@ -551,6 +555,10 @@ function deleteTodayTrade(id) {
   showToast("Trade removed");
 }
 
+function qtyLabel(t) {
+  return t.lots ? `${t.lots} lot${t.lots === 1 ? "" : "s"} × ${t.lotSize} = ${t.qty}` : (t.qty || "—");
+}
+
 function renderTodayTrades() {
   const today  = todayStr();
   $("today_date").textContent = new Date().toLocaleDateString("en-IN", { weekday:"short", day:"numeric", month:"short" });
@@ -588,7 +596,7 @@ function renderTodayTrades() {
         <span class="today-trade-pnl">${pnlStr}</span>
         ${delBtn}
       </div>
-      <div class="today-trade-meta">E: ₹${t.entry||"—"} · SL: ₹${t.sl||"—"} · Qty: ${t.qty||"—"}${closed?` · Exit: ₹${t.exit||"partial"}`:""}</div>
+      <div class="today-trade-meta">E: ₹${t.entry||"—"} · SL: ₹${t.sl||"—"} · Qty: ${qtyLabel(t)}${closed?` · Exit: ₹${t.exit||"partial"}`:""}</div>
       ${closeBtn ? `<div style="margin-top:8px;text-align:right">${closeBtn}</div>` : ""}
     </div>`;
   }).join("");
@@ -763,7 +771,7 @@ function renderReports() {
     return `<div class="rep-log">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:2px 4px 0">
         <span></span>
-        <button class="btn btn-ghost btn-sm" style="font-size:10px;padding:3px 8px;margin:4px" onclick="openReportCard('${mo}')">📊 Share Card</button>
+        <button class="btn btn-ghost btn-sm" data-level="trader" style="font-size:10px;padding:3px 8px;margin:4px" onclick="openReportCard('${mo}')">📊 Share Card</button>
       </div>
       <table class="rep-log-tbl">
         <thead><tr><th>Date</th><th>Market</th><th>Dir</th><th>Entry</th><th>SL</th><th>Target</th><th>Exit</th><th>Qty</th><th>Gross P&L</th><th>Fees</th><th>Net P&L</th><th>R:R</th><th>Setup</th><th>Result</th><th></th></tr></thead>
