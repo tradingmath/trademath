@@ -111,3 +111,66 @@ function set_session_cookie(string $token, int $expires): void {
         'expires' => $expires, 'path' => '/', 'secure' => is_https(), 'httponly' => true, 'samesite' => 'Lax',
     ]);
 }
+
+/* Find or create the user for this email, start a session and set the cookie. Shared by every sign-in method. */
+function sign_in_user(string $email): array {
+    $pdo = db(); $now = time();
+    $u = $pdo->prepare('SELECT id FROM users WHERE email = ?'); $u->execute([$email]); $user = $u->fetch();
+    if (!$user) {
+        try { $pdo->prepare('INSERT INTO users (email, created_at, last_login) VALUES (?, ?, ?)')->execute([$email, $now, $now]); }
+        catch (Throwable $e) { /* created in parallel */ }
+        $u->execute([$email]); $user = $u->fetch();
+    }
+    $pdo->prepare('UPDATE users SET last_login = ? WHERE id = ?')->execute([$now, $user['id']]);
+    $token = bin2hex(random_bytes(32));
+    $exp   = $now + SESSION_DAYS * 86400;
+    $pdo->prepare('INSERT INTO sessions (user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?)')
+        ->execute([$user['id'], hash('sha256', $token), $exp, $now]);
+    $pdo->prepare('DELETE FROM sessions WHERE expires_at < ?')->execute([$now]);        // tidy up old sessions
+    set_session_cookie($token, $exp);
+    return $user;
+}
+
+/* ── Google sign-in: verify an ID token (RS256 JWT) against Google's published certificates ── */
+function http_get(string $url): ?string {
+    if (function_exists('curl_init')) {
+        $c = curl_init($url);
+        curl_setopt_array($c, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 6, CURLOPT_CONNECTTIMEOUT => 4, CURLOPT_FOLLOWLOCATION => false]);
+        $r = curl_exec($c); $code = curl_getinfo($c, CURLINFO_HTTP_CODE); curl_close($c);
+        return ($r !== false && $code === 200) ? (string)$r : null;
+    }
+    $r = @file_get_contents($url, false, stream_context_create(['http' => ['timeout' => 6]]));
+    return $r === false ? null : $r;
+}
+function google_certs(bool $refresh = false): array {
+    $url   = (string)cfg('google_certs_url', 'https://www.googleapis.com/oauth2/v1/certs');
+    $cache = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'tm_google_certs_' . md5($url) . '.json';
+    if (!$refresh && is_file($cache) && time() - (int)filemtime($cache) < 3600) {
+        $j = json_decode((string)file_get_contents($cache), true);
+        if (is_array($j) && $j) return $j;
+    }
+    $raw = http_get($url);
+    $j = $raw === null ? null : json_decode($raw, true);
+    if (is_array($j) && $j) { @file_put_contents($cache, $raw); return $j; }
+    if (is_file($cache)) { $j = json_decode((string)file_get_contents($cache), true); if (is_array($j)) return $j; }   // stale beats nothing
+    return [];
+}
+function b64url_decode(string $s): string { return (string)base64_decode(strtr($s, '-_', '+/') . str_repeat('=', (4 - strlen($s) % 4) % 4)); }
+function verify_google_token(string $jwt): ?array {
+    $parts = explode('.', $jwt);
+    if (count($parts) !== 3 || strlen($jwt) > 4096) return null;
+    $header = json_decode(b64url_decode($parts[0]), true); $payload = json_decode(b64url_decode($parts[1]), true);
+    if (!is_array($header) || !is_array($payload) || ($header['alg'] ?? '') !== 'RS256' || empty($header['kid'])) return null;
+    $certs = google_certs(); $pem = $certs[$header['kid']] ?? null;
+    if (!is_string($pem)) { $certs = google_certs(true); $pem = $certs[$header['kid']] ?? null; }   // Google rotated its keys: fetch once more
+    if (!is_string($pem)) return null;
+    if (openssl_verify($parts[0] . '.' . $parts[1], b64url_decode($parts[2]), $pem, OPENSSL_ALGO_SHA256) !== 1) return null;
+    $now = time();
+    if (!in_array($payload['iss'] ?? '', ['accounts.google.com', 'https://accounts.google.com'], true)) return null;
+    if (!hash_equals((string)cfg('google_client_id', ''), (string)($payload['aud'] ?? ''))) return null;
+    if ((int)($payload['exp'] ?? 0) < $now - 30 || (int)($payload['iat'] ?? 0) > $now + 300) return null;
+    $verified = $payload['email_verified'] ?? false;
+    if ($verified !== true && $verified !== 'true') return null;
+    if (empty($payload['email']) || !is_string($payload['email'])) return null;
+    return $payload;
+}

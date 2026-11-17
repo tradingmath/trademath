@@ -787,3 +787,18 @@ html.tm-boot body { visibility:hidden; }
 .ac-del .field { margin-top:8px; }
 .kbd-hint { display:none; margin-left:8px; font:500 11px var(--mono); opacity:.7; border:1px solid currentColor; border-radius:4px; padding:0 5px; }
 @media (pointer: fine) { .kbd-hint { display:inline-block; } }
+
+/* ── Sign-in window ── */
+.auth-modal { position:relative; max-width:400px; width:calc(100% - 32px); text-align:center; padding:28px 24px 22px; }
+.auth-x { position:absolute; top:10px; right:12px; background:none; border:0; color:var(--fg3); font-size:16px; cursor:pointer; padding:6px; }
+.auth-x:hover { color:var(--fg); }
+.auth-logo { margin:0 auto 10px; display:block; }
+.auth-title { font-size:20px; font-weight:600; margin-bottom:6px; }
+.auth-sub { font-size:12px; color:var(--fg2); line-height:1.6; margin-bottom:16px; }
+.auth-google { display:flex; justify-content:center; min-height:44px; margin-bottom:4px; }
+.auth-or { display:flex; align-items:center; gap:12px; color:var(--fg3); font-size:12px; margin:12px 0; }
+.auth-or::before, .auth-or::after { content:""; flex:1; height:1px; background:var(--border); }
+.auth-modal .field { text-align:left; }
+.auth-main { width:100%; padding:11px 14px; font-size:14px; font-weight:600; margin-top:6px; }
+.auth-fine { font-size:11px; color:var(--fg3); margin-top:14px; line-height:1.5; }
+.auth-fine a { color:var(--fg2); }

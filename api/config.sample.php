@@ -15,6 +15,10 @@ return [
     'mail_from_name' => 'TradeMath',
     'mail_reply_to'  => 'support@yourdomain.in',   // people who reply to a code email reach this mailbox
 
+    // "Sign in with Google": your OAuth Web client ID from Google Cloud Console (looks like 123-abc.apps.googleusercontent.com).
+    // Leave empty to hide the Google button. This value is public; it is not a secret.
+    'google_client_id' => '',
+
     // Testing only. MUST be false on the real site: true returns the code in the response instead of emailing it.
     'dev_return_code' => false,
 ];

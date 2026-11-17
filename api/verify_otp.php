@@ -26,19 +26,6 @@ if (!hash_equals($otp['code_hash'], otp_hash($email, $code))) {
 }
 $pdo->prepare('UPDATE otps SET used = 1 WHERE id = ?')->execute([$otp['id']]);
 
-$u = $pdo->prepare('SELECT id FROM users WHERE email = ?'); $u->execute([$email]); $user = $u->fetch();
-if (!$user) {
-    try { $pdo->prepare('INSERT INTO users (email, created_at, last_login) VALUES (?, ?, ?)')->execute([$email, $now, $now]); }
-    catch (Throwable $e) { /* created in parallel */ }
-    $u->execute([$email]); $user = $u->fetch();
-}
-$pdo->prepare('UPDATE users SET last_login = ? WHERE id = ?')->execute([$now, $user['id']]);
-
-$token = bin2hex(random_bytes(32));
-$exp   = $now + SESSION_DAYS * 86400;
-$pdo->prepare('INSERT INTO sessions (user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?)')
-    ->execute([$user['id'], hash('sha256', $token), $exp, $now]);
-$pdo->prepare('DELETE FROM sessions WHERE expires_at < ?')->execute([$now]);        // tidy up old sessions
+sign_in_user($email);
 $pdo->prepare('DELETE FROM otps WHERE expires_at < ?')->execute([$now - 86400]);
-set_session_cookie($token, $exp);
 out(['ok' => true, 'email' => $email]);

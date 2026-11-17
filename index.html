@@ -78,6 +78,7 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
         <button type="button" class="alert-link" id="alert_more">⚙ Sound, timing &amp; volume settings</button>
       </div>
     </div>
+    <button class="theme-btn" id="acctBtn" type="button" hidden>Sign in</button>
     <button class="theme-btn" id="popBtn" data-level="trader" title="Open compact calculator in a small window">⧉ Pop Out</button>
     <button class="theme-btn" id="themeBtn">☀ Light</button>
   </div>
@@ -596,9 +597,7 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
     <div class="p-title">Account &amp; cloud sync <span class="proj-hint">optional</span></div>
     <div style="font-size:12px;color:var(--fg2);margin-bottom:12px">TradeMath works without an account and keeps everything in this browser. Sign in to keep a copy in the cloud and use it on other devices. There is no password: we email you a 6-digit code.</div>
     <div id="ac_out">
-      <div class="field"><label for="ac_email">Email</label><input type="email" id="ac_email" autocomplete="email" placeholder="you@example.com"></div>
-      <div class="field" id="ac_codewrap" hidden><label for="ac_code">6-digit code</label><input type="text" id="ac_code" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="123456"></div>
-      <div class="ac-row"><button type="button" class="btn btn-primary btn-sm" id="ac_send">Send code</button><button type="button" class="btn btn-primary btn-sm" id="ac_verify" hidden>Sign in</button></div>
+      <button type="button" class="btn btn-primary btn-sm" id="ac_open">Sign in or create account</button>
     </div>
     <div id="ac_in" hidden>
       <div class="bk-info" id="ac_who"></div>
@@ -639,6 +638,24 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
       <button type="button" class="btn btn-danger btn-sm" id="bk_apply">Replace my data</button>
       <button type="button" class="btn btn-ghost btn-sm" id="bk_cancel">Cancel</button>
     </div>
+  </div>
+</div>
+
+<!-- ══ SIGN IN ══ -->
+<div class="modal-overlay" id="authModal" hidden>
+  <div class="modal auth-modal" role="dialog" aria-modal="true" aria-labelledby="au_title">
+    <button type="button" class="auth-x" id="au_close" aria-label="Close">✕</button>
+    <img src="logo-icon.svg" alt="" width="44" height="44" class="auth-logo">
+    <h2 id="au_title" class="auth-title">Welcome to TradeMath</h2>
+    <p class="auth-sub">Sign in to keep your trades safe in the cloud and use them on any device. The calculator and journal work without an account.</p>
+    <div id="au_google" class="auth-google" hidden></div>
+    <div id="au_or" class="auth-or" hidden><span>or</span></div>
+    <div class="field"><label for="au_email">Email</label><input type="email" id="au_email" autocomplete="email" placeholder="you@example.com"></div>
+    <div class="field" id="au_codewrap" hidden><label for="au_code">6-digit code from your email</label><input type="text" id="au_code" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="123456"></div>
+    <button type="button" class="btn btn-primary auth-main" id="au_send">Continue with email</button>
+    <button type="button" class="btn btn-primary auth-main" id="au_verify" hidden>Sign in</button>
+    <div id="au_msg" class="bk-msg" aria-live="polite"></div>
+    <p class="auth-fine">No password to remember: we email you a code. By continuing you agree to the <a href="privacy.html" target="_blank" rel="noopener">privacy policy</a>.</p>
   </div>
 </div>
 
