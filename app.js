@@ -3,14 +3,14 @@
    The Settings page is STAGED: its controls only edit a draft. Nothing is saved or applied until the user
    presses "Save changes" and confirms. getAppSettings() always returns what is actually saved. */
 
-const ACCENT_NAMES = ["blue", "purple", "amber", "monochrome"];   // the colours that are offered
+const ACCENT_NAMES = ["gold", "blue", "purple", "monochrome"];   // the colours that are offered
 const BASE_THEMES  = ["midnight", "oled"];
 function getAppSettings() {
   let s = {};
   try { s = JSON.parse(localStorage.getItem("tm_settings") || "{}"); } catch(e) {}
   if (!s || typeof s !== "object" || Array.isArray(s)) s = {};
   // A colour or theme saved by an older version that is no longer offered falls back to the default.
-  if (s.accentColor && !ACCENT_NAMES.includes(s.accentColor)) s.accentColor = "blue";
+  if (s.accentColor && !ACCENT_NAMES.includes(s.accentColor)) s.accentColor = "gold";
   if (s.baseTheme && !BASE_THEMES.includes(s.baseTheme)) s.baseTheme = "midnight";
   return s;
 }
@@ -28,7 +28,7 @@ function saveChecklistItems(items) {
 const esc = t => String(t).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 /* ── draft state for controls that are not plain inputs ── */
-let draftBase = "midnight", draftAccent = "blue", draftChecklist = [];
+let draftBase = "midnight", draftAccent = "gold", draftChecklist = [];
 const BASE_NAMES  = { midnight: "Midnight", oled: "OLED Black" };
 const paletteName = c => { const el = document.querySelector('.palette-card[data-color="' + c + '"] .palette-name'); return el ? el.textContent : c; };
 const onOff       = v => v ? "On" : "Off";
@@ -40,7 +40,7 @@ const rupees      = v => "₹" + Number(v).toLocaleString("en-IN");
 const SETTINGS_FIELDS = [
   { scope: "settings", key: "darkMode",    label: "Dark mode",           fb: true,       get: () => $("tog_dark").checked,                 set: v => { $("tog_dark").checked = v; }, fmt: onOff },
   { scope: "settings", key: "baseTheme",   label: "Dark terminal theme", fb: "midnight", get: () => draftBase,                              set: v => { draftBase = v; },            fmt: v => BASE_NAMES[v] || v },
-  { scope: "settings", key: "accentColor", label: "Accent colour",       fb: "blue",     get: () => draftAccent,                            set: v => { draftAccent = v; },          fmt: paletteName },
+  { scope: "settings", key: "accentColor", label: "Accent colour",       fb: "gold",     get: () => draftAccent,                            set: v => { draftAccent = v; },          fmt: paletteName },
   { scope: "settings", key: "defaultCap",  label: "Default capital",     fb: 100000,     get: () => positive("s_default_cap", 100000),     set: v => { $("s_default_cap").value = v; },  fmt: rupees },
   { scope: "settings", key: "defaultRisk", label: "Default risk %",      fb: 1,          get: () => positive("s_default_risk", 1),         set: v => { $("s_default_risk").value = v; }, fmt: v => v + "%" },
   { scope: "settings", key: "defaultLev",  label: "Default leverage",    fb: "5",        get: () => $("s_default_lev").value,              set: v => { $("s_default_lev").value = v; }, fmt: v => v === "5" ? "5× intraday" : v === "1" ? "1× cash" : "Custom" },
@@ -302,9 +302,9 @@ function setLevel(level, init) {
 
 /* ══════════════ THEME & PALETTES ══════════════ */
 const ACCENT_COLORS = {
+  gold:       { dark:"#ffb400", light:"#a86e00", dim:"rgba(255,180,0,.14)", solid:"#ffb400" },
   blue:       { dark:"#3b82f6", light:"#2563eb", dim:"rgba(59,130,246,.15)", solid:"#2563eb" },
   purple:     { dark:"#8b5cf6", light:"#7c3aed", dim:"rgba(139,92,246,.15)", solid:"#7c3aed" },
-  amber:      { dark:"#f59e0b", light:"#d97706", dim:"rgba(245,158,11,.15)" },
   monochrome: { dark:"#94a3b8", light:"#475569", dim:"rgba(148,163,184,.15)" }
 };
 
@@ -317,7 +317,7 @@ function bestOn(hex) {
 }
 
 function applyAccent(name) {
-  const c = ACCENT_COLORS[name] || ACCENT_COLORS.blue;
+  const c = ACCENT_COLORS[name] || ACCENT_COLORS.gold;
   const isDark = document.documentElement.dataset.theme !== "light";
   const val = isDark ? c.dark : c.light;
   const solid = c.solid || val;
@@ -341,7 +341,7 @@ function applyDarkToggle(dark) {
   const r = document.documentElement;
   const baseWrap = $("base_theme_wrap");
   if (dark) {
-    delete r.dataset.theme;
+    r.dataset.theme = "dark";
     $("themeBtn").textContent = "☀ Light";
     if (baseWrap) baseWrap.style.display = "";
   } else {
@@ -351,7 +351,7 @@ function applyDarkToggle(dark) {
   }
   const s = getAppSettings();
   applyBaseTheme(s.baseTheme || "midnight");
-  applyAccent(s.accentColor || "blue");
+  applyAccent(s.accentColor || "gold");
 }
 
 // Header theme button (quick toggle)

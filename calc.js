@@ -17,6 +17,7 @@ function tmSet(key, value) {
   try {
     localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
     tmBannerOff("tm_store_banner");
+    if (typeof window.tmCloudDirty === "function") window.tmCloudDirty(key);
     return true;
   } catch (e) {
     tmBanner("tm_store_banner", "<b>Not saved.</b> Your browser is not letting TradeMath store data (storage is full or blocked, or this is a private window). What you do now will be lost when you close this tab. Use <b>Settings → Your data → Download backup</b> to keep a copy.");

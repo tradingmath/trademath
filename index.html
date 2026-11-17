@@ -15,7 +15,7 @@
 (function(){var d=document.documentElement,s={};
 try{s=JSON.parse(localStorage.getItem("tm_settings")||"{}")||{}}catch(e){}
 d.dataset.ui=["quick","trader","pro"].indexOf(s.uiLevel)>=0?s.uiLevel:"trader";
-if(s.darkMode===false)d.dataset.theme="light";
+d.dataset.theme=s.darkMode===false?"light":"dark";
 if(s.baseTheme==="oled")d.dataset.baseTheme="oled";
 d.classList.add("tm-boot");
 setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
@@ -423,15 +423,15 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
     <!-- Accent Color Palette -->
     <div style="margin-top:16px">
       <div style="font-size:12px;color:var(--fg2);font-weight:500;margin-bottom:4px">Accent Color Palette</div>
-      <div style="font-size:11px;color:var(--fg3);margin-bottom:10px;line-height:1.5">Default is a calm blue: it stays neutral and doesn't compete with the green and red you read profit and loss by. Amber is warmer and feels more urgent.</div>
+      <div style="font-size:11px;color:var(--fg3);margin-bottom:10px;line-height:1.5">Default is the channel gold, matching the videos. Blue is a calmer option that stays out of the way of the green and red you read profit and loss by.</div>
       <div class="palette-grid">
-        <div class="palette-card" data-color="amber">
-          <span class="palette-dot" style="background:#f59e0b"></span>
-          <span class="palette-name">Amber</span>
+        <div class="palette-card active" data-color="gold">
+          <span class="palette-dot" style="background:#ffb400"></span>
+          <span class="palette-name">Gold · default</span>
         </div>
-        <div class="palette-card active" data-color="blue">
+        <div class="palette-card" data-color="blue">
           <span class="palette-dot" style="background:#3b82f6"></span>
-          <span class="palette-name">Calm Blue · default</span>
+          <span class="palette-name">Blue</span>
         </div>
         <div class="palette-card" data-color="purple">
           <span class="palette-dot" style="background:#8b5cf6"></span>
@@ -573,6 +573,39 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
     </div>
   </div>
 
+
+  <!-- Account & cloud sync: stays hidden unless the server API exists -->
+  <div class="settings-section" id="account_sec" hidden>
+    <div class="p-title">Account &amp; cloud sync <span class="proj-hint">optional</span></div>
+    <div style="font-size:12px;color:var(--fg2);margin-bottom:12px">TradeMath works without an account and keeps everything in this browser. Sign in to keep a copy in the cloud and use it on other devices. There is no password: we email you a 6-digit code.</div>
+    <div id="ac_out">
+      <div class="field"><label for="ac_email">Email</label><input type="email" id="ac_email" autocomplete="email" placeholder="you@example.com"></div>
+      <div class="field" id="ac_codewrap" hidden><label for="ac_code">6-digit code</label><input type="text" id="ac_code" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="123456"></div>
+      <div class="ac-row"><button type="button" class="btn btn-primary btn-sm" id="ac_send">Send code</button><button type="button" class="btn btn-primary btn-sm" id="ac_verify" hidden>Sign in</button></div>
+    </div>
+    <div id="ac_in" hidden>
+      <div class="bk-info" id="ac_who"></div>
+      <div class="toggle-row">
+        <div><div class="toggle-label">Save to the cloud automatically</div><div class="toggle-sub">About 20 seconds after you change something</div></div>
+        <label class="toggle-switch"><input type="checkbox" id="ac_auto" checked><span class="toggle-track"></span></label>
+      </div>
+      <div class="ac-row">
+        <button type="button" class="btn btn-primary btn-sm" id="ac_push">Save to cloud now</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="ac_pull">Load from cloud…</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="ac_signout">Sign out</button>
+      </div>
+      <details class="ac-del"><summary>Delete my account and cloud data</summary>
+        <div class="field"><label for="ac_del_email">Type your email to confirm</label><input type="email" id="ac_del_email" autocomplete="off"></div>
+        <button type="button" class="btn btn-danger btn-sm" id="ac_delete">Delete permanently</button>
+        <div class="bk-info" style="margin-top:6px">This removes your email and the cloud copy. The data on this device stays.</div>
+      </details>
+    </div>
+    <div id="ac_choose" class="bk-msg" hidden>
+      <div id="ac_choose_txt"></div>
+      <div class="ac-row"><button type="button" class="btn btn-primary btn-sm" id="ac_use_cloud">Use the cloud copy</button><button type="button" class="btn btn-ghost btn-sm" id="ac_use_local">Upload this device's data</button></div>
+    </div>
+    <div id="ac_msg" class="bk-msg" aria-live="polite"></div>
+  </div>
 
   <!-- Your data -->
   <div class="settings-section" id="your_data">
@@ -735,6 +768,7 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
 <script src="projection.js"></script>
 <script src="alerts.js"></script>
 <script src="app.js"></script>
+<script src="cloud.js"></script>
 
 </body>
 </html>

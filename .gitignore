@@ -1,1 +1,4 @@
 backup_v1/
+
+api/config.php
+*.sqlite

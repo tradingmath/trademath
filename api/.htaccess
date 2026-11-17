@@ -1,0 +1,5 @@
+# Never serve setup files or secrets
+<FilesMatch "^(config(\.sample)?\.php|_lib\.php|.*\.sql|.*\.sqlite)$">
+  Require all denied
+</FilesMatch>
+Options -Indexes

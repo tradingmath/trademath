@@ -253,3 +253,10 @@ Netlify auto-deploys on push to main branch.
 ## Themes and beep
 - Accent colours: Blue (default), Violet, Amber, Slate. Dark themes: Midnight, OLED. Old saved values fall back in `getAppSettings()`.
 - The beep **interval** (chips + custom minutes) is chosen only in the header 🔔 menu. Settings holds align / lead / sound / volume / hours and a Test button that previews unsaved choices.
+
+## Optional account + cloud sync (api/*.php, cloud.js)
+- Needs the Hostinger PHP + MySQL host. On a static host (Netlify) `api/me.php` is missing, so the Settings section stays hidden and the app is unchanged.
+- Setup on the server (not in git): create a MySQL DB in hPanel, import `api/schema_mysql.sql`, copy `api/config.sample.php` to `api/config.php` and fill it in. **`api/config.php` is in .gitignore; never commit it.** `dev_return_code` must stay `false` on the real site.
+- Sign-in = emailed 6-digit OTP (HMAC-hashed, 10 min, 5 tries, single use, rate limited per IP and per email). Session = random 256-bit token in an HttpOnly SameSite=Lax cookie; only its SHA-256 is stored.
+- POST endpoints require header `X-TM: 1` and a matching Origin (no CORS). Cloud copy = one versioned backup JSON per user (<= 2 MB); stale uploads get HTTP 409 and the user picks which side wins. `tmSet()` calls `tmCloudDirty(key)`, which uploads ~20 s after a change.
+- Local testing: PHP 8.3 + SQLite (`pdo_sqlite`), `php -S 127.0.0.1:8766`, config with `dev_return_code: true`.

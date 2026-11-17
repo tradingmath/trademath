@@ -1,24 +1,24 @@
 /* ────────────────────────────────────────────────────────────
-   Dark-first terminal palette · Accent: trading amber
+   Dark-first palette (channel navy) · Accent: gold
    ──────────────────────────────────────────────────────────── */
 :root {
-  --bg:         #080c14;
-  --surface:    #0f1623;
-  --card:       #141d2e;
-  --border:     #1e2d45;
-  --accent:     #3b82f6;            /* calm blue: neutral, doesn't compete with the P&L greens/reds */
-  --accent-dim: rgba(59,130,246,.15);
-  --accent-solid: #2563eb;          /* fill behind text, so text stays readable */
-  --on-accent:  #ffffff;
-  --warn:       #f59e0b;            /* warnings keep their own colour whatever the accent is */
-  --warn-dim:   rgba(245,158,11,.14);
+  --bg:         #050a1c;            /* navy, sampled from the channel videos */
+  --surface:    #0a1128;
+  --card:       #111c3b;
+  --border:     #22305a;
+  --accent:     #ffb400;            /* channel gold */
+  --accent-dim: rgba(255,180,0,.14);
+  --accent-solid: #ffb400;          /* fill behind text; --on-accent keeps that text readable */
+  --on-accent:  #060b26;
+  --warn:       #fb923c;            /* warnings stay orange, distinct from the gold accent */
+  --warn-dim:   rgba(251,146,60,.14);
   --green:      #22c55e;
   --green-dim:  rgba(34,197,94,.12);
-  --red:        #ef4444;
-  --red-dim:    rgba(239,68,68,.12);
-  --fg:         #e2e8f0;
-  --fg2:        #94a3b8;
-  --fg3:        #475569;
+  --red:        #fd655f;
+  --red-dim:    rgba(253,101,95,.13);
+  --fg:         #f2f6fd;
+  --fg2:        #a3afcb;
+  --fg3:        #717fa4;
   --mono:       'JetBrains Mono', 'Courier New', monospace;
   --sans:       'Inter', system-ui, sans-serif;
   color-scheme: dark;
@@ -26,7 +26,7 @@
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
     --bg:#f1f5f9; --surface:#fff; --card:#f8fafc; --border:#e2e8f0;
-    --accent:#2563eb; --accent-dim:rgba(37,99,235,.10); --accent-solid:#2563eb; --on-accent:#ffffff; --warn:#b45309; --warn-dim:rgba(180,83,9,.10);
+    --accent:#a86e00; --accent-dim:rgba(255,180,0,.16); --accent-solid:#ffb400; --on-accent:#060b26; --warn:#b45309; --warn-dim:rgba(180,83,9,.10);
     --green:#16a34a; --green-dim:rgba(22,163,74,.10);
     --red:#dc2626;   --red-dim:rgba(220,38,38,.10);
     --fg:#0f172a; --fg2:#475569; --fg3:#94a3b8;
@@ -35,11 +35,19 @@
 }
 :root[data-theme="light"] {
   --bg:#f1f5f9; --surface:#fff; --card:#f8fafc; --border:#e2e8f0;
-  --accent:#2563eb; --accent-dim:rgba(37,99,235,.10); --accent-solid:#2563eb; --on-accent:#ffffff; --warn:#b45309; --warn-dim:rgba(180,83,9,.10);
+  --accent:#a86e00; --accent-dim:rgba(255,180,0,.16); --accent-solid:#ffb400; --on-accent:#060b26; --warn:#b45309; --warn-dim:rgba(180,83,9,.10);
   --green:#16a34a; --green-dim:rgba(22,163,74,.10);
   --red:#dc2626;   --red-dim:rgba(220,38,38,.10);
   --fg:#0f172a; --fg2:#475569; --fg3:#94a3b8;
   color-scheme: light;
+}
+
+/* Soft blue and gold glows behind the dark page, like the channel videos (not on OLED black or in light mode) */
+:root:not([data-theme="light"]):not([data-base-theme="oled"]) body {
+  background-image:
+    radial-gradient(55% 40% at 62% 0%, rgba(31,68,167,.45), transparent 72%),
+    radial-gradient(38% 32% at 0% 100%, rgba(123,84,22,.38), transparent 72%);
+  background-attachment: fixed;
 }
 
 /* ── Dark Base Theme Variations ── */
@@ -773,3 +781,7 @@ html[data-ui="pro"]    [data-level="below-pro"] { display:none !important; }
 
 /* Hidden only for the instant while the app sets itself up (see the script in the head); a timer also lifts it. */
 html.tm-boot body { visibility:hidden; }
+.ac-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.ac-del { margin-top:14px; font-size:12px; color:var(--fg2); }
+.ac-del summary { cursor:pointer; }
+.ac-del .field { margin-top:8px; }
