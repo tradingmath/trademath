@@ -399,3 +399,4 @@ renderTodayTrades();
 setLevel(getLevel(), true);                              // apply the saved level (and reset anything it hides)
 { const st = getAppSettings(); if (st.cryptoOn) setInstrType("crypto"); else if (st.optionsOn) setInstrType("options"); else if (st.futuresOn && getLevel() === "pro") setInstrType("futures"); }   // reopen in the mode you left
 { const r = parseRoute(); showRoute(r.tab, r.sub); }   // open the page named in the link
+document.documentElement.classList.remove("tm-boot");   // everything is set up: show the page

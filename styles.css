@@ -770,3 +770,6 @@ html[data-ui="pro"]    [data-level="below-pro"] { display:none !important; }
 .bk-confirm { display:flex; gap:8px; margin-top:8px; }
 .bk-confirm[hidden] { display:none; }
 .tile-ref { font:11px var(--mono); color:var(--fg2); margin-top:4px; }
+
+/* Hidden only for the instant while the app sets itself up (see the script in the head); a timer also lifts it. */
+html.tm-boot body { visibility:hidden; }

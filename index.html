@@ -8,7 +8,17 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="styles.css">
-<script>try{var s=JSON.parse(localStorage.getItem("tm_settings")||"{}");document.documentElement.dataset.ui=["quick","trader","pro"].indexOf(s.uiLevel)>=0?s.uiLevel:"trader"}catch(e){document.documentElement.dataset.ui="trader"}</script>
+<script>
+/* Runs before the page paints: apply the saved theme and level now, and keep the page hidden until the app has
+   finished setting itself up, so nothing flashes dark, then light, or jumps between modes. */
+(function(){var d=document.documentElement,s={};
+try{s=JSON.parse(localStorage.getItem("tm_settings")||"{}")||{}}catch(e){}
+d.dataset.ui=["quick","trader","pro"].indexOf(s.uiLevel)>=0?s.uiLevel:"trader";
+if(s.darkMode===false)d.dataset.theme="light";
+if(s.baseTheme==="oled")d.dataset.baseTheme="oled";
+d.classList.add("tm-boot");
+setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
+</script>
 </head>
 <body>
 
