@@ -880,3 +880,6 @@ html.tm-boot body { visibility:hidden; }
 .empty-mini { display:flex; align-items:center; gap:12px; justify-content:center; padding:26px 10px; color:var(--fg3); font-size:13px; text-align:left; }
 .empty-mini .es-ico { font-size:26px; }
 .empty-mini b { display:block; color:var(--fg2); font-size:13px; }
+
+/* Pop Out opens a small desktop window, which phones and tablets cannot do, so it is hidden there. */
+@media (max-width: 768px), (hover: none) and (pointer: coarse) { #popBtn { display:none !important; } }

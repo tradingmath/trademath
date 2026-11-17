@@ -19,8 +19,15 @@ function saveSetting(key, value) {
   const s = getAppSettings(); s[key] = value;
   tmSet("tm_settings", s);
 }
+/* Two starter rules, shown only until the list is first saved. Once someone edits it (even down to nothing) their list is kept as it is. */
+const DEFAULT_CHECKLIST = ["Stop-loss and target are decided before I enter", "Risk on this trade is within my per-trade limit"];
 function getChecklistItems() {
-  try { return JSON.parse(localStorage.getItem("tm_checklist") || "[]"); } catch(e) { return []; }
+  try {
+    const raw = localStorage.getItem("tm_checklist");
+    if (raw === null) return DEFAULT_CHECKLIST.slice();
+    const v = JSON.parse(raw);
+    return Array.isArray(v) ? v : [];
+  } catch(e) { return DEFAULT_CHECKLIST.slice(); }
 }
 function saveChecklistItems(items) {
   tmSet("tm_checklist", items);
