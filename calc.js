@@ -669,7 +669,18 @@ function sizeStandard(c) {
   const units = Math.max(1, Math.floor(riskINR / slPerUnit));
   const marginPerUnit = getMarginPerUnit(sym, entry);
   const tradeVal = units * lotSize * entry;
-  const totalMgn = instrType === "options" ? tradeVal
+  /* Selling (writing) an option is not paying a premium: the broker blocks SPAN + exposure margin, roughly what the
+     underlying's future needs. It moves with strike distance, VIX and expiry, which this calculator does not know, so
+     it is shown as a wide range around ~85% of the future's margin per lot. Always confirm in the broker's calculator. */
+  const sellOpt = instrType === "options" && !isLong;
+  let mgnLow = 0, mgnHigh = 0, sellMid = 0;
+  if (sellOpt) {
+    const ref = sym && sym.marginNRML ? sym : SYMBOLS[0];                 // no symbol typed: assume NIFTY
+    const perLot = ref.marginNRML * (lotSize / (ref.lot || lotSize));
+    sellMid = perLot * 0.85 * units; mgnLow = perLot * 0.6 * units; mgnHigh = perLot * 1.15 * units;
+  }
+  const totalMgn = sellOpt ? sellMid
+                 : instrType === "options" ? tradeVal
                  : instrType === "equity"  ? tradeVal / (leverageMultiplier || 1)
                  : marginPerUnit * units;
   const actualRisk = units * slPerUnit;
@@ -679,7 +690,7 @@ function sizeStandard(c) {
     const fees  = feesOn() ? calcFees(entry, tp, units, lotSize, isLong).total : 0;
     return { rr, tp, gross, net: gross - fees };
   });
-  return { units, tradeVal, totalMgn, actualRisk, targets,
+  return { units, tradeVal, totalMgn, actualRisk, targets, sellOpt, mgnLow, mgnHigh,
            profitTP: isLong ? entry + slDist * defRR : entry - slDist * defRR,
            profitGross: slDist * defRR * lotSize * units };
 }
@@ -771,6 +782,7 @@ function calc() {
       warns.push(`⚠ Margin required (${fmtINR(totalMgn)}) exceeds your capital (${fmtINR(cap)}).`);
     }
   }
+  if (M.sellOpt) warns.push(`⚠ You are SELLING an option. The broker blocks margin (about ${fmtINR(M.mgnLow)}–${fmtINR(M.mgnHigh)} here, an estimate), far more than the premium, and a loss is not capped at the premium. Strike, VIX and expiry change it a lot: check your broker's margin calculator.`);
   if (actualRiskPct > 5) {
     warns.push(`⚠ Max risk is ${actualRiskPct.toFixed(1)}% of your capital.`);
   }
@@ -808,8 +820,9 @@ function calc() {
     $("t0sub").textContent = `Trade Value: ${fmtINR(tradeVal)}${lotSize > 1 ? ` · ${comma(units * lotSize)} units` : ""}`;
 
     // Tile 1: Margin Required
-    $("t1val").textContent = fmtINR(totalMgn);
-    $("t1sub").textContent = `${mgnPct.toFixed(1)}% of capital · ${instrType === "equity" ? leverageMultiplier + "× leverage" : orderType}${instrType === "futures" ? " · approx., brokers vary" : ""}`;
+    $("t1val").textContent = (M.sellOpt ? "≈ " : "") + fmtINR(totalMgn);
+    if (M.sellOpt) $("t1sub").textContent = `Selling: approx. ${fmtINR(M.mgnLow)}–${fmtINR(M.mgnHigh)} · ${mgnPct.toFixed(0)}% of capital`;
+    else $("t1sub").textContent = `${mgnPct.toFixed(1)}% of capital · ${instrType === "equity" ? leverageMultiplier + "× leverage" : orderType}${instrType === "futures" ? " · approx., brokers vary" : ""}`;
   }
 
   // Tile 2: Max Risk
