@@ -22,7 +22,8 @@ if (cfg('dev_return_code', false) === true) {
 } else {
     $from = (string)cfg('mail_from', 'no-reply@localhost');
     $name = str_replace(["\r", "\n", '"'], '', (string)cfg('mail_from_name', 'TradeMath'));
-    $headers = "From: \"$name\" <$from>\r\nReply-To: $from\r\nContent-Type: text/plain; charset=UTF-8\r\nX-Mailer: TradeMath";
+    $reply = filter_var((string)cfg('mail_reply_to', $from), FILTER_VALIDATE_EMAIL) ?: $from;
+    $headers = "From: \"$name\" <$from>\r\nReply-To: $reply\r\nContent-Type: text/plain; charset=UTF-8\r\nX-Mailer: TradeMath";
     $text = "Your TradeMath sign-in code is $code\r\n\r\nIt works for 10 minutes. If you did not ask for it, ignore this email: nobody can sign in without the code.\r\n";
     if (!@mail($email, 'Your TradeMath code: ' . $code, $text, $headers)) {
         error_log('TradeMath: mail() failed');

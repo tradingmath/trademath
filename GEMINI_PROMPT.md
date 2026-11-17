@@ -2,13 +2,13 @@
 
 ## What is this project?
 TradeMath is a **trade position sizing calculator + trade journal** for Indian retail traders (NSE/BSE/MCX).
-Live site: https://tradingmath.netlify.app
+Live site: https://trademath.in (hosted on Hostinger; Netlify is no longer used)
 GitHub: https://github.com/tradingmath/trademath.git
 
 ---
 
 ## IMPORTANT RULE — READ FIRST
-**Never push to GitHub or deploy to Netlify unless I explicitly say "deploy".**
+**Never push to GitHub or deploy unless I explicitly say "deploy".**
 I test with the local .html file first before deploying.
 
 ---
@@ -177,7 +177,7 @@ Partial pushes to `t.exits[]`. Full exit sets `t.exit`.
 (Analytics tab was removed — do not re-add `renderAnalytics`.)
 
 ### Routing (every page has its own link)
-`#calc` (home), `#journal`, `#journal/projection`, `#settings`. Hash routes, so they work on Netlify, localhost and file://. Navigate with `switchTab(tab, sub)` in app.js (never toggle `hidden` on tabs directly); back/forward buttons work via `hashchange`.
+`#calc` (home), `#journal`, `#journal/projection`, `#settings`. Hash routes, so they work on the live host, localhost and file://. Navigate with `switchTab(tab, sub)` in app.js (never toggle `hidden` on tabs directly); back/forward buttons work via `hashchange`.
 
 ### Projection rules (do not break)
 - Max 3 wins in a row across the whole simulation; losing streaks are deliberately NOT capped.
@@ -194,7 +194,7 @@ git add -A
 git commit -m "your message here"
 git push origin main
 ```
-Netlify auto-deploys on push to main branch.
+Hostinger deploys the main branch from GitHub on push (hPanel, Deploy from Git). api/config.php is untracked and lives only on the server.
 
 ---
 
@@ -255,7 +255,7 @@ Netlify auto-deploys on push to main branch.
 - The beep **interval** (chips + custom minutes) is chosen only in the header 🔔 menu. Settings holds align / lead / sound / volume / hours and a Test button that previews unsaved choices.
 
 ## Optional account + cloud sync (api/*.php, cloud.js)
-- Needs the Hostinger PHP + MySQL host. On a static host (Netlify) `api/me.php` is missing, so the Settings section stays hidden and the app is unchanged.
+- Needs the Hostinger PHP + MySQL host. On a static host without PHP `api/me.php` is missing, so the Settings section stays hidden and the app is unchanged.
 - Setup on the server (not in git): create a MySQL DB in hPanel, import `api/schema_mysql.sql`, copy `api/config.sample.php` to `api/config.php` and fill it in. **`api/config.php` is in .gitignore; never commit it.** `dev_return_code` must stay `false` on the real site.
 - Sign-in = emailed 6-digit OTP (HMAC-hashed, 10 min, 5 tries, single use, rate limited per IP and per email). Session = random 256-bit token in an HttpOnly SameSite=Lax cookie; only its SHA-256 is stored.
 - POST endpoints require header `X-TM: 1` and a matching Origin (no CORS). Cloud copy = one versioned backup JSON per user (<= 2 MB); stale uploads get HTTP 409 and the user picks which side wins. `tmSet()` calls `tmCloudDirty(key)`, which uploads ~20 s after a change.

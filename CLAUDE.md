@@ -1,12 +1,12 @@
 # TradeMath — Project Context for Claude
 
 ## Project
-Trade calculator + journal for Indian retail traders. Live at: https://tradingmath.netlify.app
+Trade calculator + journal for Indian retail traders. Live at: https://trademath.in (hosted on Hostinger; Netlify is no longer used)
 GitHub: https://github.com/tradingmath/trademath.git (branch: main)
-Netlify auto-deploys on push to main.
+Hostinger deploys the main branch from GitHub on push (hPanel, Deploy from Git). api/config.php is untracked and lives only on the server.
 
 ## CRITICAL RULE
-**Never push to GitHub or deploy to Netlify unless the user explicitly says "deploy".**
+**Never push to GitHub or deploy unless the user explicitly says "deploy".**
 User tests with the local .html file first.
 
 ## File Structure
@@ -143,7 +143,7 @@ Script load order matters: `calc.js` → `journal.js` → `projection.js` → `a
 - The beep **interval** (chips + custom minutes) is chosen only in the header 🔔 menu. Settings holds align / lead / sound / volume / hours and a Test button that previews unsaved choices.
 
 ## Optional account + cloud sync (api/*.php, cloud.js)
-- Needs the Hostinger PHP + MySQL host. On a static host (Netlify) `api/me.php` is missing, so the Settings section stays hidden and the app is unchanged.
+- Needs the Hostinger PHP + MySQL host. On a static host without PHP `api/me.php` is missing, so the Settings section stays hidden and the app is unchanged.
 - Setup on the server (not in git): create a MySQL DB in hPanel, import `api/schema_mysql.sql`, copy `api/config.sample.php` to `api/config.php` and fill it in. **`api/config.php` is in .gitignore; never commit it.** `dev_return_code` must stay `false` on the real site.
 - Sign-in = emailed 6-digit OTP (HMAC-hashed, 10 min, 5 tries, single use, rate limited per IP and per email). Session = random 256-bit token in an HttpOnly SameSite=Lax cookie; only its SHA-256 is stored.
 - POST endpoints require header `X-TM: 1` and a matching Origin (no CORS). Cloud copy = one versioned backup JSON per user (<= 2 MB); stale uploads get HTTP 409 and the user picks which side wins. `tmSet()` calls `tmCloudDirty(key)`, which uploads ~20 s after a change.

@@ -13,6 +13,7 @@ return [
     // Sender of the OTP email. Use a mailbox on your own domain so the mail does not land in spam.
     'mail_from'      => 'no-reply@yourdomain.in',
     'mail_from_name' => 'TradeMath',
+    'mail_reply_to'  => 'support@yourdomain.in',   // people who reply to a code email reach this mailbox
 
     // Testing only. MUST be false on the real site: true returns the code in the response instead of emailing it.
     'dev_return_code' => false,

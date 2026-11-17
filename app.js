@@ -204,7 +204,7 @@ window.addEventListener("beforeunload", e => { if (changes().length) { e.prevent
 
 /* ══════════════ TABS ══════════════ */
 /* Every page has its own link: #calc (home), #journal, #journal/projection, #settings.
-   Hash links work on Netlify, on localhost and when index.html is opened straight from disk. */
+   Hash links work on any host, on localhost and when index.html is opened straight from disk. */
 const PAGES = ["calc", "journal", "settings"];
 const PAGE_TITLES = { calc: "TradeMath", journal: "TradeMath · Journal", settings: "TradeMath · Settings" };
 let currentRoute = null;

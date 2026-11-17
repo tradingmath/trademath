@@ -986,7 +986,7 @@ $("rc_download").addEventListener("click", () => {
       return `<text x="${col}" y="${y-2}" font-size="10" fill="#475569" text-transform="uppercase" letter-spacing="1">${s[0].toUpperCase()}</text>
                <text x="${col}" y="${y+22}" font-size="20" font-weight="bold" fill="${s[0]==='Net P&L'?($("rc_pnl").style.color||'#e2e8f0'):'#e2e8f0'}">${s[1]}</text>`;
     }).join("")}
-    <text x="240" y="288" text-anchor="middle" font-size="11" fill="#1e2d45">tradingmath.netlify.app</text>
+    <text x="240" y="288" text-anchor="middle" font-size="11" fill="#1e2d45">trademath.in</text>
   </svg>`;
   const blob = new Blob([svg], { type:"image/svg+xml" });
   const a    = document.createElement("a");
