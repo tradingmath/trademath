@@ -940,3 +940,15 @@ html.tm-boot body { visibility:hidden; }
 .pill-win { color:var(--green); border-color:var(--green); background:var(--green-dim); }
 .pill-loss { color:var(--red); border-color:var(--red); background:var(--red-dim); }
 .pill-open { color:var(--accent); border-color:var(--accent); background:var(--accent-dim); }
+
+/* Trade log: every number column gets the same compact width, so the gaps between Entry, Exit, Lots, Net P&L, Margin and Return match.
+   The Instrument column takes whatever room is left. */
+.rep-log-tbl { min-width:1100px; }
+.rep-log-tbl .c-inst { width:auto; }
+.rep-log-tbl th:nth-child(2), .rep-log-tbl th:nth-child(3) { width:104px; }
+.rep-log-tbl th:nth-child(4) { width:84px; }
+.rep-log-tbl th:nth-child(5), .rep-log-tbl th:nth-child(6) { width:118px; }
+.rep-log-tbl th:nth-child(7) { width:96px; }
+.rep-log-tbl th.c-res { width:96px; }
+.rep-log-tbl th:nth-child(9) { width:96px; }
+.rep-log-tbl th.c-act { width:150px; }
