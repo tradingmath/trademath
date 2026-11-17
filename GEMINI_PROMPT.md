@@ -29,7 +29,7 @@ I test with the local .html file first before deploying.
 | `alerts.js` | Header interval beep — candle-aligned (NSE 9:15 or clock), pre-scheduled on the audio clock |
 | `app.js` | App shell — settings, tab switching, theme, checklist, init |
 
-Script load order matters: calc.js, journal.js, import.js, projection.js, alerts.js, app.js. calc.js runs `calc()` at load
+Script load order matters: calc.js, journal.js, projection.js, alerts.js, app.js. calc.js runs `calc()` at load
 before journal.js exists, so anything it calls must live in calc.js or be guarded.
 
 ---
@@ -238,13 +238,6 @@ Netlify auto-deploys on push to main branch.
 - Journal: a crypto trade stores `instrument:"crypto"`, `ccy:"USDT"`, `fx` (rate at logging), `leverage`, `liq`, `qty` in coins, prices in USDT. `pnlForTrade` converts with `fxOf(t)`; `fees` and `funding` are in ₹. Closing a crypto trade auto-fills fees (round-trip taker + GST at the trade's fx) unless you type your own, and has a Funding (₹) field. The ✎ editor can change leverage and USD/INR.
 - Older trades with market "Crypto" but no `instrument` are treated as plain ₹, on purpose (no surprise conversion).
 - `fmtP` now puts commas on the whole part only; `fmtUsd` formats prices (2 decimals ≥ 1000, up to 4 below, up to 6 below 1, trailing zeros trimmed).
-
-## Broker import (import.js, broker-neutral)
-- UI says "Import broker data"; no broker is named anywhere in the app. Reads CSV/TSV/;/| files. Finds the header row (brokers put account details above the table), then columns by name (`IMPORT_CONCEPTS`). If symbol / buy-sell / quantity / price can't be found, a **column mapper** lets the user pick them.
-- Matching: fills of one order (or consecutive same-side fills on a day) are merged into one weighted-average fill, then matched FIFO per symbol across days. Scale-outs become one trade with `exits[]`, shorts-first are SHORT, partly closed positions stay open with a partial exit, flips split correctly.
-- Re-importing is safe: trades already in the journal (same symbol, date, direction, entry, quantity) are skipped and counted. Unrecognised rows are skipped and counted, never guessed. Preview text is escaped. Files over 8 MB are refused.
-- `contractInfo(symbol, exch)` classifies the symbol (index/stock options and futures, MCX, crypto). A bare CE/PE ending is not an option (RELIANCE ends in CE); it needs a digit before it or to stand alone as a word.
-- The fee schedule in calc.js (`calcFees`, `FEE_RATES`) was verified against a discount broker's published charges in Nov 2026; keep the source in these notes only, not in the UI.
 
 ## Data safety (calc.js `tmSet`, journal.js)
 - **Every write goes through `tmSet(key, value)`** (calc.js, loaded first). It returns false and shows a persistent red banner if the browser refuses to store (full, blocked, private window). Never call `localStorage.setItem` directly.

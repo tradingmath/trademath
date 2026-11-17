@@ -754,7 +754,7 @@ function calc() {
     optType: optShown ? optType : null,
     isLots: instrType !== "equity" && !crypto && lotSize > 1,
     dec: 2,
-    margin: totalMgn,
+    margin: totalMgn, sellOpt: !!M.sellOpt,
     tradeValue: tradeVal,
     leverage: crypto ? M.crypto.lev : (instrType === "equity" ? leverageMultiplier : orderType),
     targetPrice: profitTP,
@@ -810,8 +810,8 @@ function calc() {
     const base = cryptoBase();
     $("t0lbl").textContent = "Position (" + base + ")";
     $("t0val").textContent = fmtP(units, 4).replace(/\.?0+$/, "") + " " + base;
-    $("t0sub").textContent = `Notional: $${fmtP(tradeVal / M.crypto.fx, 2)} · ${fmtINR(tradeVal)}`;
-    $("t1val").textContent = fmtINR(totalMgn);
+    $("t0sub").textContent = `Notional: $${fmtP(tradeVal / M.crypto.fx, 2)}`;
+    $("t1val").textContent = "$" + fmtP(totalMgn / M.crypto.fx, 2);
     $("t1sub").textContent = `${mgnPct.toFixed(1)}% of capital · ${M.crypto.lev}× · Liq $${fmtUsd(M.crypto.liq)}`;
   } else {
     // Tile 0: Position
@@ -826,22 +826,24 @@ function calc() {
   }
 
   // Tile 2: Max Risk
-  $("t2val").textContent = fmtINR(actualRisk);
-  $("t2sub").textContent = `${actualRiskPct.toFixed(2)}% of capital${flatOn ? " · flat risk" : ""}`;
+  // Crypto is shown in dollars; rupees stay as a small reference on risk and profit only.
+  const usd = inr => (inr < 0 ? "−" : "") + "$" + fmtP(Math.abs(inr) / M.crypto.fx, 2);
+  $("t2val").textContent = crypto ? usd(actualRisk) : fmtINR(actualRisk);
+  $("t2sub").textContent = `${crypto ? "≈ " + fmtINR(actualRisk) + " · " : ""}${actualRiskPct.toFixed(2)}% of capital${flatOn ? " · flat risk" : ""}`;
 
   // Tile 3: Profit
   $("t_profit_lbl").textContent = "Profit (1:" + defRR + ")";
-  $("t_profit_val").textContent = "+₹" + fmtP(profitGross, 0);
-  $("t_profit_sub").innerHTML = '<span class="tile-target"><i>🎯 Target</i><b>' + cur + (crypto ? fmtUsd(profitTP) : fmtP(profitTP, 2)) + '</b></span>';
+  $("t_profit_val").textContent = crypto ? "+" + usd(profitGross) : "+₹" + fmtP(profitGross, 0);
+  $("t_profit_sub").innerHTML = '<span class="tile-target"><i>🎯 Target</i><b>' + cur + (crypto ? fmtUsd(profitTP) : fmtP(profitTP, 2)) + '</b></span>' + (crypto ? '<div class="tile-ref">≈ ₹' + fmtP(profitGross, 0) + '</div>' : "");
 
   const showFees = typeof getAppSettings === "function" ? getAppSettings().showFees !== false : true;
   $("tgt_body").innerHTML = targets.map(t => `
     <div class="tgt-row">
       <div class="rr-pill">1:${t.rr}</div>
       <div class="tp-px">${cur}${crypto ? fmtUsd(t.tp) : fmtP(t.tp, 2)}</div>
-      <div class="v-pos">₹${fmtP(t.gross, 0)}</div>
+      <div class="v-pos">${crypto ? usd(t.gross) : "₹" + fmtP(t.gross, 0)}</div>
       ${showFees
-        ? `<div class="v-dim ${t.net >= 0 ? "pos" : "neg"}">${t.net < 0 ? "−" : ""}₹${fmtP(Math.abs(t.net), 0)}</div>`
+        ? `<div class="v-dim ${t.net >= 0 ? "pos" : "neg"}">${crypto ? usd(t.net) : (t.net < 0 ? "−" : "") + "₹" + fmtP(Math.abs(t.net), 0)}</div>`
         : `<div class="v-dim" style="color:var(--fg3)">—</div>`}
     </div>`).join("");
 

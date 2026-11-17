@@ -769,3 +769,4 @@ html[data-ui="pro"]    [data-level="below-pro"] { display:none !important; }
 .bk-msg.bad { color:var(--red); }
 .bk-confirm { display:flex; gap:8px; margin-top:8px; }
 .bk-confirm[hidden] { display:none; }
+.tile-ref { font:11px var(--mono); color:var(--fg2); margin-top:4px; }

@@ -7,11 +7,11 @@ let editId   = null;
 /* Every trade has the same shape whichever level logged it: market (from the fixed MARKETS list), symbol,
    instrument ("equity" | "options" | "futures") and optType. Older trades stored a symbol name or "Options (CE)"
    in the market field, which broke the Market filter; this repairs them once on load. */
-const TRADE_NUM_KEYS = ["entry", "sl", "target", "exit", "qty", "lots", "lotSize", "fees", "fx", "funding"];
+const TRADE_NUM_KEYS = ["entry", "sl", "target", "exit", "qty", "lots", "lotSize", "fees", "fx", "funding", "margin"];
 function normalizeTrade(t) {
   let changed = false;
   const set = (k, v) => { if (t[k] !== v) { t[k] = v; changed = true; } };
-  /* Data can come from an old version, an imported file or a restored backup, so never trust its shape: ids, dates,
+  /* Data can come from an old version or a restored backup, so never trust its shape: ids, dates,
      symbols and numbers are forced into safe forms here, and text is escaped again wherever it is drawn. */
   if (typeof t.id !== "string" || !/^[\w-]{1,40}$/.test(t.id)) set("id", uid());
   if (t.date != null && !/^\d{4}-\d{2}-\d{2}$/.test(t.date)) set("date", "");
@@ -294,6 +294,8 @@ function quickLogTrade() {
   const t = {
     id: uid(),
     date: todayStr(),
+    margin: lc.sellOpt ? Math.round(lc.margin) : null,   // short options only: an estimate until you enter the real one on close
+    marginActual: false,
     market: lc.market || "NSE Equity",
     symbol: lc.symbol || null,
     instrument: lc.instrument || null,
@@ -386,6 +388,8 @@ $("pl_confirm").addEventListener("click", () => {
   const t = {
     id: uid(),
     date: todayStr(),
+    margin: lc.sellOpt ? Math.round(lc.margin) : null,   // short options only: an estimate until you enter the real one on close
+    marginActual: false,
     market: lc.market || "NSE Equity",
     symbol: lc.symbol || null,
     instrument: lc.instrument || null,
@@ -535,6 +539,9 @@ function openCloseModal(id) {
   $("cm_fees").value  = "";
   feesTouched = false;
   $("cm_funding_wrap").hidden = t.instrument !== "crypto";
+  const shortOpt = t.margin != null && t.instrument === "options" && t.dir === "SHORT";
+  $("cm_margin_wrap").hidden = !shortOpt;
+  $("cm_margin").value = shortOpt ? t.margin : "";
   $("cm_funding").value = "";
   $("cm_notes").value = t.notes || "";
   // Show existing partial exits
@@ -612,6 +619,8 @@ $("cm_confirm").addEventListener("click", () => {
       notes: $("cm_notes").value.trim() || t.notes || "",
     };
     if (t.instrument === "crypto") updated.funding = (t.funding || 0) + funding;
+    const realMgn = parseFloat($("cm_margin").value);
+    if (!$("cm_margin_wrap").hidden && realMgn >= 0) { if (realMgn !== t.margin) updated.marginActual = true; updated.margin = realMgn; }
     const partialExit = { price: exit, qty: exitQty || t.qty, fees: exitFees, date: todayStr() };
     if (!updated.exits) updated.exits = [];
     updated.exits = [...updated.exits, partialExit];
@@ -691,7 +700,7 @@ function renderTodayTrades() {
         ${editBtnFor(t)}
         ${delBtn}
       </div>
-      <div class="today-trade-meta">E: ${pxs(t, t.entry)} · SL: ${pxs(t, t.sl)} · Qty: ${qtyLabel(t)}${closed?` · Exit: ${t.exit ? pxs(t, t.exit) : "partial"}`:""}</div>
+      <div class="today-trade-meta">E: ${pxs(t, t.entry)} · SL: ${pxs(t, t.sl)} · Qty: ${qtyLabel(t)}${t.margin != null ? ` · Margin: ₹${fmtP(t.margin, 0)} (${t.marginActual ? "actual" : "est."})` : ""}${closed?` · Exit: ${t.exit ? pxs(t, t.exit) : "partial"}`:""}</div>
       ${closeBtn ? `<div style="margin-top:8px;text-align:right">${closeBtn}</div>` : ""}
     </div>`;
   }).join("");
