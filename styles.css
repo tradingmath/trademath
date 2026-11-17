@@ -785,3 +785,5 @@ html.tm-boot body { visibility:hidden; }
 .ac-del { margin-top:14px; font-size:12px; color:var(--fg2); }
 .ac-del summary { cursor:pointer; }
 .ac-del .field { margin-top:8px; }
+.kbd-hint { display:none; margin-left:8px; font:500 11px var(--mono); opacity:.7; border:1px solid currentColor; border-radius:4px; padding:0 5px; }
+@media (pointer: fine) { .kbd-hint { display:inline-block; } }

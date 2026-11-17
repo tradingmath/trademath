@@ -1,0 +1,7 @@
+# Friendly 404 page
+ErrorDocument 404 /404.html
+
+# Developer notes are not part of the site
+<FilesMatch "^(CLAUDE|GEMINI_PROMPT)\.md$">
+  Require all denied
+</FilesMatch>

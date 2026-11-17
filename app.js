@@ -48,8 +48,8 @@ const SETTINGS_FIELDS = [
   { scope: "settings", key: "defaultMarket", label: "I mainly trade",    fb: "NSE Equity", get: () => $("s_default_market").value,         set: v => { $("s_default_market").value = v; }, fmt: v => v },
   { scope: "settings", key: "quickLog",    label: "One-click quick log", fb: true,       get: () => $("tog_quick_log").checked,            set: v => { $("tog_quick_log").checked = v; }, fmt: onOff },
   { scope: "settings", key: "showFees",    label: "Show fee breakdown",  fb: true,       get: () => $("tog_show_fees").checked,            set: v => { $("tog_show_fees").checked = v; }, fmt: onOff },
-  { scope: "settings", key: "brokerage",   label: "Brokerage per order", fb: 20,         get: () => nonNeg("s_brokerage", 20),             set: v => { $("s_brokerage").value = v; },   fmt: v => "₹" + v },
-  { scope: "settings", key: "gstPct",      label: "GST",                 fb: 18,         get: () => nonNeg("s_gst_pct", 18),               set: v => { $("s_gst_pct").value = v; },     fmt: v => v + "%" },
+  { scope: "settings", key: "brokerage",   label: "Brokerage per order", fb: 20,         get: () => Math.min(nonNeg("s_brokerage", 20), 10000),             set: v => { $("s_brokerage").value = v; },   fmt: v => "₹" + v },
+  { scope: "settings", key: "gstPct",      label: "GST",                 fb: 18,         get: () => Math.min(nonNeg("s_gst_pct", 18), 100),               set: v => { $("s_gst_pct").value = v; },     fmt: v => v + "%" },
   { scope: "settings", key: "cryptoTaker",   label: "Crypto taker fee",      fb: 0.05, get: () => nonNeg("s_cry_taker", 0.05),  set: v => { $("s_cry_taker").value = v; }, fmt: v => v + "%" },
   { scope: "settings", key: "cryptoGst",     label: "GST on crypto fees",    fb: 18,   get: () => nonNeg("s_cry_gst", 18),      set: v => { $("s_cry_gst").value = v; },   fmt: v => v + "%" },
   { scope: "settings", key: "cryptoFunding", label: "Funding per 8 hours",   fb: 0.01, get: () => nonNeg("s_cry_fund", 0.01),   set: v => { $("s_cry_fund").value = v; },  fmt: v => v + "%" },
@@ -371,7 +371,7 @@ $("popBtn").addEventListener("click", () => {
   const w = 420, h = 620;
   const left = Math.max(0, screen.width - w - 20);
   const top  = Math.max(0, Math.round((screen.height - h) / 2));
-  const win  = window.open(location.href + "?popout=1", "trademath_popout",
+  const win  = window.open(location.origin + location.pathname + "?popout=1#calc", "trademath_popout",
     `width=${w},height=${h},left=${left},top=${top},resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no,status=no`);
   if (!win) alert("Pop-up blocked — please allow pop-ups for this site in your browser.");
 });
@@ -400,3 +400,18 @@ setLevel(getLevel(), true);                              // apply the saved leve
 { const st = getAppSettings(); if (st.cryptoOn) setInstrType("crypto"); else if (st.optionsOn) setInstrType("options"); else if (st.futuresOn && getLevel() === "pro") setInstrType("futures"); }   // reopen in the mode you left
 { const r = parseRoute(); showRoute(r.tab, r.sub); }   // open the page named in the link
 document.documentElement.classList.remove("tm-boot");   // everything is set up: show the page
+
+/* ══════════════ KEYBOARD ══════════════
+   Ctrl+Enter (Cmd+Enter on a Mac) logs the trade from any calculator box. Plain Enter is left alone so a stray Enter
+   never logs half-typed numbers. On a computer the Entry box is focused when the page opens; on a phone it is not,
+   because that would pop the keyboard up before you have looked at anything. */
+document.addEventListener("keydown", e => {
+  if (e.key !== "Enter" || !(e.ctrlKey || e.metaKey) || e.isComposing) return;
+  const inCalc = e.target.closest && e.target.closest("#tab-calc") && !$("tab-calc").hidden;
+  if (!inCalc || document.querySelector(".modal-overlay:not([hidden])") || typeof lastCalc === "undefined" || !lastCalc) return;
+  e.preventDefault();
+  $("logTradeBtn").click();
+});
+if (window.matchMedia("(pointer: fine)").matches && !$("tab-calc").hidden && !document.querySelector(".modal-overlay:not([hidden])")) {
+  try { $("i_entry").focus({ preventScroll: true }); } catch (e) {}
+}

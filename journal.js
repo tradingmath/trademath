@@ -453,6 +453,7 @@ $("saveTradeBtn").addEventListener("click", () => {
     exits: [],
   };
   if (!t.entry || !t.qty) { alert("Entry price and Qty are required."); return; }
+  if (t.entry <= 0 || t.qty <= 0 || [t.sl, t.target, t.exit].some(v => v != null && v <= 0) || t.fees < 0) { alert("Prices and quantity must be greater than zero, and fees cannot be negative."); return; }
   if (editId) { trades = trades.map(x => x.id === editId ? t : x); }
   else { trades.push(t); }
   saveTrades();
@@ -467,19 +468,17 @@ $("saveTradeBtn").addEventListener("click", () => {
 /* ── Export CSV ── */
 $("exportBtn").addEventListener("click", () => {
   const cols = ["date","market","symbol","instrument","ccy","fx","leverage","funding","dir","entry","sl","target","exit","qty","fees","pnl","rr","setup","notes"];
+  // A text cell starting with = + - @ is read as a formula by Excel / Sheets, so it gets a leading apostrophe.
+  const txt = v => { let s = String(v == null ? "" : v); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
   const rows = trades.map(t => {
     const pnl = pnlForTrade(t);
     const rr  = rrActual(t);
-    return [t.date, t.market, '"' + (t.symbol || "") + '"', t.instrument || "", t.ccy || "", t.fx || "", t.leverage || "", t.funding || "", t.dir, t.entry, t.sl, t.target, t.exit, t.qty, t.fees,
+    return [txt(t.date), txt(t.market), txt(t.symbol), txt(t.instrument), txt(t.ccy), t.fx || "", txt(t.leverage), t.funding || "", t.dir, t.entry, t.sl, t.target, t.exit, t.qty, t.fees,
       pnl !== null ? pnl.toFixed(2) : "", rr !== null ? rr.toFixed(2) : "",
-      '"' + (t.setup || "").replace(/"/g,'""') + '"',
-      '"' + (t.notes || "").replace(/"/g,'""') + '"'].join(",");
+      txt(t.setup), txt(t.notes)].join(",");
   });
   const csv = [cols.join(","), ...rows].join("\n");
-  const a   = document.createElement("a");
-  a.href    = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
-  a.download = "trademath_journal.csv";
-  a.click();
+  tmDownload("trademath_journal.csv", "\ufeff" + csv, "text/csv;charset=utf-8");
 });
 
 /* ══════════════ TRADE DETAILS: the one-tap way to tidy a trade you logged in a hurry ══════════════ */
@@ -609,8 +608,11 @@ $("closeModal").addEventListener("click", e  => { if (e.target === $("closeModal
 $("cm_confirm").addEventListener("click", () => {
   const exit = parseFloat($("cm_exit").value);
   if (!exit) { $("cm_exit").focus(); return; }
+  const open = trades.find(x => x.id === closeTradeId);
+  const stillOpen = open ? Math.max(0, (open.qty || 0) - (open.exits || []).reduce((s, ex) => s + (ex.qty || 0), 0)) : 0;
   const exitQty  = parseFloat($("cm_qty").value)  || 0;
-  const exitFees = parseFloat($("cm_fees").value) || 0;
+  const exitFees = Math.max(0, parseFloat($("cm_fees").value) || 0);
+  if (exitQty < 0 || exitQty > stillOpen + 1e-9) { showToast("Quantity must be between 0 and " + stillOpen + " (what is still open)."); $("cm_qty").focus(); return; }
   const funding  = parseFloat($("cm_funding").value) || 0;
   trades = trades.map(t => {
     if (t.id !== closeTradeId) return t;

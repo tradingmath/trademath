@@ -833,9 +833,9 @@ function calc() {
   if (totalMgn > cap) {
     if (instrType === "equity") {
       const maxAffordable = Math.floor((cap * (leverageMultiplier || 1)) / entry);
-      warns.push(`⚠ Margin required (${fmtINR(totalMgn)}) exceeds capital (${fmtINR(cap)}). Max affordable with ${leverageMultiplier}× leverage: <strong>${comma(maxAffordable)} shares</strong>.`);
+      warns.push(`⚠ Margin required (${fmtINR(totalMgn)}) exceeds capital (${fmtINR(cap)}). Max affordable with ${leverageMultiplier}× leverage: <strong>${comma(maxAffordable)} shares</strong>.${typeof getLevel === "function" && getLevel() === "quick" ? " Change your capital in Settings → Default capital." : ""}`);
     } else {
-      warns.push(`⚠ Margin required (${fmtINR(totalMgn)}) exceeds your capital (${fmtINR(cap)}).`);
+      warns.push(`⚠ Margin required (${fmtINR(totalMgn)}) exceeds your capital (${fmtINR(cap)}).${typeof getLevel === "function" && getLevel() === "quick" ? " Change your capital in Settings → Default capital." : ""}`);
     }
   }
   if (M.sellOpt) warns.push(`⚠ You are SELLING an option. The broker blocks margin (about ${fmtINR(M.mgnLow)}–${fmtINR(M.mgnHigh)} here, an estimate), far more than the premium, and a loss is not capped at the premium. Strike, VIX and expiry change it a lot: check your broker's margin calculator.`);
