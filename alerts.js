@@ -218,7 +218,7 @@
       label.textContent = intervalName(cfg.min) + " · idle";
       note.textContent = "No more beeps in the selected window.";
     } else {
-      label.textContent = "Beep";
+      label.textContent = "";
       note.textContent = "Press Start. You'll hear a test beep a second later to confirm your speakers work." + clamped;
     }
     if (Date.now() < noteUntil) note.textContent = noteMsg;

@@ -10,7 +10,9 @@ if ($method === 'GET') {                       // download the saved copy
     $s = $pdo->prepare('SELECT version, updated_at, data FROM sync WHERE user_id = ?');
     $s->execute([$u['id']]); $row = $s->fetch();
     if (!$row) out(['ok' => true, 'version' => 0, 'updatedAt' => 0, 'data' => null]);
-    out(['ok' => true, 'version' => (int)$row['version'], 'updatedAt' => (int)$row['updated_at'], 'data' => json_decode($row['data'], true)]);
+    $plain = unpack_data((string)$row['data']);
+    if ($plain === null) { error_log('TradeMath: could not open a saved copy'); fail('Your saved copy could not be read. Please contact support.', 500); }
+    out(['ok' => true, 'version' => (int)$row['version'], 'updatedAt' => (int)$row['updated_at'], 'data' => json_decode($plain, true)]);
 }
 
 $in = require_post();                          // upload: {baseVersion, data, force?}
@@ -27,6 +29,7 @@ $base  = (int)($in['baseVersion'] ?? 0);
 $force = ($in['force'] ?? false) === true;
 $now   = time();
 
+$packed = pack_data($json);
 $pdo->beginTransaction();
 try {
     $s = $pdo->prepare('SELECT version FROM sync WHERE user_id = ?');
@@ -34,8 +37,8 @@ try {
     $cur = $row ? (int)$row['version'] : 0;
     if ($cur !== $base && !$force) { $pdo->rollBack(); fail('The cloud copy changed on another device.', 409, ['conflict' => true, 'version' => $cur]); }
     $new = $cur + 1;
-    if ($row) $pdo->prepare('UPDATE sync SET version = ?, updated_at = ?, data = ? WHERE user_id = ?')->execute([$new, $now, $json, $u['id']]);
-    else      $pdo->prepare('INSERT INTO sync (user_id, version, updated_at, data) VALUES (?, ?, ?, ?)')->execute([$u['id'], $new, $now, $json]);
+    if ($row) $pdo->prepare('UPDATE sync SET version = ?, updated_at = ?, data = ? WHERE user_id = ?')->execute([$new, $now, $packed, $u['id']]);
+    else      $pdo->prepare('INSERT INTO sync (user_id, version, updated_at, data) VALUES (?, ?, ?, ?)')->execute([$u['id'], $new, $now, $packed]);
     $pdo->commit();
 } catch (Throwable $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();

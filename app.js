@@ -41,11 +41,6 @@ const SETTINGS_FIELDS = [
   { scope: "settings", key: "darkMode",    label: "Dark mode",           fb: true,       get: () => $("tog_dark").checked,                 set: v => { $("tog_dark").checked = v; }, fmt: onOff },
   { scope: "settings", key: "baseTheme",   label: "Dark terminal theme", fb: "midnight", get: () => draftBase,                              set: v => { draftBase = v; },            fmt: v => BASE_NAMES[v] || v },
   { scope: "settings", key: "accentColor", label: "Accent colour",       fb: "gold",     get: () => draftAccent,                            set: v => { draftAccent = v; },          fmt: paletteName },
-  { scope: "settings", key: "defaultCap",  label: "Default capital",     fb: 100000,     get: () => positive("s_default_cap", 100000),     set: v => { $("s_default_cap").value = v; },  fmt: rupees },
-  { scope: "settings", key: "defaultRisk", label: "Default risk %",      fb: 1,          get: () => positive("s_default_risk", 1),         set: v => { $("s_default_risk").value = v; }, fmt: v => v + "%" },
-  { scope: "settings", key: "defaultLev",  label: "Default leverage",    fb: "5",        get: () => $("s_default_lev").value,              set: v => { $("s_default_lev").value = v; }, fmt: v => v === "5" ? "5× intraday" : v === "1" ? "1× cash" : "Custom" },
-  { scope: "settings", key: "defaultRR",   label: "Default target R:R",  fb: 2,          get: () => positive("s_default_rr", 2),           set: v => { $("s_default_rr").value = v; },  fmt: v => "1 : " + v },
-  { scope: "settings", key: "defaultMarket", label: "I mainly trade",    fb: "NSE Equity", get: () => $("s_default_market").value,         set: v => { $("s_default_market").value = v; }, fmt: v => v },
   { scope: "settings", key: "quickLog",    label: "One-click quick log", fb: true,       get: () => $("tog_quick_log").checked,            set: v => { $("tog_quick_log").checked = v; }, fmt: onOff },
   { scope: "settings", key: "showFees",    label: "Show fee breakdown",  fb: true,       get: () => $("tog_show_fees").checked,            set: v => { $("tog_show_fees").checked = v; }, fmt: onOff },
   { scope: "settings", key: "brokerage",   label: "Brokerage per order", fb: 20,         get: () => Math.min(nonNeg("s_brokerage", 20), 10000),             set: v => { $("s_brokerage").value = v; },   fmt: v => "₹" + v },
@@ -54,8 +49,6 @@ const SETTINGS_FIELDS = [
   { scope: "settings", key: "cryptoGst",     label: "GST on crypto fees",    fb: 18,   get: () => nonNeg("s_cry_gst", 18),      set: v => { $("s_cry_gst").value = v; },   fmt: v => v + "%" },
   { scope: "settings", key: "cryptoFunding", label: "Funding per 8 hours",   fb: 0.01, get: () => nonNeg("s_cry_fund", 0.01),   set: v => { $("s_cry_fund").value = v; },  fmt: v => v + "%" },
   { scope: "settings", key: "cryptoMmr",     label: "Maintenance margin",    fb: 0.5,  get: () => nonNeg("s_cry_mmr", 0.5),     set: v => { $("s_cry_mmr").value = v; },   fmt: v => v + "%" },
-  { scope: "settings", key: "maxDailyLoss",   label: "Max daily loss",   fb: "",         get: () => $("s_max_loss").value.trim(),          set: v => { $("s_max_loss").value = v; },    fmt: v => v ? rupees(v) : "Off" },
-  { scope: "settings", key: "maxDailyTrades", label: "Max trades / day", fb: "",         get: () => $("s_max_trades").value.trim(),        set: v => { $("s_max_trades").value = v; }, fmt: v => v || "Off" },
   { scope: "alert",    key: "anchor", label: "Beep aligned to",    get: () => +$("alert_anchor").value,          set: v => { $("alert_anchor").value = String(v); }, fmt: v => +v === 0 ? "Clock (:00)" : "NSE candles (9:15)" },
   { scope: "alert",    key: "lead",   label: "Beep before close",  get: () => +$("alert_lead").value,            set: v => { $("alert_lead").value = String(v); },   fmt: v => +v ? v + " sec early" : "At the close" },
   { scope: "alert",    key: "sound",  label: "Beep sound",         get: () => $("alert_sound").value,            set: v => { $("alert_sound").value = v; },         fmt: v => (tmAlert.SOUNDS[v] || {}).label || v },
@@ -171,8 +164,8 @@ function commitSettings() {
 function discardSettings() { populateForm(); showToast("Changes discarded"); }
 
 /* ── wiring: every control only updates the draft ── */
-["tog_dark", "s_default_cap", "s_default_risk", "s_default_lev", "s_default_rr", "s_default_market", "tog_quick_log",
- "tog_show_fees", "s_brokerage", "s_gst_pct", "s_cry_taker", "s_cry_gst", "s_cry_fund", "s_cry_mmr", "s_max_loss", "s_max_trades",
+["tog_dark", "tog_quick_log",
+ "tog_show_fees", "s_brokerage", "s_gst_pct", "s_cry_taker", "s_cry_gst", "s_cry_fund", "s_cry_mmr",
  "alert_anchor", "alert_lead", "alert_hours", "alert_vol"].forEach(id => {
   const el = $(id); if (!el) return;
   ["input", "change"].forEach(ev => el.addEventListener(ev, refreshDirty));
@@ -205,8 +198,8 @@ window.addEventListener("beforeunload", e => { if (changes().length) { e.prevent
 /* ══════════════ TABS ══════════════ */
 /* Every page has its own link: #calc (home), #journal, #journal/projection, #settings.
    Hash links work on any host, on localhost and when index.html is opened straight from disk. */
-const PAGES = ["calc", "journal", "settings"];
-const PAGE_TITLES = { calc: "TradeMath", journal: "TradeMath · Journal", settings: "TradeMath · Settings" };
+const PAGES = ["calc", "journal", "settings", "profile"];
+const PAGE_TITLES = { calc: "TradeMath", journal: "TradeMath · Journal", settings: "TradeMath · Settings", profile: "TradeMath · Profile" };
 let currentRoute = null;
 
 function parseRoute() {
@@ -221,10 +214,11 @@ function showRoute(tab, sub) {
   currentRoute = tab + "/" + sub;
   PAGES.forEach(t => {
     $("tab-"+t).hidden = t !== tab;
-    document.querySelector('.tab-btn[data-tab="'+t+'"]').classList.toggle("active", t === tab);
+    const tb = document.querySelector('.tab-btn[data-tab="'+t+'"]'); if (tb) tb.classList.toggle("active", t === tab);   // Profile has no tab button
   });
   document.title = sub === "projection" && tab === "journal" ? "TradeMath · Projection" : PAGE_TITLES[tab];
   if (tab === "calc")    { renderTodayTrades(); renderDailyBanner(); }
+  if (tab === "profile" && window.tmProfileShow) window.tmProfileShow();
   if (tab === "journal") {
     const proj = sub === "projection";
     showJournalView(proj ? "projection" : "main");
@@ -342,11 +336,11 @@ function applyDarkToggle(dark) {
   const baseWrap = $("base_theme_wrap");
   if (dark) {
     r.dataset.theme = "dark";
-    $("themeBtn").textContent = "☀ Light";
+    $("themeBtn").textContent = "☀"; $("themeBtn").title = "Switch to light mode";
     if (baseWrap) baseWrap.style.display = "";
   } else {
     r.dataset.theme = "light";
-    $("themeBtn").textContent = "☾ Dark";
+    $("themeBtn").textContent = "☾"; $("themeBtn").title = "Switch to dark mode";
     if (baseWrap) baseWrap.style.display = "none";
   }
   const s = getAppSettings();

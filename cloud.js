@@ -8,7 +8,7 @@
 (function () {
   const META = "tm_cloud";                                   // { version, auto }  (local only, never synced)
   const SYNC_KEYS = ["tm_trades", "tm_settings", "tm_checklist", "tm_alert", "tm_proj"];
-  const st = { signedIn: false, email: "", version: 0, updatedAt: 0, timer: null, busy: false, googleId: "", googleReady: false };
+  const st = { signedIn: false, email: "", version: 0, updatedAt: 0, timer: null, busy: false, googleId: "", googleReady: false, apiReady: false };
   const meta = () => tmGet(META, {}) || {};
   const setMeta = o => tmSet(META, Object.assign(meta(), o));
   const el = id => document.getElementById(id);
@@ -30,9 +30,13 @@
   function render() {
     el("ac_out").hidden = st.signedIn;
     el("ac_in").hidden = !st.signedIn;
-    const b = el("acctBtn");
-    b.textContent = st.signedIn ? "☁ " + (st.email.split("@")[0].slice(0, 14)) : "Sign in";
-    b.title = st.signedIn ? "Signed in as " + st.email + ". Open account settings." : "Sign in to keep a copy of your trades in the cloud";
+    el("acctBtn").hidden = !st.apiReady || st.signedIn;
+    el("avatarBtn").hidden = !st.signedIn;
+    const nm = ((tmGet("tm_settings", {}) || {}).displayName || "").trim();
+    el("avatarLetter").textContent = (nm || st.email || "?").charAt(0).toUpperCase();
+    el("am_name").textContent = nm || (st.email.split("@")[0] || "Your account");
+    el("am_email").textContent = st.email;
+    document.dispatchEvent(new CustomEvent("tm:account", { detail: { signedIn: st.signedIn, email: st.email, name: nm } }));
     if (st.signedIn) {
       el("ac_who").textContent = "Signed in as " + st.email + ". Cloud copy: " + (st.version ? "version " + st.version + ", saved " + when(st.updatedAt) : "none yet") + ".";
       el("ac_auto").checked = meta().auto !== false;
@@ -51,6 +55,7 @@
   async function finishSignIn(email) {
     st.signedIn = true; st.email = email; closeAuth(); el("au_code").value = "";
     render(); await reconcile();
+    document.dispatchEvent(new CustomEvent("tm:signedin", { detail: { email } }));
   }
 
   /* ── Google ── */
@@ -131,7 +136,7 @@
   async function start() {
     const r = await api("me.php");
     if (!r.ok || typeof r.signedIn !== "boolean") return;      // no server here: everything stays hidden
-    el("account_sec").hidden = false; el("acctBtn").hidden = false;
+    el("account_sec").hidden = false; st.apiReady = true;
     st.signedIn = r.signedIn; st.email = r.email || ""; st.version = r.version || 0; st.updatedAt = r.updatedAt || 0;
     st.googleId = r.googleClientId || "";
     render();
@@ -144,11 +149,10 @@
   }
 
   /* ── wiring ── */
-  el("acctBtn").addEventListener("click", () => {
-    if (st.signedIn) { switchTab("settings"); el("account_sec").scrollIntoView({ behavior: "smooth", block: "start" }); }
-    else openAuth();
-  });
+  el("acctBtn").addEventListener("click", openAuth);
+  window.tmAccount = { isSignedIn: () => st.signedIn, email: () => st.email, openAuth, refresh: render };
   el("ac_open").addEventListener("click", openAuth);
+  el("pf_signin").addEventListener("click", openAuth);
   el("au_close").addEventListener("click", closeAuth);
   el("authModal").addEventListener("click", e => { if (e.target === el("authModal")) closeAuth(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !el("authModal").hidden) closeAuth(); });

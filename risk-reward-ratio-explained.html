@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Risk-Reward Ratio Explained: Win Rate, Expectancy and Break-even | TradeMath</title>
+<meta name="description" content="What the risk-reward ratio is, how to calculate it, the win rate you need to break even at 1:1, 1:2 and 1:3, and why expectancy matters.">
+<meta name="theme-color" content="#050a1c">
+<link rel="canonical" href="https://trademath.in/risk-reward-ratio-explained.html">
+<link rel="icon" href="logo-icon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="TradeMath">
+<meta property="og:title" content="Risk-reward ratio explained: win rate, expectancy and break-even">
+<meta property="og:description" content="What the risk-reward ratio is, how to calculate it, the win rate you need to break even at 1:1, 1:2 and 1:3, and why expectancy matters.">
+<meta property="og:url" content="https://trademath.in/risk-reward-ratio-explained.html">
+<meta property="og:image" content="https://trademath.in/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<script>try{var s=JSON.parse(localStorage.getItem("tm_settings")||"{}");document.documentElement.dataset.theme=s.darkMode===false?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
+<link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts.css?v=140c3a0f">
+<link rel="stylesheet" href="styles.css?v=e7bdd9b8">
+<link rel="stylesheet" href="guide.css?v=322239b4">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Risk-reward ratio explained: win rate, expectancy and break-even", "description": "What the risk-reward ratio is, how to calculate it, the win rate you need to break even at 1:1, 1:2 and 1:3, and why expectancy matters.", "mainEntityOfPage": "https://trademath.in/risk-reward-ratio-explained.html", "dateModified": "2026-11-17", "author": {"@type": "Organization", "name": "TradeMath"}, "publisher": {"@type": "Organization", "name": "TradeMath", "url": "https://trademath.in"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is a good risk-reward ratio?", "acceptedAnswer": {"@type": "Answer", "text": "Many traders look for at least 1 : 1.5 or 1 : 2, but the right ratio depends on your win rate. Expectancy, which combines the win rate with the size of wins and losses, is what shows whether a method works."}}, {"@type": "Question", "name": "How do I calculate the risk-reward ratio?", "acceptedAnswer": {"@type": "Answer", "text": "Divide the distance from entry to target by the distance from entry to stop-loss. A \u20b95 stop with a \u20b910 target is 1 : 2."}}, {"@type": "Question", "name": "What win rate do I need at 1 : 2?", "acceptedAnswer": {"@type": "Answer", "text": "About 33.3% before charges. Brokerage and taxes raise the number you need slightly."}}]}</script>
+</head>
+<body>
+<header class="g-head"><a class="g-brand" href="/"><img src="logo-icon.svg" alt="" width="28" height="28"><span>Trade<b>Math</b></span></a>
+<nav class="g-nav" aria-label="Guides"><a href="position-size-calculator-india.html">Position size</a><a href="risk-reward-ratio-explained.html">Risk-reward</a><a href="nse-fno-lot-sizes.html">Lot sizes</a><a href="trading-journal-india.html">Journal</a></nav>
+<a class="g-cta" href="/">Open calculator</a></header>
+<main class="g-doc">
+<p class="g-crumb"><a href="/">TradeMath</a> / Guides</p>
+<h1>Risk-reward ratio explained: win rate, expectancy and break-even</h1>
+<p class="g-lede">A good ratio lets you be wrong often and still make money. Here is the maths, a break-even table and how to set targets.</p>
+
+<h2>What risk-reward means</h2>
+<p>The risk-reward ratio compares what you stand to lose with what you aim to gain. If your stop-loss is ₹5 below your entry and your target is ₹10 above it, the trade is <b>1 : 2</b>: you risk 1 to make 2.</p>
+<div class="g-formula">Risk-reward = (Target − Entry) ÷ (Entry − Stop-loss)</div>
+
+<h2>The win rate you need to break even</h2>
+<p>A better ratio means you can be wrong more often and still not lose money. Ignoring charges, the minimum win rate to break even is:</p>
+<div class="g-formula">Break-even win rate = 1 ÷ (1 + reward-to-risk)</div>
+<div class="g-tablewrap"><table class="g-table"><thead><tr><th>Risk : reward</th><th>Break-even win rate</th><th>Meaning</th></tr></thead><tbody>
+<tr><td>1 : 0.5</td><td>66.7%</td><td>You must win two of every three trades</td></tr>
+<tr><td>1 : 1</td><td>50.0%</td><td>Win half your trades</td></tr>
+<tr><td>1 : 1.5</td><td>40.0%</td><td>Win four of every ten</td></tr>
+<tr><td>1 : 2</td><td>33.3%</td><td>Win one in three</td></tr>
+<tr><td>1 : 3</td><td>25.0%</td><td>Win one in four</td></tr>
+</tbody></table></div>
+<p>Real results are worse than this table, because brokerage, STT, exchange charges and GST are paid on every trade, wins and losses alike. Add them to your loss and subtract them from your gain before you judge a ratio.</p>
+
+<h2>Expectancy: the number that matters</h2>
+<p>Ratio alone does not tell you whether a method works. <b>Expectancy</b> combines win rate and size:</p>
+<div class="g-formula">Expectancy per trade = (Win % × average win) − (Loss % × average loss)</div>
+<p>Example: you win 40% of trades with an average win of ₹2,000, and lose 60% with an average loss of ₹1,000. Expectancy = 0.40 × 2,000 − 0.60 × 1,000 = ₹800 − ₹600 = <b>₹200 per trade</b>, before charges. You can be right less than half the time and still be profitable, if the winners are larger than the losers.</p>
+<p>That is why a <a href="trading-journal-india.html">trading journal</a> matters. Your actual win rate and average win and loss tell you your real expectancy. A guess does not.</p>
+
+<h2>How to set a target</h2>
+<ul>
+<li>Start from the stop-loss, which should sit where your trade idea is proven wrong, then place the target at a multiple of that distance, such as 1.5× or 2×.</li>
+<li>Check that the target is reachable. A 1 : 3 target that sits beyond a strong resistance level may rarely be hit.</li>
+<li>Use the same ratio rule every time, so your results can be compared.</li>
+</ul>
+
+<h2>Common mistakes</h2>
+<ul>
+<li><b>Chasing a high ratio.</b> A 1 : 5 target that is almost never reached gives a low win rate and a worse expectancy than 1 : 2.</li>
+<li><b>Forgetting charges</b> on tight trades, where they can eat a large part of a small target.</li>
+<li><b>Moving targets and stops</b> during the trade, which breaks the ratio you planned.</li>
+</ul>
+<p>Next: <a href="position-size-calculator-india.html">calculate how many shares or lots</a> match your risk.</p>
+
+<h2>Common questions</h2><h3>What is a good risk-reward ratio?</h3><p>Many traders look for at least 1 : 1.5 or 1 : 2, but the right ratio depends on your win rate. Expectancy, which combines the win rate with the size of wins and losses, is what shows whether a method works.</p><h3>How do I calculate the risk-reward ratio?</h3><p>Divide the distance from entry to target by the distance from entry to stop-loss. A ₹5 stop with a ₹10 target is 1 : 2.</p><h3>What win rate do I need at 1 : 2?</h3><p>About 33.3% before charges. Brokerage and taxes raise the number you need slightly.</p>
+<aside class="g-box"><b>Try it with your own numbers.</b> The free TradeMath calculator does this sum for you, with charges, lot sizes and a trade journal. No sign-up needed.<br><a class="g-btn" href="/">Open the calculator</a></aside>
+<p class="g-fine">Updated 17 November 2026. This guide is for education and is not investment advice. Markets carry risk of loss. Check lot sizes, margins and charges with your broker and the exchange before you trade.</p>
+</main>
+<footer class="g-foot"><a href="/">Calculator</a> · <a href="position-size-calculator-india.html">Position size</a> · <a href="risk-reward-ratio-explained.html">Risk-reward</a> · <a href="nse-fno-lot-sizes.html">F&amp;O lot sizes</a> · <a href="trading-journal-india.html">Trading journal</a> · <a href="privacy.html">Privacy</a> · <a href="mailto:support@trademath.in">support@trademath.in</a></footer>
+</body>
+</html>

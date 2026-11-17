@@ -88,12 +88,13 @@ function saveTrades() {
   window.trades = trades;
   renderTodayTrades();
   renderBackupInfo();
+  if (window.tmDemoBar) window.tmDemoBar();
 }
 
 /* ── Backup & restore (Settings → Your data) ── */
 const BACKUP_KEYS = { settings: "tm_settings", checklist: "tm_checklist", alert: "tm_alert", projection: "tm_proj" };
 function buildBackup() {
-  const out = { app: "TradeMath", version: 1, exported: new Date().toISOString(), trades };
+  const out = { app: "TradeMath", version: 1, exported: new Date().toISOString(), trades: trades.filter(t => !t.demo) };   // sample trades are never saved
   Object.keys(BACKUP_KEYS).forEach(k => { out[k] = tmGet(BACKUP_KEYS[k], null); });
   return out;
 }
@@ -670,7 +671,7 @@ function renderTodayTrades() {
   const todays = trades.filter(t => t.date === today);
   const list   = $("today_list");
   const empty  = $("today_empty");
-  if (!todays.length) { list.innerHTML = ""; empty.style.display = "block"; return; }
+  if (!todays.length) { list.innerHTML = ""; empty.style.display = "flex"; return; }
   empty.style.display = "none";
 
   const closedTodays = todays.filter(t => isClosed(t));
@@ -812,8 +813,13 @@ function repTradeRow(t, dayId, moKey) {
 
 const repDays = new Map();   // dayId -> { trades, mo } so a day's rows can be built when it is first opened
 
+function showJournalEmpty(mode) {          // mode: "empty" (no trades at all) | "filtered" (filters hide everything) | null
+  const el = $("jnl_empty"); if (!el) return;
+  el.style.display = mode ? "block" : "none";
+  if (mode) el.dataset.mode = mode;
+}
 function renderReports() {
-  if (!trades.length) { $("rep_body").innerHTML = ""; return; }
+  if (!trades.length) { $("rep_body").innerHTML = ""; showJournalEmpty("empty"); return; }
 
   const fMkt = $("flt_market").value;
   const fDir = $("flt_dir").value;
@@ -827,9 +833,8 @@ function renderReports() {
     return true;
   });
 
-  const jEmpty = $("jnl_empty");
-  if (!filtered.length) { $("rep_body").innerHTML = ""; if (jEmpty) jEmpty.style.display = "block"; return; }
-  if (jEmpty) jEmpty.style.display = "none";
+  if (!filtered.length) { $("rep_body").innerHTML = ""; showJournalEmpty("filtered"); return; }
+  showJournalEmpty(null);
 
   const fset = new Set(filtered);
   repDays.clear();

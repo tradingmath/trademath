@@ -1,0 +1,35 @@
+/* Guide pages (content for search). Uses the site's colour tokens from styles.css. */
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); line-height: 1.7; }
+.g-head { display:flex; align-items:center; gap:18px; flex-wrap:wrap; padding:14px 0; border-bottom:1px solid var(--border); max-width:920px; margin:0 auto; }
+.g-brand { display:flex; align-items:center; gap:8px; font:600 17px var(--mono); color:var(--fg); text-decoration:none; }
+.g-brand b { color:var(--accent); font-weight:600; }
+.g-nav { display:flex; gap:14px; flex-wrap:wrap; margin-left:auto; font-size:13px; }
+.g-nav a { color:var(--fg2); text-decoration:none; }
+.g-nav a:hover { color:var(--accent); }
+.g-cta, .g-btn { background:var(--accent-solid); color:var(--on-accent); font-weight:600; font-size:13px; text-decoration:none; padding:8px 16px; border-radius:9px; display:inline-block; }
+.g-doc { max-width:760px; margin:0 auto; padding:26px 0 40px; }
+.g-crumb { font-size:12px; color:var(--fg3); margin-bottom:10px; }
+.g-crumb a { color:var(--fg3); }
+.g-doc h1 { font-size:30px; line-height:1.25; margin-bottom:12px; text-wrap:balance; }
+.g-lede { font-size:16px; color:var(--fg2); margin-bottom:8px; }
+.g-doc h2 { font-size:21px; margin:34px 0 10px; color:var(--fg); }
+.g-doc h3 { font-size:16px; margin:18px 0 4px; }
+.g-doc p, .g-doc li { font-size:15px; color:var(--fg2); }
+.g-doc p { margin:10px 0; }
+.g-doc ul, .g-doc ol { margin:10px 0 10px 22px; }
+.g-doc li { margin:5px 0; }
+.g-doc b { color:var(--fg); font-weight:600; }
+.g-doc a { color:var(--accent); }
+.g-formula { background:var(--card); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:10px; padding:14px 16px; margin:14px 0; font:500 15px var(--mono); color:var(--fg); overflow-x:auto; }
+.g-note { background:var(--warn-dim); border:1px solid var(--warn); border-radius:10px; padding:12px 14px; color:var(--fg); }
+.g-box { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px; margin:34px 0 14px; color:var(--fg2); font-size:14px; }
+.g-box .g-btn { margin-top:12px; }
+.g-fine { font-size:12px; color:var(--fg3); }
+.g-tablewrap { overflow-x:auto; border:1px solid var(--border); border-radius:10px; margin:14px 0; }
+.g-table { border-collapse:collapse; width:100%; font-size:14px; }
+.g-table th, .g-table td { text-align:left; padding:8px 14px; border-bottom:1px solid var(--border); color:var(--fg2); }
+.g-table th { color:var(--fg); background:var(--card); position:sticky; top:0; font-weight:600; }
+.g-table tr:last-child td { border-bottom:0; }
+.g-foot { max-width:920px; margin:0 auto; padding:18px 0 40px; border-top:1px solid var(--border); font-size:12px; color:var(--fg3); }
+.g-foot a { color:var(--fg2); }
+@media (max-width:560px) { .g-doc h1 { font-size:25px; } .g-nav { margin-left:0; } }

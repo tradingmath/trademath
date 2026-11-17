@@ -20,7 +20,7 @@ User tests with the local .html file first.
 | `alerts.js` | Header interval beep (candle-aligned, pre-scheduled on the audio clock) |
 | `app.js` | Settings, tabs, theme (dark/light + palettes), checklist, init |
 
-Script load order matters: `calc.js` → `journal.js` → `projection.js` → `alerts.js` → `app.js`.
+Script load order matters: `calc.js` → `journal.js` → `projection.js` → `alerts.js` → `app.js` → `cloud.js` → `profile.js`.
 `calc.js` runs `calc()` at load, before `journal.js` exists, so anything it calls must live in `calc.js` or be guarded (e.g. `todayStr()` lives in calc.js).
 
 ## Key Architecture
@@ -150,9 +150,20 @@ Script load order matters: `calc.js` → `journal.js` → `projection.js` → `a
 - **Google sign-in** (`api/google_login.php`): the page loads Google's script only when the sign-in window opens, and posts the ID token to the server. The server checks the RS256 signature against Google's certificates (`google_certs()`, cached 1 h, re-fetched once if the key id is new), `aud` = `google_client_id`, `iss`, expiry and `email_verified`, then calls `sign_in_user()` (shared with the email-code route, so both reach the same account). Needs `google_client_id` in `api/config.php` (public value, from Google Cloud Console → OAuth Web client, authorised origin `https://trademath.in`); leave it empty to hide the button. Sign-in UI is the `#authModal` window in index.html, driven by cloud.js.
 - Local testing: PHP 8.3 + SQLite (`pdo_sqlite`), `php -S 127.0.0.1:8766`, config with `dev_return_code: true`.
 
+## Profile, welcome setup, tour, demo (profile.js)
+- Avatar button + account menu in the header (`#avatarBtn`, `#acctMenu`); signed out it is the **Sign in** button. **Profile** is its own page (`#profile`, `#tab-profile`): trading capital, risk %, target R:R, trading style, "I mainly trade", name, experience level (=interface level), daily loss / max trades, cloud sync (`#account_sec`). Those fields keep their old ids (`s_default_*`, `s_max_*`) and **save by themselves** (not staged); they are no longer in `SETTINGS_FIELDS`.
+- **Welcome setup** (5 optional steps, Skip everywhere, Skip keeps defaults and live-previewed look is reverted) opens after a first sign-in when `settings.onboarded` is not set; `settings.onboarded` syncs with the account.
+- **Tour**: spotlight steps with Skip (`tm_tour_done` / `tm_tour_dismissed` in localStorage). **Demo data**: trades with `demo:true`, shown with a bar, removed with one click, never included in `buildBackup()` or the cloud copy.
+
+## Security and speed (read before deploying)
+- **Before every deploy run `python tools/stamp_assets.py`.** It adds `?v=<hash>` to every local .js/.css link, because `.htaccess` lets scripts, styles and fonts be cached for a year. Re-run it after regenerating guide pages (the generator lives outside the repo) or editing any asset.
+- `.htaccess` sends: HSTS, nosniff, X-Frame-Options DENY, Referrer-Policy, Permissions-Policy, COOP `same-origin-allow-popups` (needed for the Google popup), and a **Content-Security-Policy** (only our own files plus Google's sign-in; `'unsafe-inline'` is still needed for inline handlers). If a new third-party script, font or image host is added, the CSP must be updated or it will be blocked.
+- Fonts are **self-hosted** (`fonts.css`, `fonts/`); no Google Fonts request. ₹ in Inter text falls back to the system font on purpose (the Inter latin-ext file is 85 KB).
+- **Cloud copies are compressed (gzip) and encrypted (AES-256-GCM)** before they reach MySQL (`pack_data` / `unpack_data` in api/_lib.php). Key = `data_key` in api/config.php (falls back to `secret`). **Never change or lose `data_key` once users have saved data: their copies could no longer be opened.** Old plain or `gz:` rows still read fine.
+
 ## Pages & routing
 - 3 top tabs: Calc, Journal, Settings. Projection is a view inside Journal (`#jnl_projection`, opened by the 🎯 button, `#jnl_main` is the trade list).
-- Hash routes: `#calc` (home), `#journal`, `#journal/projection`, `#settings`. Use `switchTab(tab, sub)` (app.js). It updates the URL and renders synchronously; `hashchange` handles back/forward and typed links.
+- Hash routes: `#calc` (home), `#journal`, `#journal/projection`, `#settings`, `#profile`. Use `switchTab(tab, sub)` (app.js). It updates the URL and renders synchronously; `hashchange` handles back/forward and typed links.
 - Beep configuration lives in Settings → Interval Beep (sound, lead time, volume, alignment, hours). The header 🔔 popover only has interval chips, Start/Stop and Test.
 
 ## Performance notes (measured)

@@ -10,6 +10,10 @@ return [
     // A long random string (40+ characters). Used to sign one-time codes. Changing it invalidates codes in flight.
     'secret'  => 'CHANGE-ME-TO-A-LONG-RANDOM-STRING',
 
+    // Key that encrypts every user's saved cloud copy (AES-256). A long random string. If you lose or change it, saved copies
+    // can no longer be opened, so keep a safe copy of it. Leave empty to fall back to 'secret'.
+    'data_key' => 'CHANGE-ME-TO-ANOTHER-LONG-RANDOM-STRING',
+
     // Sender of the OTP email. Use a mailbox on your own domain so the mail does not land in spam.
     'mail_from'      => 'no-reply@yourdomain.in',
     'mail_from_name' => 'TradeMath',

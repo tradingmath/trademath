@@ -174,3 +174,35 @@ function verify_google_token(string $jwt): ?array {
     if (empty($payload['email']) || !is_string($payload['email'])) return null;
     return $payload;
 }
+
+/* ── Cloud copy storage: compressed, then encrypted (AES-256-GCM) ──
+   A leaked database dump alone cannot be read: the key lives in config.php, not in the database.
+   Stored format "v2:" + base64(iv | tag | ciphertext-of-gzip). Older rows ("gz:" or plain JSON) still open fine. */
+function data_key(): string {
+    $k = (string)cfg('data_key', '');
+    if ($k === '') $k = (string)cfg('secret', '');
+    return hash('sha256', 'tm-data|' . $k, true);
+}
+function pack_data(string $json): string {
+    $z = function_exists('gzencode') ? gzencode($json, 6) : false;
+    if ($z === false) $z = $json;
+    $compressed = $z !== $json;
+    if (!function_exists('openssl_encrypt') || !in_array('aes-256-gcm', openssl_get_cipher_methods(), true)) {
+        return $compressed ? 'gz:' . base64_encode($z) : $json;        // no OpenSSL here: compressed only
+    }
+    $iv = random_bytes(12); $tag = '';
+    $ct = openssl_encrypt(($compressed ? 'Z' : 'P') . $z, 'aes-256-gcm', data_key(), OPENSSL_RAW_DATA, $iv, $tag, '', 16);
+    if ($ct === false) throw new RuntimeException('encrypt failed');
+    return 'v2:' . base64_encode($iv . $tag . $ct);
+}
+function unpack_data(string $stored): ?string {
+    if (strncmp($stored, 'v2:', 3) === 0) {
+        $raw = base64_decode(substr($stored, 3), true);
+        if ($raw === false || strlen($raw) < 29) return null;
+        $pt = openssl_decrypt(substr($raw, 28), 'aes-256-gcm', data_key(), OPENSSL_RAW_DATA, substr($raw, 0, 12), substr($raw, 12, 16));
+        if ($pt === false || $pt === '') return null;
+        return $pt[0] === 'Z' ? (function_exists('gzdecode') ? (gzdecode(substr($pt, 1)) ?: null) : null) : substr($pt, 1);
+    }
+    if (strncmp($stored, 'gz:', 3) === 0) { $z = base64_decode(substr($stored, 3), true); return $z === false ? null : (function_exists('gzdecode') ? (gzdecode($z) ?: null) : null); }
+    return $stored;                                                     // rows saved before this change
+}

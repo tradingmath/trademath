@@ -21,11 +21,11 @@
 <meta name="twitter:title" content="TradeMath: position size calculator and trade journal">
 <meta name="twitter:description" content="Know your quantity, risk and reward before you trade. Built for Indian traders.">
 <meta name="twitter:image" content="https://trademath.in/og-image.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts.css?v=140c3a0f">
 <link rel="icon" href="logo-icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=e7bdd9b8">
 <script>
 /* Runs before the page paints: apply the saved theme and level now, and keep the page hidden until the app has
    finished setting itself up, so nothing flashes dark, then light, or jumps between modes. */
@@ -56,7 +56,7 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
     </div>
     <div class="alert-wrap" id="alert_wrap">
       <button class="theme-btn alert-btn" id="alert_btn" type="button" aria-haspopup="true" aria-expanded="false" title="Interval beep: reminds you to check the chart">
-        <span aria-hidden="true">🔔</span> <span id="alert_label">Beep</span>
+        <span aria-hidden="true">🔔</span> <span id="alert_label"></span>
       </button>
       <div class="alert-pop" id="alert_pop" hidden>
         <div class="alert-pop-title">Interval beep</div>
@@ -78,9 +78,19 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
         <button type="button" class="alert-link" id="alert_more">⚙ Sound, timing &amp; volume settings</button>
       </div>
     </div>
-    <button class="theme-btn" id="acctBtn" type="button" hidden>Sign in</button>
-    <button class="theme-btn" id="popBtn" data-level="trader" title="Open compact calculator in a small window">⧉ Pop Out</button>
-    <button class="theme-btn" id="themeBtn">☀ Light</button>
+    <button class="theme-btn icon-btn" id="popBtn" data-level="trader" type="button" title="Pop out: open a compact calculator in a small window" aria-label="Pop out">⧉</button>
+    <button class="theme-btn icon-btn" id="themeBtn" type="button" title="Switch to light mode" aria-label="Switch theme">☀</button>
+    <div class="acct-wrap" id="acct_wrap">
+      <button class="theme-btn acct-signin" id="acctBtn" type="button" hidden>Sign in</button>
+      <button class="avatar-btn" id="avatarBtn" type="button" aria-haspopup="menu" aria-expanded="false" title="Your account" hidden><span id="avatarLetter">?</span></button>
+      <div class="alert-pop acct-pop" id="acctMenu" role="menu" aria-label="Account" hidden>
+        <div class="acct-who"><div class="acct-name" id="am_name">Your account</div><div class="acct-mail" id="am_email"></div></div>
+        <button type="button" role="menuitem" class="acct-item" data-go="profile">👤 Profile and trading defaults</button>
+        <button type="button" role="menuitem" class="acct-item" data-go="settings">⚙ Settings</button>
+        <button type="button" role="menuitem" class="acct-item" id="am_tour">🧭 Take the tour</button>
+        <button type="button" role="menuitem" class="acct-item acct-out" id="am_signout">⎋ Sign out</button>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -270,7 +280,7 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
         <span id="today_date" style="font-size:11px;color:var(--fg3);font-weight:400"></span>
       </div>
       <div id="today_list"></div>
-      <div id="today_empty" style="color:var(--fg3);font-size:13px;text-align:center;padding:32px 0;display:none">No trades logged today</div>
+      <div id="today_empty" class="empty-mini" style="display:none"><div class="es-ico" aria-hidden="true">🗒️</div><div><b>No trades yet today</b><span>Trades you log will appear here, with today's profit and loss.</span></div></div>
     </div>
 
   </div>
@@ -347,6 +357,15 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
         <option value="">All Results</option>
         <option value="win">Wins</option><option value="loss">Losses</option><option value="open">Open</option>
       </select>
+    </div>
+    <div id="jnl_empty" class="empty-state" style="display:none">
+      <div class="es-ico" aria-hidden="true">📒</div>
+      <div class="es-new">
+        <h3>Your journal is empty</h3>
+        <p>Every trade you log shows up here with your win rate, profit and loss, and reports by month, setup and mistake. Log one from the calculator, add one by hand, or look around with sample data.</p>
+        <div class="es-actions"><button type="button" class="btn btn-primary" id="es_calc">Open the calculator</button><button type="button" class="btn btn-ghost" id="es_add">+ Add a trade</button><button type="button" class="btn btn-ghost" id="es_demo">Try demo data</button></div>
+      </div>
+      <div class="es-filtered"><h3>No trades match these filters</h3><p>Change or clear the filters above to see your trades again.</p></div>
     </div>
     <div id="rep_body" style="margin-top:10px"></div>
     <div class="empty-state" id="jnl_empty" style="display:none"><strong>No trades yet</strong>Click "+ Add Trade" to log your first trade</div>
@@ -463,38 +482,10 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
     </div>
   </div>
 
-  <!-- Trading Defaults -->
   <div class="settings-section">
-    <div class="p-title">Trading Defaults</div>
-    <div style="font-size:12px;color:var(--fg2);margin-bottom:12px">Set your standard parameters so you don't have to re-enter them every session.</div>
-    <div class="field-row">
-      <div class="field">
-        <label for="s_default_cap">Default Capital (₹)</label>
-        <input type="number" id="s_default_cap" value="100000" step="5000" min="1000" placeholder="100000" autocomplete="off">
-      </div>
-      <div class="field">
-        <label for="s_default_risk">Default Risk %</label>
-        <input type="number" id="s_default_risk" value="1" step="0.1" min="0.1" max="100" placeholder="1.0" autocomplete="off">
-      </div>
-    </div>
-    <div class="field-row">
-      <div class="field">
-        <label for="s_default_lev">Default Leverage</label>
-        <select id="s_default_lev">
-          <option value="5">5× Intraday (MIS)</option>
-          <option value="1">1× Cash (CNC / Delivery)</option>
-          <option value="custom">Custom Multiplier</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="s_default_rr">Default Target R:R</label>
-        <input type="number" id="s_default_rr" value="2" step="0.5" min="0.5" max="20" placeholder="2.0" autocomplete="off">
-      </div>
-    </div>
-    <div class="field">
-      <label for="s_default_market">I mainly trade <span class="proj-hint">files your Quick logs under this market</span></label>
-      <select id="s_default_market"></select>
-    </div>
+    <div class="p-title">Your trading profile</div>
+    <div style="font-size:12px;color:var(--fg2);margin-bottom:12px">Capital, risk per trade, target reward, daily limits, experience level and your account now live on your Profile page.</div>
+    <button type="button" class="btn btn-primary btn-sm" data-go="profile">Open Profile</button>
   </div>
 
   <!-- Workflow & Simplicity Preferences -->
@@ -564,22 +555,6 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
     </div>
   </div>
 
-  <!-- Daily risk rules -->
-  <div class="settings-section" data-level="trader">
-    <div class="p-title">Daily Risk Rules</div>
-    <div style="font-size:12px;color:var(--fg2);margin-bottom:14px">The calculator shows a warning banner when today's trades approach or hit these limits.</div>
-    <div class="field-row">
-      <div class="field">
-        <label for="s_max_loss">Max Daily Loss (₹)</label>
-        <input type="number" id="s_max_loss" step="100" min="0" placeholder="e.g. 5000" autocomplete="off">
-      </div>
-      <div class="field">
-        <label for="s_max_trades">Max Trades / Day</label>
-        <input type="number" id="s_max_trades" step="1" min="0" placeholder="e.g. 3" autocomplete="off">
-      </div>
-    </div>
-  </div>
-
   <!-- Pre-trade checklist -->
   <div class="settings-section" data-level="pro">
     <div class="p-title">Pre-Trade Checklist</div>
@@ -591,6 +566,99 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
     </div>
   </div>
 
+
+  <!-- Your data -->
+  <div class="settings-section" id="your_data">
+    <div class="p-title">Your data</div>
+    <div style="font-size:12px;color:var(--fg2);margin-bottom:6px">Everything lives only in this browser. Clearing site data or switching browser or device loses it, so keep a backup file.</div>
+    <div id="bk_info" class="bk-info"></div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">
+      <button type="button" class="btn btn-primary btn-sm" id="bk_download">Download backup</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="bk_pick">Restore from backup…</button>
+      <input type="file" id="bk_file" accept=".json,application/json" hidden>
+    </div>
+    <div id="bk_msg" class="bk-msg" aria-live="polite"></div>
+    <div id="bk_confirm" class="bk-confirm" hidden>
+      <button type="button" class="btn btn-danger btn-sm" id="bk_apply">Replace my data</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="bk_cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB: PROFILE ══ -->
+<div id="tab-profile" hidden>
+  <div class="pf-head">
+    <div class="pf-avatar" id="pf_avatar" aria-hidden="true">?</div>
+    <div class="pf-who">
+      <h1 class="pf-name" id="pf_title">Your profile</h1>
+      <div class="pf-sub" id="pf_sub">Not signed in. Your settings are saved on this device.</div>
+    </div>
+    <button type="button" class="btn btn-primary btn-sm" id="pf_signin">Sign in to save to the cloud</button>
+  </div>
+  <div class="pf-saved" id="pf_saved" aria-live="polite"></div>
+  <!-- Trading Defaults -->
+  <div class="settings-section">
+    <div class="p-title">Trading profile</div>
+    <div style="font-size:12px;color:var(--fg2);margin-bottom:12px">These fill the calculator for you every time. Changes save automatically.</div>
+    <div class="field-row">
+      <div class="field">
+        <label for="pf_name">Your name <span class="proj-hint">optional</span></label>
+        <input type="text" id="pf_name" maxlength="40" autocomplete="name" placeholder="e.g. Anirudh">
+      </div>
+      <div class="field">
+        <label for="pf_level">Experience level <span class="proj-hint">how much of the app you see</span></label>
+        <select id="pf_level">
+          <option value="quick">Beginner: Quick (only the essentials)</option>
+          <option value="trader">Intermediate: Trader (targets, fees, journal tools)</option>
+          <option value="pro">Advanced: Pro (F&amp;O lots, projection, checklist)</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="s_default_cap">Trading capital (₹)</label>
+        <input type="number" id="s_default_cap" value="100000" step="5000" min="1000" placeholder="100000" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="s_default_risk">Risk per trade (%)</label>
+        <input type="number" id="s_default_risk" value="1" step="0.1" min="0.1" max="100" placeholder="1.0" autocomplete="off">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="s_default_lev">Trading style</label>
+        <select id="s_default_lev">
+          <option value="5">Intraday: 5× leverage (MIS)</option>
+          <option value="1">Swing / positional: 1× cash (delivery)</option>
+          <option value="custom">Custom multiplier</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="s_default_rr">Target reward for 1 of risk <span class="proj-hint">1 : x</span></label>
+        <input type="number" id="s_default_rr" value="2" step="0.5" min="0.5" max="20" placeholder="2.0" autocomplete="off">
+      </div>
+    </div>
+    <div class="field">
+      <label for="s_default_market">I mainly trade <span class="proj-hint">files your Quick logs under this market</span></label>
+      <select id="s_default_market"></select>
+    </div>
+  </div>
+
+  <!-- Daily risk rules -->
+  <div class="settings-section" >
+    <div class="p-title">Daily guardrails</div>
+    <div style="font-size:12px;color:var(--fg2);margin-bottom:14px">The calculator shows a warning when today's trades approach or hit these limits. Leave blank to turn a limit off.</div>
+    <div class="field-row">
+      <div class="field">
+        <label for="s_max_loss">Max Daily Loss (₹)</label>
+        <input type="number" id="s_max_loss" step="100" min="0" placeholder="e.g. 5000" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="s_max_trades">Max Trades / Day</label>
+        <input type="number" id="s_max_trades" step="1" min="0" placeholder="e.g. 3" autocomplete="off">
+      </div>
+    </div>
+  </div>
 
   <!-- Account & cloud sync: stays hidden unless the server API exists -->
   <div class="settings-section" id="account_sec" hidden>
@@ -623,21 +691,10 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
     <div id="ac_msg" class="bk-msg" aria-live="polite"></div>
   </div>
 
-  <!-- Your data -->
-  <div class="settings-section" id="your_data">
-    <div class="p-title">Your data</div>
-    <div style="font-size:12px;color:var(--fg2);margin-bottom:6px">Everything lives only in this browser. Clearing site data or switching browser or device loses it, so keep a backup file.</div>
-    <div id="bk_info" class="bk-info"></div>
-    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">
-      <button type="button" class="btn btn-primary btn-sm" id="bk_download">Download backup</button>
-      <button type="button" class="btn btn-ghost btn-sm" id="bk_pick">Restore from backup…</button>
-      <input type="file" id="bk_file" accept=".json,application/json" hidden>
-    </div>
-    <div id="bk_msg" class="bk-msg" aria-live="polite"></div>
-    <div id="bk_confirm" class="bk-confirm" hidden>
-      <button type="button" class="btn btn-danger btn-sm" id="bk_apply">Replace my data</button>
-      <button type="button" class="btn btn-ghost btn-sm" id="bk_cancel">Cancel</button>
-    </div>
+  <div class="settings-section">
+    <div class="p-title">Help</div>
+    <div style="font-size:12px;color:var(--fg2);margin-bottom:12px">New here? A one-minute tour shows how everything works.</div>
+    <div class="ac-row"><button type="button" class="btn btn-ghost btn-sm" id="pf_tour">Take the tour</button><button type="button" class="btn btn-ghost btn-sm" id="pf_demo">Try demo data</button><button type="button" class="btn btn-ghost btn-sm" id="pf_welcome">Run the welcome setup again</button></div>
   </div>
 </div>
 
@@ -796,13 +853,14 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
   </div>
 </div>
 
-<p class="note" style="text-align:center;margin:24px 0 8px"><a href="privacy.html" style="color:inherit">Privacy</a> · Not investment advice</p>
-<script src="calc.js"></script>
-<script src="journal.js"></script>
-<script src="projection.js"></script>
-<script src="alerts.js"></script>
-<script src="app.js"></script>
-<script src="cloud.js"></script>
+<p class="note" style="text-align:center;margin:24px 0 8px">Guides: <a href="position-size-calculator-india.html" style="color:inherit">Position size</a> · <a href="risk-reward-ratio-explained.html" style="color:inherit">Risk-reward</a> · <a href="nse-fno-lot-sizes.html" style="color:inherit">F&amp;O lot sizes</a> · <a href="trading-journal-india.html" style="color:inherit">Trading journal</a><br><a href="privacy.html" style="color:inherit">Privacy</a> · Not investment advice</p>
+<script src="calc.js?v=cd2b415e"></script>
+<script src="journal.js?v=851f80e1"></script>
+<script src="projection.js?v=76e2f8eb"></script>
+<script src="alerts.js?v=0a43bf1d"></script>
+<script src="app.js?v=30437694"></script>
+<script src="cloud.js?v=c0fe1086"></script>
+<script src="profile.js?v=c9cd453e"></script>
 
 </body>
 </html>
