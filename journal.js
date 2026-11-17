@@ -157,11 +157,12 @@ function pnlForTrade(t) {
   const dir = t.dir === "LONG" ? 1 : -1;
   const k = fxOf(t);
   const funding = t.instrument === "crypto" ? (t.funding || 0) : 0;            // ₹ paid/received on the perpetual, counted once
+  const entryFees = t.entryFees || 0;                                         // charges paid on extra buys (Add to position)
   if (t.exits && t.exits.length) {
-    return t.exits.reduce((sum, ex) => sum + dir * (ex.price - t.entry) * ex.qty * k - (ex.fees || 0), 0) - funding;
+    return t.exits.reduce((sum, ex) => sum + dir * (ex.price - t.entry) * ex.qty * k - (ex.fees || 0), 0) - funding - entryFees;
   }
   if (!t.exit) return null;
-  return dir * (t.exit - t.entry) * t.qty * k - (t.fees || 0) - funding;
+  return dir * (t.exit - t.entry) * t.qty * k - (t.fees || 0) - funding - entryFees;
 }
 
 function rrActual(t) {
@@ -660,9 +661,16 @@ function editBtnFor(t) {
 
 const px  = (t, v) => v ? (t.instrument === "crypto" ? "$" + fmtUsd(v) : v) : "—";          // table cells
 const pxs = (t, v) => v ? (t.instrument === "crypto" ? "$" + fmtUsd(v) : "₹" + v) : "—";   // with currency symbol
+function buysOf(t) {                         // every purchase that makes up the position, oldest first
+  if (t.adds && t.adds.length) return [{ date: t.date, price: t.entry0, qty: t.qty0 }].concat(t.adds);
+  return [{ date: t.date, price: t.entry, qty: t.qty }];
+}
+function tradeName(t) { return t.symbol ? esc(t.symbol) + (t.optType ? " " + esc(t.optType) : "") : esc(t.market || "Trade"); }
+function shortDate(d) { return d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? new Date(d + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : ""; }
 function qtyLabel(t) {
   if (t.instrument === "crypto") return `${t.qty}${t.leverage ? " · " + esc(t.leverage) + "× lev" : ""}`;
-  return t.lots ? `${t.lots} lot${t.lots === 1 ? "" : "s"} × ${t.lotSize} = ${t.qty}` : (t.qty || "—");
+  const n = t.adds && t.adds.length ? ` · avg of ${t.adds.length + 1} buys` : "";
+  return (t.lots ? `${t.lots} lot${t.lots === 1 ? "" : "s"} × ${t.lotSize} = ${t.qty}` : (t.qty || "—")) + n;
 }
 
 function renderTodayTrades() {
@@ -690,7 +698,7 @@ function renderTodayTrades() {
     const res    = !closed ? `<span class="badge open" style="font-size:10px">OPEN</span>`
       : pnl > 0 ? `<span class="badge win" style="font-size:10px">WIN</span>`
       : `<span class="badge loss" style="font-size:10px">LOSS</span>`;
-    const closeBtn = !closed ? `<button class="btn btn-danger btn-sm" style="font-size:11px;padding:3px 10px" onclick="openCloseModal('${t.id}')">Close</button>` : "";
+    const closeBtn = !closed ? `<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 10px;margin-right:6px" onclick="openAddModal('${t.id}')" title="Bought more? Add to this position and see your new average">＋ Add</button><button class="btn btn-danger btn-sm" style="font-size:11px;padding:3px 10px" onclick="openCloseModal('${t.id}')">Close</button>` : "";
     const delBtn   = `<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px;color:var(--fg3)" onclick="deleteTodayTrade('${t.id}')" title="Delete trade">✕</button>`;
     const setupTag = t.setup ? `<span style="font-size:10px;color:var(--accent);background:var(--accent-dim);border-radius:3px;padding:1px 6px">${esc(t.setup)}</span>` : "";
     return `<div class="today-trade" data-id="${t.id}">
@@ -780,33 +788,39 @@ function toggleDay(btn, dayId) {
 }
 
 /* ══════════════ REPORTS ══════════════ */
+function grossPnl(t) {
+  const dir = t.dir === "LONG" ? 1 : -1, k = fxOf(t);
+  if (t.exits && t.exits.length) return t.exits.reduce((s, ex) => s + dir * (ex.price - t.entry) * ex.qty * k, 0);
+  return t.exit ? dir * (t.exit - t.entry) * t.qty * k : null;
+}
+const signed = v => (v > 0 ? "+" : "") + fmtINR(v);
 function repTradeRow(t, dayId, moKey) {
-    const pnl = pnlForTrade(t);
-    const rr  = rrActual(t);
-    const closed = isClosed(t);
-    const res = !closed ? `<span class="badge open">OPEN</span>` : pnl > 0 ? `<span class="badge win">WIN</span>` : `<span class="badge loss">LOSS</span>`;
-    const pc  = pnl === null ? "td-muted" : pnl > 0 ? "td-pos" : "td-neg";
-    const gv  = pnl !== null ? fmtINR((t.exit - t.entry) * (t.dir === "LONG" ? 1 : -1) * t.qty * fxOf(t)) : "—";
-    const gc  = pnl !== null ? (pnl > 0 ? "td-pos" : "td-neg") : "td-muted";
-    const setupTag = t.setup ? `<span style="font-size:10px;color:var(--accent)">${esc(t.setup)}</span>` : "—";
-    const partialBadge = (!t.exit && t.exits && t.exits.length) ? ` <span style="font-size:10px;color:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;padding:0 4px">partial</span>` : "";
-    return `<tr class="tr-row" data-id="${t.id}" data-grp="${dayId}" data-mo="${moKey}">
-      <td class="td-muted td-mono">${esc(t.date||"—")}</td>
-      <td>${esc(t.market||"—")}${symChip(t)}</td>
-      <td><span class="badge ${t.dir.toLowerCase()}">${t.dir==="LONG"?"▲":"▼"} ${t.dir}</span></td>
-      <td class="td-mono">${px(t, t.entry)}</td><td class="td-mono">${px(t, t.sl)}</td>
-      <td class="td-mono">${px(t, t.target)}</td><td class="td-mono">${px(t, t.exit)}${partialBadge}</td>
-      <td class="td-mono">${t.qty||"—"}</td>
-      <td class="td-mono ${gc}">${gv}</td>
-      <td class="td-mono td-muted">${t.fees ? fmtINR(t.fees) : "₹0"}</td>
-      <td class="td-mono ${pc}">${pnl !== null ? fmtINR(pnl) : "—"}</td>
-      <td class="td-mono td-muted">${rr !== null ? rr.toFixed(2) : "—"}</td>
-      <td>${setupTag}</td>
-      <td>${res}</td>
-      <td>
-        ${!closed ? `<button class="btn btn-danger btn-sm rep-close-btn" data-id="${t.id}" style="font-size:10px;padding:1px 6px">Close</button>` : ""}
-        <button class="btn btn-ghost btn-sm rep-edit-btn" data-id="${t.id}" style="font-size:10px;padding:1px 5px;color:var(--fg3)" title="Edit market, symbol and notes">✎</button>
-        <button class="btn btn-ghost btn-sm rep-del-btn" data-id="${t.id}" style="font-size:10px;padding:1px 5px;color:var(--fg3)">✕</button>
+  const pnl = pnlForTrade(t), rr = rrActual(t), closed = isClosed(t), k = fxOf(t);
+  const badge = `<span class="badge ${t.dir.toLowerCase()}">${t.dir === "LONG" ? "▲" : "▼"} ${t.dir}</span>`;
+  const res = !closed ? `<span class="badge open">OPEN</span>` : pnl > 0 ? `<span class="badge win">WIN</span>` : `<span class="badge loss">LOSS</span>`;
+  const partial = (!t.exit && t.exits && t.exits.length) ? `<span class="rep-chip">partial</span>` : "";
+  const exitTxt = t.exit ? px(t, t.exit) : partial ? "partial" : "open";
+  const sub = [esc(t.market || ""), shortDate(t.date)].filter(Boolean).join(" · ");
+  const levels = [t.sl ? "SL " + px(t, t.sl) : "", t.target ? "TP " + px(t, t.target) : ""].filter(Boolean).join(" · ");
+  let pnlCell;
+  if (pnl !== null) {
+    const costs = grossPnl(t) - pnl;
+    pnlCell = `<div class="pnl-big ${pnl > 0 ? "td-pos" : "td-neg"}">${signed(pnl)}</div><div class="t-sub">${costs > 0.005 ? "after " + fmtINR(costs) + " charges" : "no charges added"}${rr !== null ? " · " + (rr >= 0 ? "+" : "−") + Math.abs(rr).toFixed(2) + "R" : ""}</div>`;
+  } else {
+    const risk = t.sl && t.entry ? Math.abs(t.entry - t.sl) * t.qty * k : null;
+    pnlCell = `<div class="pnl-big td-muted">Open</div><div class="t-sub">${risk !== null ? "risk " + fmtINR(risk) : "no stop-loss set"}</div>`;
+  }
+  const nBuys = t.adds && t.adds.length ? `<div class="t-sub">avg of ${t.adds.length + 1} buys</div>` : "";
+  return `<tr class="tr-row" data-id="${t.id}" data-grp="${dayId}" data-mo="${moKey}">
+      <td class="c-trade"><div class="t-sym">${tradeName(t)} ${badge}</div><div class="t-sub">${sub}</div></td>
+      <td class="c-px"><div class="px-line"><b>${px(t, t.entry)}</b><i>→</i><b>${exitTxt}</b></div><div class="t-sub">${levels || "&nbsp;"}</div></td>
+      <td class="num"><b>${t.lots ? t.lots + (t.lots === 1 ? " lot" : " lots") : (t.qty || "—")}</b>${nBuys}${t.setup ? `<div class="t-sub" style="color:var(--accent)">${esc(t.setup)}</div>` : ""}</td>
+      <td class="num">${pnlCell}</td>
+      <td class="c-res">${res}${partial ? " " + partial : ""}</td>
+      <td class="c-act">
+        ${!closed ? `<button type="button" class="rep-act rep-add-btn" data-id="${t.id}" title="Bought more? Add to this position and see your new average">＋ Add</button><button type="button" class="rep-act rep-close-btn" data-id="${t.id}">Close</button>` : ""}
+        <button type="button" class="rep-act rep-edit-btn" data-id="${t.id}" title="Edit market, symbol and notes">✎</button>
+        <button type="button" class="rep-act rep-del-btn" data-id="${t.id}" title="Delete trade">✕</button>
       </td>
     </tr>`;
 }
@@ -871,35 +885,28 @@ function renderReports() {
       repDays.set(dayId, { trades: filteredDay, mo: mo.replace(/[^a-z0-9]/gi, "") });
 
       return `<tr class="dy-row" data-mo="${mo.replace(/[^a-z0-9]/gi,'')}" data-grp="${dayId}" onclick="toggleDay(this,'${dayId}')">
-        <td><span class="rep-caret">▶</span>${dayLabel}</td>
-        <td colspan="8" class="td-muted" style="font-size:11px">${filteredDay.length} trade${filteredDay.length!==1?"s":""} · Daily Total</td>
-        <td colspan="2"></td>
-        <td class="td-mono ${pCls}" style="font-weight:600">${dayClosed.length ? fmtINR(dayPnlVal) : "—"}</td>
-        <td></td><td class="td-muted" style="font-size:11px">${wl}</td><td></td>
+        <td colspan="3"><span class="rep-caret">▶</span>${dayLabel} <span class="t-sub">· ${filteredDay.length} trade${filteredDay.length!==1?"s":""}</span></td>
+        <td class="num"><b class="${pCls}">${dayClosed.length ? signed(dayPnlVal) : "—"}</b></td>
+        <td colspan="2" class="t-sub">${wl}</td>
       </tr>`;
     }).join("");
 
     const moId = mo.replace(/[^a-z0-9]/gi,"");
     return `<div class="rep-log">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:2px 4px 0">
-        <span></span>
-        <button class="btn btn-ghost btn-sm" data-level="trader" style="font-size:10px;padding:3px 8px;margin:4px" onclick="openReportCard('${mo}')">📊 Share Card</button>
+      <div class="rep-log-top">
+        <button class="btn btn-ghost btn-sm" data-level="trader" onclick="openReportCard('${mo}')">📊 Share card</button>
       </div>
-      <table class="rep-log-tbl">
-        <thead><tr><th>Date</th><th>Market</th><th>Dir</th><th>Entry</th><th>SL</th><th>Target</th><th>Exit</th><th>Qty</th><th>Gross P&L</th><th>Fees</th><th>Net P&L</th><th>R:R</th><th>Setup</th><th>Result</th><th></th></tr></thead>
+      <div class="rep-scroll"><table class="rep-log-tbl">
+        <thead><tr><th class="c-trade">Trade</th><th class="c-px">Entry → Exit</th><th class="num">Quantity</th><th class="num">Profit / loss</th><th class="c-res">Result</th><th class="c-act"></th></tr></thead>
         <tbody>
           <tr class="mo-row" onclick="toggleMonth(this,'${moId}')">
-            <td><span class="rep-caret open">▶</span><span style="text-transform:uppercase;letter-spacing:.04em">${moLabel}</span></td>
-            <td colspan="8" class="td-muted" style="font-size:11px">${allTrades.length} TRADES · MONTHLY TOTAL</td>
-            <td colspan="2"></td>
-            <td class="td-mono ${pnlCls}" style="font-size:13px">${moClosed.length ? fmtINR(moPnl) : "—"}</td>
-            <td class="td-muted" style="font-size:11px">${moClosed.length ? Math.round(moWins.length/moClosed.length*100)+"% win" : ""}</td>
-            <td class="td-muted" style="font-size:11px">${moWins.length}W / ${moClosed.length-moWins.length}L</td>
-            <td></td>
+            <td colspan="3"><span class="rep-caret open">▶</span><span style="text-transform:uppercase;letter-spacing:.04em">${moLabel}</span> <span class="t-sub">· ${allTrades.length} trade${allTrades.length!==1?"s":""}</span></td>
+            <td class="num"><b class="${pnlCls}">${moClosed.length ? signed(moPnl) : "—"}</b></td>
+            <td colspan="2" class="t-sub">${moClosed.length ? Math.round(moWins.length/moClosed.length*100) + "% win · " : ""}${moWins.length}W / ${moClosed.length-moWins.length}L</td>
           </tr>
           ${daysHTML}
         </tbody>
-      </table>
+      </table></div>
     </div>`;
   }).join("");
 
@@ -908,6 +915,8 @@ function renderReports() {
 $("rep_body").addEventListener("click", e => {
   const edit = e.target.closest(".rep-edit-btn");
   if (edit) { e.stopPropagation(); openDetails(edit.dataset.id); return; }
+  const add = e.target.closest(".rep-add-btn");
+  if (add) { e.stopPropagation(); openAddModal(add.dataset.id); return; }
   const close = e.target.closest(".rep-close-btn");
   if (close) { e.stopPropagation(); openCloseModal(close.dataset.id); return; }
   const del = e.target.closest(".rep-del-btn");
@@ -1009,3 +1018,65 @@ $("bk_pick").addEventListener("click", () => $("bk_file").click());
 $("bk_file").addEventListener("change", e => { readBackupFile(e.target.files[0]); e.target.value = ""; });
 $("bk_apply").addEventListener("click", applyRestore);
 $("bk_cancel").addEventListener("click", () => { pendingRestore = null; $("bk_confirm").hidden = true; $("bk_msg").textContent = ""; });
+
+/* ══════════════ ADD TO POSITION (average) ══════════════
+   Bought more of the same trade days later? This keeps ONE position: the entry becomes the weighted average price,
+   the quantity becomes the total, and every purchase is remembered in t.adds so nothing is lost. */
+let addTradeId = null;
+function openAddModal(id) {
+  const t = trades.find(x => x.id === id); if (!t || isClosed(t)) return;
+  addTradeId = id;
+  const lots = !!(t.lotSize && t.lots);
+  $("ap_title").textContent = "Add to position: " + (t.symbol ? t.symbol : t.market);
+  $("ap_info").textContent = (t.dir === "LONG" ? "Long" : "Short") + " · " + (lots ? t.lots + " lots" : t.qty + " units") + " at an average of " + (t.instrument === "crypto" ? "$" + fmtUsd(t.entry) : "₹" + fmtP(t.entry, 2));
+  $("ap_qty_lbl").textContent = lots ? "Lots to add" : t.instrument === "crypto" ? "Quantity to add" : "Shares to add";
+  const hist = buysOf(t);
+  $("ap_hist").innerHTML = hist.length > 1 ? "<b>Buys so far</b>" + hist.map(b => `<span>${esc(shortDate(b.date) || "")} · ${b.qty} @ ${px(t, b.price)}</span>`).join("") : "";
+  $("ap_date").value = todayStr(); ["ap_price", "ap_qty", "ap_fees", "ap_sl", "ap_tp"].forEach(i => { $(i).value = ""; });
+  $("ap_sl").placeholder = t.sl ? "now " + t.sl : "";  $("ap_tp").placeholder = t.target ? "now " + t.target : "";
+  $("addModal").hidden = false; apPreview(); setTimeout(() => $("ap_price").focus(), 40);
+}
+function apCalc() {
+  const t = trades.find(x => x.id === addTradeId); if (!t) return null;
+  const lots = !!(t.lotSize && t.lots), dir = t.dir === "LONG" ? 1 : -1, k = fxOf(t);
+  const price = parseFloat($("ap_price").value), qIn = parseFloat($("ap_qty").value);
+  if (!(price > 0) || !(qIn > 0)) return { t, ready: false };
+  const addUnits = lots ? qIn * t.lotSize : qIn;
+  const qty = t.qty + addUnits, avg = (t.entry * t.qty + price * addUnits) / qty;
+  const sl = parseFloat($("ap_sl").value) || t.sl || null;
+  const risk = sl ? dir * (avg - sl) * qty * k : null, risk0 = t.sl ? dir * (t.entry - t.sl) * t.qty * k : null;
+  return { t, ready: true, lots, dir, k, price, qIn, addUnits, qty, avg, sl, risk, risk0, against: dir * (price - t.entry) < 0, invested: avg * qty * k };
+}
+function apPreview() {
+  const c = apCalc(), box = $("ap_preview"); if (!c) return;
+  if (!c.ready) { box.innerHTML = '<span class="t-sub">Enter the buy price and quantity to see your new average.</span>'; $("ap_save").disabled = true; return; }
+  $("ap_save").disabled = false;
+  const t = c.t, chg = (c.avg / t.entry - 1) * 100, cap = (getAppSettings().defaultCap || 100000);
+  const money = v => t.instrument === "crypto" ? "$" + fmtUsd(v) : "₹" + fmtP(v, 2);
+  let riskLine = "Set a stop-loss to see your risk.";
+  if (c.risk !== null) riskLine = c.risk > 0 ? `Risk to your stop-loss: <b>${fmtINR(c.risk)}</b> (${(c.risk / cap * 100).toFixed(2)}% of capital)${c.risk0 > 0 ? `, was ${fmtINR(c.risk0)}` : ""}` : `Your stop-loss is beyond the average, so it would lock in a profit of <b>${fmtINR(-c.risk)}</b>.`;
+  box.innerHTML = `<div class="ap-new"><span>New average price</span><b>${money(c.avg)}</b><small class="${chg <= 0 === (c.dir > 0) ? "td-pos" : "td-neg"}">${chg >= 0 ? "+" : "−"}${Math.abs(chg).toFixed(2)}% vs old average</small></div>
+    <div class="ap-row"><span>Total quantity</span><b>${c.lots ? (t.lots + c.qIn) + " lots" : c.qty}</b><span class="t-sub">was ${c.lots ? t.lots + " lots" : t.qty}</span></div>
+    <div class="ap-row"><span>Total invested</span><b>${fmtINR(c.invested)}</b><span class="t-sub">${(c.invested / cap * 100).toFixed(1)}% of capital</span></div>
+    <div class="ap-row"><span>Break-even price</span><b>${money(c.avg)}</b><span class="t-sub">before charges</span></div>
+    <div class="ap-risk">${riskLine}</div>
+    ${c.against ? '<div class="ap-warn">You are buying ' + (c.dir > 0 ? "below" : "above") + " your average price. Averaging into a losing trade adds risk. Add only if your original reason for the trade still holds.</div>" : ""}`;
+}
+["ap_price", "ap_qty", "ap_sl", "ap_tp"].forEach(id => $(id).addEventListener("input", apPreview));
+$("ap_cancel").addEventListener("click", () => { $("addModal").hidden = true; addTradeId = null; });
+$("addModal").addEventListener("click", e => { if (e.target === $("addModal")) { $("addModal").hidden = true; addTradeId = null; } });
+$("ap_save").addEventListener("click", () => {
+  const c = apCalc(); if (!c || !c.ready) return;
+  const t = c.t, before = JSON.stringify(t), fees = Math.max(0, parseFloat($("ap_fees").value) || 0);
+  if (!t.adds) { t.entry0 = t.entry; t.qty0 = t.qty; t.adds = []; }
+  t.adds.push({ date: /^\d{4}-\d{2}-\d{2}$/.test($("ap_date").value) ? $("ap_date").value : todayStr(), price: c.price, qty: c.addUnits, fees });
+  t.entry = Math.round(c.avg * 1e6) / 1e6; t.qty = c.qty;
+  if (c.lots) t.lots = t.lots + c.qIn;
+  const sl = parseFloat($("ap_sl").value), tp = parseFloat($("ap_tp").value);
+  if (sl > 0) t.sl = sl; if (tp > 0) t.target = tp;
+  t.entryFees = (t.entryFees || 0) + fees;
+  const id = t.id; $("addModal").hidden = true; addTradeId = null;
+  saveTrades(); refreshJournal(); if (typeof renderDailyBanner === "function") renderDailyBanner();
+  showToast("Position updated: average " + (t.instrument === "crypto" ? "$" + fmtUsd(t.entry) : "₹" + fmtP(t.entry, 2)) + ", quantity " + t.qty,
+    { label: "Undo", fn: () => { const i = trades.findIndex(x => x.id === id); if (i >= 0) { trades[i] = JSON.parse(before); saveTrades(); refreshJournal(); showToast("Undone"); } } });
+});

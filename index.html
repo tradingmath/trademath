@@ -25,7 +25,7 @@
 <link rel="preload" href="fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts.css?v=140c3a0f">
 <link rel="icon" href="logo-icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css?v=afd1cb15">
+<link rel="stylesheet" href="styles.css?v=17ecb13b">
 <script>
 /* Runs before the page paints: apply the saved theme and level now, and keep the page hidden until the app has
    finished setting itself up, so nothing flashes dark, then light, or jumps between modes. */
@@ -316,7 +316,7 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
           <select id="j_dir"><option value="LONG">▲ LONG</option><option value="SHORT">▼ SHORT</option></select>
         </div>
       </div>
-      <div class="field" data-level="trader"><label for="j_symbol">Symbol <span class="proj-hint">optional</span></label><input type="text" id="j_symbol" list="sym_list" placeholder="e.g. NIFTY, RELIANCE, BTCUSDT" autocomplete="off"></div>
+      <div class="field"><label for="j_symbol">Symbol <span class="proj-hint">optional</span></label><input type="text" id="j_symbol" list="sym_list" placeholder="e.g. NIFTY, RELIANCE, BTCUSDT" autocomplete="off"></div>
       <div class="lot-hint" id="j_hint" hidden style="margin:-6px 0 12px">Crypto: enter prices in USDT. Profit is converted to ₹ at your saved USD/INR rate.</div>
       <div class="field-row3">
         <div class="field"><label for="j_entry">Entry Price</label><input type="number" id="j_entry" step="any" min="0" autocomplete="off" placeholder="0.00"></div>
@@ -716,6 +716,32 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
   </div>
 </div>
 
+<!-- ══ ADD TO POSITION (average) ══ -->
+<div class="modal-overlay" id="addModal" hidden>
+  <div class="modal ap-modal" role="dialog" aria-modal="true" aria-labelledby="ap_title">
+    <div class="modal-title" id="ap_title">Add to position</div>
+    <div class="modal-sub" id="ap_info"></div>
+    <div class="ap-hist" id="ap_hist"></div>
+    <div class="field-row">
+      <div class="field"><label for="ap_date">Date</label><input type="date" id="ap_date" autocomplete="off"></div>
+      <div class="field"><label for="ap_price">Buy price</label><input type="number" id="ap_price" step="any" min="0" autocomplete="off" placeholder="0.00"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label for="ap_qty" id="ap_qty_lbl">Shares to add</label><input type="number" id="ap_qty" step="any" min="0" autocomplete="off" placeholder="0"></div>
+      <div class="field"><label for="ap_fees">Fees (₹) <span class="proj-hint">optional</span></label><input type="number" id="ap_fees" step="any" min="0" autocomplete="off" placeholder="0"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label for="ap_sl">New stop-loss <span class="proj-hint">optional</span></label><input type="number" id="ap_sl" step="any" min="0" autocomplete="off"></div>
+      <div class="field"><label for="ap_tp">New target <span class="proj-hint">optional</span></label><input type="number" id="ap_tp" step="any" min="0" autocomplete="off"></div>
+    </div>
+    <div class="ap-preview" id="ap_preview" aria-live="polite"></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-primary" id="ap_save">Add to position</button>
+      <button class="btn btn-ghost" id="ap_cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ CLOSE TRADE MODAL ══ -->
 <div class="modal-overlay" id="closeModal" hidden>
   <div class="modal">
@@ -855,7 +881,7 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
 
 <p class="note" style="text-align:center;margin:24px 0 8px">Guides: <a href="position-size-calculator-india.html" style="color:inherit">Position size</a> · <a href="risk-reward-ratio-explained.html" style="color:inherit">Risk-reward</a> · <a href="nse-fno-lot-sizes.html" style="color:inherit">F&amp;O lot sizes</a> · <a href="trading-journal-india.html" style="color:inherit">Trading journal</a><br><a href="privacy.html" style="color:inherit">Privacy</a> · Not investment advice</p>
 <script src="calc.js?v=cd2b415e"></script>
-<script src="journal.js?v=851f80e1"></script>
+<script src="journal.js?v=f7b9453c"></script>
 <script src="projection.js?v=76e2f8eb"></script>
 <script src="alerts.js?v=0a43bf1d"></script>
 <script src="app.js?v=53bda27a"></script>

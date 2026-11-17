@@ -883,3 +883,39 @@ html.tm-boot body { visibility:hidden; }
 
 /* Pop Out opens a small desktop window, which phones and tablets cannot do, so it is hidden there. */
 @media (max-width: 768px), (hover: none) and (pointer: coarse) { #popBtn { display:none !important; } }
+
+/* ══════════ Journal log: a cleaner trade table ══════════ */
+.rep-scroll { overflow-x:auto; }
+.rep-log-top { display:flex; justify-content:flex-end; padding:8px 10px 0; }
+.rep-log-tbl { display:table; width:100%; min-width:760px; border-collapse:collapse; table-layout:fixed; font-size:13px; }
+.rep-log-tbl th { font-size:11px; letter-spacing:.06em; padding:10px 14px; background:transparent; border-bottom:1px solid var(--border); }
+.rep-log-tbl td { padding:11px 14px; vertical-align:middle; white-space:normal; }
+.rep-log-tbl th.num, .rep-log-tbl td.num { text-align:right; }
+.rep-log-tbl .c-trade { width:27%; } .rep-log-tbl .c-px { width:21%; } .rep-log-tbl th:nth-child(3), .rep-log-tbl td:nth-child(3) { width:13%; }
+.rep-log-tbl th:nth-child(4), .rep-log-tbl td:nth-child(4) { width:19%; } .rep-log-tbl .c-res { width:8%; } .rep-log-tbl .c-act { width:12%; text-align:right; white-space:nowrap; }
+.rep-log-tbl tr.tr-row td { padding-left:14px; }
+.rep-log-tbl tr.tr-row:hover td { background:rgba(255,255,255,.025); }
+.rep-log-tbl tr.mo-row td, .rep-log-tbl tr.dy-row td { padding:10px 14px; }
+.rep-log-tbl tr.dy-row td { font-size:13px; }
+.t-sym { font-weight:600; font-size:14px; color:var(--fg); display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.t-sub { font-size:11px; color:var(--fg3); margin-top:2px; line-height:1.4; }
+.px-line { display:flex; align-items:baseline; gap:6px; font-family:var(--mono); font-size:14px; color:var(--fg); }
+.px-line i { font-style:normal; color:var(--fg3); font-size:12px; }
+.px-line b { font-weight:600; }
+.pnl-big { font-family:var(--mono); font-size:15px; font-weight:700; }
+.rep-chip { font-size:10px; color:var(--accent); border:1px solid var(--accent); border-radius:4px; padding:0 5px; }
+.rep-act { background:none; border:1px solid var(--border); color:var(--fg2); border-radius:7px; padding:4px 9px; font:600 11px var(--sans); cursor:pointer; margin-left:4px; }
+.rep-act:hover { border-color:var(--accent); color:var(--fg); }
+.rep-act.rep-close-btn { color:var(--red); border-color:var(--red-dim); }
+.rep-act.rep-del-btn { color:var(--fg3); }
+
+/* Add to position */
+.ap-modal { max-width:460px; width:calc(100% - 32px); max-height:92vh; overflow-y:auto; }
+.ap-hist { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:0 0 12px; font-size:11px; color:var(--fg3); }
+.ap-hist span { background:var(--card); border:1px solid var(--border); border-radius:6px; padding:2px 8px; font-family:var(--mono); color:var(--fg2); }
+.ap-preview { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin-top:6px; font-size:13px; color:var(--fg2); }
+.ap-new { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; padding-bottom:10px; margin-bottom:8px; border-bottom:1px solid var(--border); }
+.ap-new span { font-size:12px; color:var(--fg3); } .ap-new b { font:700 20px var(--mono); color:var(--fg); }
+.ap-row { display:flex; align-items:baseline; gap:10px; padding:3px 0; } .ap-row span:first-child { flex:1; color:var(--fg3); font-size:12px; } .ap-row b { font-family:var(--mono); color:var(--fg); }
+.ap-risk { margin-top:8px; padding-top:8px; border-top:1px solid var(--border); font-size:12px; line-height:1.6; }
+.ap-warn { margin-top:8px; background:var(--warn-dim); border:1px solid var(--warn); color:var(--fg); border-radius:8px; padding:8px 10px; font-size:12px; line-height:1.5; }

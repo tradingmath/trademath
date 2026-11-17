@@ -155,6 +155,12 @@ Script load order matters: `calc.js` → `journal.js` → `projection.js` → `a
 - **Welcome setup** (5 optional steps, Skip everywhere, Skip keeps defaults and live-previewed look is reverted) opens after a first sign-in when `settings.onboarded` is not set; `settings.onboarded` syncs with the account.
 - **Tour**: spotlight steps with Skip (`tm_tour_done` / `tm_tour_dismissed` in localStorage). **Demo data**: trades with `demo:true`, shown with a bar, removed with one click, never included in `buildBackup()` or the cloud copy.
 
+## Journal log and Add to position (journal.js)
+- The journal log is a six-column table (Trade, Entry to Exit, Quantity, Profit/loss, Result, actions) built by `repTradeRow`; the table scrolls sideways inside `.rep-scroll` on phones. Month and day rows use `colspan` for those six columns.
+- **Add to position** (`openAddModal`, `#addModal`): for an OPEN trade, a later buy keeps ONE position. `entry` becomes the weighted average, `qty` the total (`lots` too for options), the original is kept in `entry0`/`qty0`, every extra buy in `t.adds[]` (`{date, price, qty, fees}`), and charges on extra buys in `t.entryFees`, which `pnlForTrade` subtracts. A shown preview gives the new average, total invested, risk to stop-loss and warns when the buy is against the position. Undo restores the exact previous trade.
+- The Symbol field in the Add Trade form shows at every level.
+- **Do not edit these files with PowerShell `Get-Content`/`Set-Content`** (PowerShell 5.1 re-encodes UTF-8 and corrupts the rupee sign and other symbols). Use Python with `encoding="utf-8"`.
+
 ## Security and speed (read before deploying)
 - **Before every deploy run `python tools/stamp_assets.py`.** It adds `?v=<hash>` to every local .js/.css link, because `.htaccess` lets scripts, styles and fonts be cached for a year. Re-run it after regenerating guide pages (the generator lives outside the repo) or editing any asset.
 - `.htaccess` sends: HSTS, nosniff, X-Frame-Options DENY, Referrer-Policy, Permissions-Policy, COOP `same-origin-allow-popups` (needed for the Google popup), and a **Content-Security-Policy** (only our own files plus Google's sign-in; `'unsafe-inline'` is still needed for inline handlers). If a new third-party script, font or image host is added, the CSP must be updated or it will be blocked.
