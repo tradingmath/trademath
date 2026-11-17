@@ -190,6 +190,10 @@ function renderStats() {
   pnlEl.textContent  = fmtINR(totalPnl);
   pnlEl.className    = "stat-card-val " + (totalPnl > 0 ? "pos" : totalPnl < 0 ? "neg" : "acc");
   $("st_rr").textContent = avgRR !== null ? avgRR.toFixed(2) : "—";
+  const cap = getAppSettings().defaultCap || 100000, ret = $("st_ret");
+  ret.textContent = closed.length ? pctTxt(totalPnl / cap * 100) : "—";
+  ret.className = "stat-card-val " + (!closed.length ? "acc" : totalPnl > 0 ? "pos" : totalPnl < 0 ? "neg" : "acc");
+  $("st_ret_sub").textContent = "of your " + fullINR(cap, true) + " capital";
 }
 
 function refreshJournal() { renderStats(); renderReports(); renderCalendar(); }
@@ -296,7 +300,7 @@ function quickLogTrade() {
   const t = {
     id: uid(),
     date: todayStr(),
-    margin: lc.sellOpt ? Math.round(lc.margin) : null,   // short options only: an estimate until you enter the real one on close
+    margin: lc.margin > 0 ? Math.round(lc.margin) : null,   // margin the calculator says this trade needs (an estimate; short options can be corrected on close)
     marginActual: false,
     market: lc.market || "NSE Equity",
     symbol: lc.symbol || null,
@@ -390,7 +394,7 @@ $("pl_confirm").addEventListener("click", () => {
   const t = {
     id: uid(),
     date: todayStr(),
-    margin: lc.sellOpt ? Math.round(lc.margin) : null,   // short options only: an estimate until you enter the real one on close
+    margin: lc.margin > 0 ? Math.round(lc.margin) : null,   // margin the calculator says this trade needs (an estimate; short options can be corrected on close)
     marginActual: false,
     market: lc.market || "NSE Equity",
     symbol: lc.symbol || null,
@@ -793,30 +797,45 @@ function grossPnl(t) {
   if (t.exits && t.exits.length) return t.exits.reduce((s, ex) => s + dir * (ex.price - t.entry) * ex.qty * k, 0);
   return t.exit ? dir * (t.exit - t.entry) * t.qty * k : null;
 }
-const signed = v => (v > 0 ? "+" : "") + fmtINR(v);
+/* Full Indian grouping (₹3,42,819), like a broker statement. */
+function fullINR(v, plain) {
+  const a = Math.abs(v), s = a >= 100 ? Math.round(a).toLocaleString("en-IN") : a.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return (v < 0 ? "−" : plain || v === 0 ? "" : "+") + "₹" + s;
+}
+const signed = v => fullINR(v);
+const pctTxt = v => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(Math.abs(v) >= 10 ? 1 : 2) + "%";
+const tone = v => v > 0 ? "td-pos" : v < 0 ? "td-neg" : "td-muted";
+/* Margin a trade ties up: the estimate saved when it was logged from the calculator, otherwise its full value. */
+function capitalUsed(t) {
+  if (t.margin > 0) return t.margin;
+  const v = (t.entry || 0) * (t.qty || 0) * fxOf(t);
+  return v > 0 ? v : null;
+}
+function exitDateOf(t) { return t.exits && t.exits.length ? t.exits[t.exits.length - 1].date : null; }
+function daysHeld(t) {
+  const a = t.date, b = exitDateOf(t) || (isClosed(t) ? t.date : todayStr());
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(a || "") || !/^\d{4}-\d{2}-\d{2}$/.test(b || "")) return null;
+  return Math.max(0, Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 864e5));
+}
 function repTradeRow(t, dayId, moKey) {
-  const pnl = pnlForTrade(t), rr = rrActual(t), closed = isClosed(t), k = fxOf(t);
-  const badge = `<span class="badge ${t.dir.toLowerCase()}">${t.dir === "LONG" ? "▲" : "▼"} ${t.dir}</span>`;
-  const res = !closed ? `<span class="badge open">OPEN</span>` : pnl > 0 ? `<span class="badge win">WIN</span>` : `<span class="badge loss">LOSS</span>`;
-  const partial = (!t.exit && t.exits && t.exits.length) ? `<span class="rep-chip">partial</span>` : "";
-  const exitTxt = t.exit ? px(t, t.exit) : partial ? "partial" : "open";
-  const sub = [esc(t.market || ""), shortDate(t.date)].filter(Boolean).join(" · ");
-  const levels = [t.sl ? "SL " + px(t, t.sl) : "", t.target ? "TP " + px(t, t.target) : ""].filter(Boolean).join(" · ");
-  let pnlCell;
-  if (pnl !== null) {
-    const costs = grossPnl(t) - pnl;
-    pnlCell = `<div class="pnl-big ${pnl > 0 ? "td-pos" : "td-neg"}">${signed(pnl)}</div><div class="t-sub">${costs > 0.005 ? "after " + fmtINR(costs) + " charges" : "no charges added"}${rr !== null ? " · " + (rr >= 0 ? "+" : "−") + Math.abs(rr).toFixed(2) + "R" : ""}</div>`;
-  } else {
-    const risk = t.sl && t.entry ? Math.abs(t.entry - t.sl) * t.qty * k : null;
-    pnlCell = `<div class="pnl-big td-muted">Open</div><div class="t-sub">${risk !== null ? "risk " + fmtINR(risk) : "no stop-loss set"}</div>`;
-  }
-  const nBuys = t.adds && t.adds.length ? `<div class="t-sub">avg of ${t.adds.length + 1} buys</div>` : "";
-  return `<tr class="tr-row" data-id="${t.id}" data-grp="${dayId}" data-mo="${moKey}">
-      <td class="c-trade"><div class="t-sym">${tradeName(t)} ${badge}</div><div class="t-sub">${sub}</div></td>
-      <td class="c-px"><div class="px-line"><b>${px(t, t.entry)}</b><i>→</i><b>${exitTxt}</b></div><div class="t-sub">${levels || "&nbsp;"}</div></td>
-      <td class="num"><b>${t.lots ? t.lots + (t.lots === 1 ? " lot" : " lots") : (t.qty || "—")}</b>${nBuys}${t.setup ? `<div class="t-sub" style="color:var(--accent)">${esc(t.setup)}</div>` : ""}</td>
-      <td class="num">${pnlCell}</td>
-      <td class="c-res">${res}${partial ? " " + partial : ""}</td>
+  const pnl = pnlForTrade(t), rr = rrActual(t), closed = isClosed(t);
+  const cap = capitalUsed(t), ret = pnl !== null && cap ? pnl / cap * 100 : null;
+  const partial = !t.exit && t.exits && t.exits.length;
+  const result = !closed ? `<span class="pill pill-open">${partial ? "PARTIAL" : "OPEN"}</span>` : pnl > 0 ? '<span class="pill pill-win">WIN</span>' : '<span class="pill pill-loss">LOSS</span>';
+  const xd = exitDateOf(t), exitTxt = t.exit ? px(t, t.exit) + (xd && xd !== t.date ? ` <span class="t-dim">${esc(shortDate(xd))}</span>` : "") : partial ? "partial" : "—";
+  const gross = pnl !== null ? grossPnl(t) : null, fees = gross !== null ? gross - pnl : null, held = daysHeld(t);
+  const avgTag = t.adds && t.adds.length ? ` <span class="t-dim" title="Average of ${t.adds.length + 1} buys">avg</span>` : "";
+  const tip = [t.sl ? "Stop-loss " + px(t, t.sl) : "", t.target ? "Target " + px(t, t.target) : "", gross !== null ? "Gross " + fullINR(gross) : "", rr !== null ? "Result " + (rr >= 0 ? "+" : "−") + Math.abs(rr).toFixed(2) + "R" : "", held !== null ? "Held " + held + (held === 1 ? " day" : " days") : "", t.setup ? "Setup " + t.setup : ""].filter(Boolean).join("  ·  ");
+  return `<tr class="tr-row" data-id="${t.id}" data-grp="${dayId}" data-mo="${moKey}" title="${esc(tip)}">
+      <td class="c-inst"><b>${tradeName(t)}</b> <span class="${t.dir === "LONG" ? "dir-l" : "dir-s"}">${t.dir === "LONG" ? "▲ LONG" : "▼ SHORT"}</span></td>
+      <td class="num">${px(t, t.entry)}${avgTag}</td>
+      <td class="num">${exitTxt}</td>
+      <td class="num">${t.lots ? t.lots : (t.qty || "—")}</td>
+      <td class="num ${pnl !== null ? tone(pnl) : "td-muted"}">${pnl !== null ? signed(pnl) : "—"}</td>
+      <td class="num">${cap ? fullINR(cap, true) : "—"}</td>
+      <td class="num ${ret !== null ? tone(ret) : "td-muted"}">${ret !== null ? pctTxt(ret) : "—"}</td>
+      <td class="c-res">${result}</td>
+      <td class="num">${fees !== null ? fullINR(fees, true) : "—"}</td>
       <td class="c-act">
         ${!closed ? `<button type="button" class="rep-act rep-add-btn" data-id="${t.id}" title="Bought more? Add to this position and see your new average">＋ Add</button><button type="button" class="rep-act rep-close-btn" data-id="${t.id}">Close</button>` : ""}
         <button type="button" class="rep-act rep-edit-btn" data-id="${t.id}" title="Edit market, symbol and notes">✎</button>
@@ -884,25 +903,37 @@ function renderReports() {
 
       repDays.set(dayId, { trades: filteredDay, mo: mo.replace(/[^a-z0-9]/gi, "") });
 
+      const dayCap = dayClosed.reduce((s, t) => s + (capitalUsed(t) || 0), 0), dayRet = dayCap ? dayPnlVal / dayCap * 100 : null;
+      const dayFees = dayClosed.reduce((s, t) => s + (grossPnl(t) - pnlForTrade(t)), 0);
       return `<tr class="dy-row" data-mo="${mo.replace(/[^a-z0-9]/gi,'')}" data-grp="${dayId}" onclick="toggleDay(this,'${dayId}')">
-        <td colspan="3"><span class="rep-caret">▶</span>${dayLabel} <span class="t-sub">· ${filteredDay.length} trade${filteredDay.length!==1?"s":""}</span></td>
-        <td class="num"><b class="${pCls}">${dayClosed.length ? signed(dayPnlVal) : "—"}</b></td>
-        <td colspan="2" class="t-sub">${wl}</td>
+        <td class="c-inst" colspan="4"><span class="rep-caret">▶</span><b>${esc(day === "unknown" ? "Unknown" : day)}</b> <span class="t-dim">· ${filteredDay.length} trade${filteredDay.length!==1?"s":""} · Daily total</span></td>
+        <td class="num"><b class="${dayClosed.length ? tone(dayPnlVal) : ""}">${dayClosed.length ? signed(dayPnlVal) : "—"}</b></td>
+        <td class="num"><b>${dayCap ? fullINR(dayCap, true) : "—"}</b></td>
+        <td class="num"><b class="${dayRet !== null ? tone(dayRet) : ""}">${dayRet !== null ? pctTxt(dayRet) : "—"}</b></td>
+        <td class="c-res t-dim">${wl}</td>
+        <td class="num">${dayClosed.length ? fullINR(dayFees, true) : "—"}</td>
+        <td></td>
       </tr>`;
     }).join("");
 
     const moId = mo.replace(/[^a-z0-9]/gi,"");
+    const moCap = moClosed.reduce((s, t) => s + (capitalUsed(t) || 0), 0), moRet = moCap ? moPnl / moCap * 100 : null;
+    const moFees = moClosed.reduce((s, t) => s + (grossPnl(t) - pnlForTrade(t)), 0);
     return `<div class="rep-log">
       <div class="rep-log-top">
         <button class="btn btn-ghost btn-sm" data-level="trader" onclick="openReportCard('${mo}')">📊 Share card</button>
       </div>
       <div class="rep-scroll"><table class="rep-log-tbl">
-        <thead><tr><th class="c-trade">Trade</th><th class="c-px">Entry → Exit</th><th class="num">Quantity</th><th class="num">Profit / loss</th><th class="c-res">Result</th><th class="c-act"></th></tr></thead>
+        <thead><tr><th class="c-inst">Instrument</th><th class="num">Entry</th><th class="num">Exit</th><th class="num">Lots</th><th class="num">Net P&amp;L</th><th class="num">Margin</th><th class="num">Return</th><th class="c-res">Result</th><th class="num">Fees</th><th class="c-act"></th></tr></thead>
         <tbody>
           <tr class="mo-row" onclick="toggleMonth(this,'${moId}')">
-            <td colspan="3"><span class="rep-caret open">▶</span><span style="text-transform:uppercase;letter-spacing:.04em">${moLabel}</span> <span class="t-sub">· ${allTrades.length} trade${allTrades.length!==1?"s":""}</span></td>
-            <td class="num"><b class="${pnlCls}">${moClosed.length ? signed(moPnl) : "—"}</b></td>
-            <td colspan="2" class="t-sub">${moClosed.length ? Math.round(moWins.length/moClosed.length*100) + "% win · " : ""}${moWins.length}W / ${moClosed.length-moWins.length}L</td>
+            <td class="c-inst" colspan="4"><span class="rep-caret open">▶</span><b>${moLabel}</b> <span class="t-dim">· ${allTrades.length} trade${allTrades.length!==1?"s":""} · Monthly total</span></td>
+            <td class="num"><b class="${moClosed.length ? tone(moPnl) : ""}">${moClosed.length ? signed(moPnl) : "—"}</b></td>
+            <td class="num"><b>${moCap ? fullINR(moCap, true) : "—"}</b></td>
+            <td class="num"><b class="${moRet !== null ? tone(moRet) : ""}">${moRet !== null ? pctTxt(moRet) : "—"}</b></td>
+            <td class="c-res t-dim">${moWins.length}W / ${moClosed.length-moWins.length}L</td>
+            <td class="num">${moClosed.length ? fullINR(moFees, true) : "—"}</td>
+            <td></td>
           </tr>
           ${daysHTML}
         </tbody>
@@ -1070,7 +1101,9 @@ $("ap_save").addEventListener("click", () => {
   const t = c.t, before = JSON.stringify(t), fees = Math.max(0, parseFloat($("ap_fees").value) || 0);
   if (!t.adds) { t.entry0 = t.entry; t.qty0 = t.qty; t.adds = []; }
   t.adds.push({ date: /^\d{4}-\d{2}-\d{2}$/.test($("ap_date").value) ? $("ap_date").value : todayStr(), price: c.price, qty: c.addUnits, fees });
+  const oldQty = t.qty;
   t.entry = Math.round(c.avg * 1e6) / 1e6; t.qty = c.qty;
+  if (t.margin > 0 && !t.marginActual && oldQty > 0) t.margin = Math.round(t.margin * t.qty / oldQty);   // the margin grows with the position
   if (c.lots) t.lots = t.lots + c.qIn;
   const sl = parseFloat($("ap_sl").value), tp = parseFloat($("ap_tp").value);
   if (sl > 0) t.sl = sl; if (tp > 0) t.target = tp;

@@ -247,8 +247,8 @@
   /* ───────── demo data ───────── */
   function dstr(back) { const d = new Date(); d.setDate(d.getDate() - back); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
   function demoTrades() {
-    const eq = (i, back, sym, dir, entry, sl, target, exit, qty, fees, setup, notes) => ({ id: "demo-" + i, demo: true, date: dstr(back), market: "NSE Equity", symbol: sym, instrument: "equity", dir, entry, sl, target, exit, qty, fees, setup, notes, mistakes: [], exits: [], confidence: 3, checklistSkipped: false });
-    const op = (i, back, dir, entry, sl, target, exit, lots, fees, setup, notes, ot) => ({ id: "demo-" + i, demo: true, date: dstr(back), market: "Nifty F&O", symbol: "NIFTY", instrument: "options", optType: ot, dir, entry, sl, target, exit, lots, lotSize: 65, qty: lots * 65, fees, setup, notes, mistakes: [], exits: [], confidence: 3, checklistSkipped: false });
+    const eq = (i, back, sym, dir, entry, sl, target, exit, qty, fees, setup, notes) => ({ id: "demo-" + i, demo: true, date: dstr(back), market: "NSE Equity", symbol: sym, instrument: "equity", dir, entry, sl, target, exit, qty, fees, setup, notes, margin: Math.round(entry * qty / 5), mistakes: [], exits: [], confidence: 3, checklistSkipped: false });   // intraday: about a fifth of the value
+    const op = (i, back, dir, entry, sl, target, exit, lots, fees, setup, notes, ot) => ({ id: "demo-" + i, demo: true, date: dstr(back), market: "Nifty F&O", symbol: "NIFTY", instrument: "options", optType: ot, dir, entry, sl, target, exit, lots, lotSize: 65, qty: lots * 65, fees, setup, notes, margin: Math.round(entry * lots * 65), mistakes: [], exits: [], confidence: 3, checklistSkipped: false });   // option buyer: the premium paid
     const t = [
       eq(1, 13, "RELIANCE", "LONG", 1420, 1405, 1450, 1448, 66, 74, "Breakout", "Broke the day's high on volume. Held to target."),
       eq(2, 12, "TCS", "SHORT", 3560, 3585, 3510, 3585, 40, 82, "Reversal", "Stopped out. The reversal needed more confirmation."),

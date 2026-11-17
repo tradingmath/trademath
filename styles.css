@@ -919,3 +919,24 @@ html.tm-boot body { visibility:hidden; }
 .ap-row { display:flex; align-items:baseline; gap:10px; padding:3px 0; } .ap-row span:first-child { flex:1; color:var(--fg3); font-size:12px; } .ap-row b { font-family:var(--mono); color:var(--fg); }
 .ap-risk { margin-top:8px; padding-top:8px; border-top:1px solid var(--border); font-size:12px; line-height:1.6; }
 .ap-warn { margin-top:8px; background:var(--warn-dim); border:1px solid var(--warn); color:var(--fg); border-radius:8px; padding:8px 10px; font-size:12px; line-height:1.5; }
+
+/* ══════════ Trade log: dense, broker-statement style ══════════ */
+.stats-row { grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); }
+.stat-card-sub { font-size:11px; color:var(--fg3); margin-top:3px; }
+.rep-log-tbl { min-width:900px; font-size:13px; }
+.rep-log-tbl th { font-size:10px; letter-spacing:.08em; padding:9px 12px; color:var(--fg3); font-weight:600; }
+.rep-log-tbl td { padding:9px 12px; border-bottom:1px solid var(--border); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.rep-log-tbl td.num, .rep-log-tbl th.num { text-align:right; }
+.rep-log-tbl .c-inst { width:24%; overflow:hidden; text-overflow:ellipsis; }
+.rep-log-tbl .c-res { width:88px; text-align:left; padding-left:18px; } .rep-log-tbl .c-act { width:140px; text-align:right; }
+.rep-log-tbl tr.mo-row td { background:rgba(255,255,255,.05); padding:10px 12px; font-size:13px; }
+.rep-log-tbl tr.dy-row td { background:rgba(255,255,255,.025); padding:9px 12px; color:var(--fg2); }
+.rep-log-tbl tr.tr-row td { padding-left:12px; }
+.rep-log-tbl tr.tr-row:hover td { background:rgba(255,255,255,.035); }
+.rep-log-tbl td.num { font-family:var(--mono); font-size:12.5px; }
+.t-dim { color:var(--fg3); font-size:11px; font-weight:400; }
+.dir-l { color:var(--green); font-weight:600; font-size:11px; margin-left:4px; } .dir-s { color:var(--red); font-weight:600; font-size:11px; margin-left:4px; }
+.pill { display:inline-block; border:1px solid; border-radius:999px; padding:1px 10px; font:700 10px var(--mono); letter-spacing:.05em; }
+.pill-win { color:var(--green); border-color:var(--green); background:var(--green-dim); }
+.pill-loss { color:var(--red); border-color:var(--red); background:var(--red-dim); }
+.pill-open { color:var(--accent); border-color:var(--accent); background:var(--accent-dim); }
