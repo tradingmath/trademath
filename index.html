@@ -1,31 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-IN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>TradeMath: position size calculator and trade journal</title>
-<meta name="description" content="Free position size calculator and trade journal for Indian traders: risk-based quantity, stop-loss and target, F&amp;O lots, charges, and a journal with reports.">
+<title>Position Size Calculator &amp; Trade Journal for Indian Traders | TradeMath</title>
+<meta name="description" content="Free position size calculator and trade journal for Indian traders. Risk-based quantity, stop-loss and targets, NSE F&amp;O lots, charges and reports. No sign-up needed.">
+<meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="theme-color" content="#050a1c">
 <link rel="canonical" href="https://trademath.in/">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="TradeMath">
-<meta property="og:title" content="TradeMath: position size calculator and trade journal">
+<meta property="og:title" content="Position Size Calculator &amp; Trade Journal for Indian Traders | TradeMath">
 <meta property="og:description" content="Know your quantity, risk and reward before you trade. Built for Indian traders.">
 <meta property="og:url" content="https://trademath.in/">
 <meta property="og:image" content="https://trademath.in/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="TradeMath position size calculator and trade journal">
+<meta property="og:locale" content="en_IN">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="TradeMath: position size calculator and trade journal">
+<meta name="twitter:title" content="Position Size Calculator &amp; Trade Journal for Indian Traders | TradeMath">
 <meta name="twitter:description" content="Know your quantity, risk and reward before you trade. Built for Indian traders.">
 <meta name="twitter:image" content="https://trademath.in/og-image.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://trademath.in/#site","url":"https://trademath.in/","name":"TradeMath","inLanguage":"en-IN","publisher":{"@id":"https://trademath.in/#org"}},{"@type":"Organization","@id":"https://trademath.in/#org","name":"TradeMath","url":"https://trademath.in/","logo":"https://trademath.in/apple-touch-icon.png","email":"support@trademath.in"},{"@type":"WebApplication","@id":"https://trademath.in/#app","name":"TradeMath","url":"https://trademath.in/","description":"Free position size calculator and trade journal for Indian traders: risk-based quantity, stop-loss and targets, NSE F&O lots, charges and reports.","applicationCategory":"FinanceApplication","operatingSystem":"Any (web browser)","inLanguage":"en-IN","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"INR"},"publisher":{"@id":"https://trademath.in/#org"}}]}</script>
 <link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts.css?v=140c3a0f">
 <link rel="icon" href="logo-icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css?v=8ec9552a">
+<link rel="stylesheet" href="styles.css?v=3daaff80">
 <script>
 /* Runs before the page paints: apply the saved theme and level now, and keep the page hidden until the app has
    finished setting itself up, so nothing flashes dark, then light, or jumps between modes. */
@@ -39,9 +43,10 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
 </script>
 </head>
 <body>
+<noscript><p style="padding:16px;font:14px/1.6 sans-serif">TradeMath needs JavaScript to calculate position size and keep your journal. Please turn JavaScript on, then reload this page. Guides that work without it: <a href="position-size-calculator-india.html">position size</a>, <a href="risk-reward-ratio-explained.html">risk-reward</a>, <a href="nse-fno-lot-sizes.html">F&amp;O lot sizes</a>.</p></noscript>
 
 <header class="header">
-  <div class="logo"><img src="logo-icon.svg" alt="" width="24" height="24" style="vertical-align:-6px;margin-right:8px">TradeMath <em>/ Calculator + Journal</em></div>
+  <h1 class="logo"><img src="logo-icon.svg" alt="" width="24" height="24" style="vertical-align:-6px;margin-right:8px">TradeMath <em>/ Calculator + Journal</em></h1>
   <div class="hdr-right">
     <div class="lvl-wrap" id="lvl_wrap">
       <button class="theme-btn lvl-btn" id="lvl_btn" type="button" aria-haspopup="menu" aria-expanded="false" title="Choose how much of the app you see">
@@ -616,7 +621,7 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
   <div class="pf-head">
     <div class="pf-avatar" id="pf_avatar" aria-hidden="true">?</div>
     <div class="pf-who">
-      <h1 class="pf-name" id="pf_title">Your profile</h1>
+      <h2 class="pf-name" id="pf_title">Your profile</h2>
       <div class="pf-sub" id="pf_sub">Not signed in. Your settings are saved on this device.</div>
     </div>
     <button type="button" class="btn btn-primary btn-sm" id="pf_signin">Sign in to save to the cloud</button>
@@ -905,12 +910,13 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
   </div>
 </div>
 
-<p class="note" style="text-align:center;margin:24px 0 8px">Guides: <a href="position-size-calculator-india.html" style="color:inherit">Position size</a> · <a href="risk-reward-ratio-explained.html" style="color:inherit">Risk-reward</a> · <a href="nse-fno-lot-sizes.html" style="color:inherit">F&amp;O lot sizes</a> · <a href="trading-journal-india.html" style="color:inherit">Trading journal</a><br><a href="about.html" style="color:inherit">About</a> · <a href="contact.html" style="color:inherit">Contact</a> · <a href="privacy.html" style="color:inherit">Privacy</a> · <a href="terms.html" style="color:inherit">Terms</a> · Not investment advice</p>
+<p class="note" style="max-width:720px;margin:24px auto 0;text-align:center;line-height:1.7">TradeMath is a free position size calculator and trade journal for Indian traders. Enter your entry, stop-loss, capital and risk to get quantity, margin, targets and charges for NSE stocks, F&amp;O lots, MCX and crypto futures. Then log the trade and review your results.</p>
+<p class="note" style="text-align:center;margin:10px 0 8px">Guides: <a href="position-size-calculator-india.html" style="color:inherit">Position size</a> · <a href="risk-reward-ratio-explained.html" style="color:inherit">Risk-reward</a> · <a href="nse-fno-lot-sizes.html" style="color:inherit">F&amp;O lot sizes</a> · <a href="trading-journal-india.html" style="color:inherit">Trading journal</a><br><a href="about.html" style="color:inherit">About</a> · <a href="contact.html" style="color:inherit">Contact</a> · <a href="privacy.html" style="color:inherit">Privacy</a> · <a href="terms.html" style="color:inherit">Terms</a> · Not investment advice</p>
 <script src="calc.js?v=d145c816"></script>
 <script src="journal.js?v=a0bcf3c3"></script>
 <script src="projection.js?v=76e2f8eb"></script>
 <script src="alerts.js?v=0a43bf1d"></script>
-<script src="app.js?v=ac472b84"></script>
+<script src="app.js?v=a6489719"></script>
 <script src="cloud.js?v=459e79da"></script>
 <script src="profile.js?v=b4b8fe8d"></script>
 

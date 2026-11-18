@@ -265,10 +265,12 @@ function showRoute(tab, sub) {
 }
 function switchTab(tab, sub) {
   sub = sub || "";
-  const h = "#" + tab + (sub ? "/" + sub : "");
+  const h = tab === "calc" ? "" : "#" + tab + (sub ? "/" + sub : "");   // the home tab has no #, so the address is just trademath.in
   showRoute(tab, sub);                       // synchronous, so callers can act on the new page straight away
-  if (location.hash !== h) location.hash = h; // hashchange then fires, but showRoute is skipped (already on this route)
+  if (tab === "calc") { if (location.hash) history.pushState(null, "", location.pathname + location.search); }
+  else if (location.hash !== h) location.hash = h; // hashchange then fires, but showRoute is skipped (already on this route)
 }
+if (location.hash === "#calc") history.replaceState(null, "", location.pathname + location.search);   // old links to #calc show the clean address
 window.addEventListener("hashchange", () => {  // back/forward buttons, typed or bookmarked links
   const { tab, sub } = parseRoute();
   if (tab + "/" + sub !== currentRoute) showRoute(tab, sub);

@@ -1,0 +1,17 @@
+# TradeMath
+
+> TradeMath is a free position size calculator and trade journal for Indian traders. It works out quantity, margin, stop-loss, targets and estimated charges for NSE stocks, F&O lots, MCX and crypto futures, and keeps a journal with reports. No sign-up is needed; your journal stays in your browser unless you choose to sign in for cloud sync.
+
+## Tools
+- [Calculator and journal](https://trademath.in/): position size, risk-reward, margin, trade log and reports
+
+## Guides
+- [How to calculate position size](https://trademath.in/position-size-calculator-india.html): formula and worked examples for stocks, futures and options in India
+- [Risk-reward ratio explained](https://trademath.in/risk-reward-ratio-explained.html): break-even win rate, expectancy and how to set targets
+- [NSE F&O lot sizes](https://trademath.in/nse-fno-lot-sizes.html): lot sizes and how to use them in position sizing
+- [Trading journal for Indian traders](https://trademath.in/trading-journal-india.html): what to record and how to review
+
+## About
+- [About](https://trademath.in/about.html), [Contact](https://trademath.in/contact.html), [Privacy](https://trademath.in/privacy.html), [Terms](https://trademath.in/terms.html)
+
+TradeMath is a calculation aid and does not give investment advice. Figures are estimates; confirm with your broker.
