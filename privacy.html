@@ -12,7 +12,7 @@
 <link rel="preload" href="fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts.css?v=140c3a0f">
 <link rel="icon" href="logo-icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css?v=24795b61">
+<link rel="stylesheet" href="styles.css?v=8ec9552a">
 <style>
   .doc { max-width:720px; margin:0 auto; padding:32px 0 56px; }
   .doc h1 { font-size:26px; margin-bottom:6px; }
@@ -27,7 +27,7 @@
 <main class="doc">
   <p style="display:flex;align-items:center;gap:10px"><img src="logo-icon.svg" alt="" width="28" height="28"><a href="index.html">← Back to TradeMath</a></p>
   <h1>Privacy</h1>
-  <div class="meta">Last updated: 17 November 2026</div>
+  <div class="meta">Last updated: 18 November 2026</div>
 
   <p>TradeMath is a position-size calculator and trade journal. You can use all of it without an account. This page explains what happens to your information, with and without the optional account.</p>
 
@@ -36,13 +36,15 @@
     <li>Your trades, settings, checklist, beep settings and projection inputs are saved in your own browser (local storage). They are not sent to us or to any server.</li>
     <li>We cannot see, recover or delete that data. If you clear your browser's site data, switch browser or switch device, it is gone. Use <b>Settings → Your data → Download backup</b> to keep a copy.</li>
     <li>Backup files, CSV exports and restores are created and read entirely inside your browser.</li>
+    <li>Backup files are encrypted so that they can be opened only by TradeMath. This keeps the file private from other apps and detects edits. It is not a password: the key is part of the app, so do not treat a backup file as secret from someone who has the file and the technical skill to read the site's code. Keep backup files somewhere safe.</li>
+    <li>Calculations, including the optional fee estimates and the strategy names you add in Settings, happen in your browser and are saved on your device like the rest of your journal.</li>
   </ul>
 
   <h2>With the optional account: what we store</h2>
   <ul>
     <li>You sign in either with Google or with your email address and a 6-digit code we email you. There is no password.</li>
     <li>If you choose Google, Google tells us your email address and confirms that it is yours. We do not receive your Google password or any other Google data. Google's sign-in script is loaded only when you open the sign-in window, and Google's own privacy policy applies to it.</li>
-    <li>We store your email address, when you joined and last signed in, and a copy of your TradeMath data (trades, settings, checklist) so you can use it on other devices. The copy is kept as one saved backup per account, up to 2 MB.</li>
+    <li>We store your email address, when you joined and last signed in, and a copy of your TradeMath data (trades, settings, strategy names, checklist) so you can use it on other devices. The copy is compressed and encrypted on our server. The copy is kept as one saved backup per account, up to 2 MB.</li>
     <li>One-time codes and sign-in sessions are stored only in scrambled (hashed) form and expire. The sign-in cookie is needed to keep you signed in and is not used for tracking or advertising.</li>
     <li>We use your email only to send sign-in codes and to contact you about your account. We do not sell it or share it.</li>
     <li>You can delete your account at any time in <b>Settings → Account &amp; cloud sync → Delete my account and cloud data</b>. That removes your email and the cloud copy. The data on your own device stays.</li>
@@ -56,8 +58,11 @@
     <li>The fonts (Inter and JetBrains Mono) are loaded from Google Fonts, so Google receives a normal font request from your browser.</li>
   </ul>
 
+  <h2>Fee figures and other estimates</h2>
+  <p>Fees are off by default. When you turn them on, TradeMath shows rough estimates based on published rates and the rates you enter. They are not from your broker or exchange and can differ from your contract note. Do not use them for accounts or tax.</p>
+
   <h2>If this changes</h2>
-  <p>If we later add advertising, analytics or affiliate links, those services may use cookies or similar technology, and this page will be updated before they go live. Last updated: 17 November 2026.</p>
+  <p>If we later add advertising, analytics or affiliate links, those services may use cookies or similar technology, and this page will be updated before they go live. Last updated: 18 November 2026.</p>
 
   <h2>Not financial advice</h2>
   <p>TradeMath is a calculation aid. Results, including margin, lot-size, fee and projection figures, are estimates and can be wrong or out of date. They are not investment advice and not a guarantee of any outcome. Check everything with your broker before you trade. Trading carries a risk of loss.</p>

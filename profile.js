@@ -311,3 +311,34 @@
   /* ───────── first visit nudge ───────── */
   setTimeout(() => { if (!trades.length && !onbOpen && new URLSearchParams(location.search).get("popout") !== "1") maybeOfferTour(); }, 2500);
 })();
+
+/* ══════════════ RISK DISCLOSURE ══════════════
+   Shown the first time someone opens TradeMath, again after every sign-in, and then once a week after they press
+   "I understand". The date they pressed it is kept on this device only. */
+(function () {
+  const KEY = "tm_risk_ack", WEEK = 7 * 864e5, AFTER_LOGIN = 10 * 6e4;
+  const last = () => { const v = Number(tmGet(KEY, 0)); return v > 0 ? v : 0; };
+  let open = false;
+  function show() {
+    if (open) return; open = true;
+    const ov = document.createElement("div"); ov.className = "modal-overlay"; ov.style.zIndex = 400;
+    ov.innerHTML = '<div class="modal risk-modal" role="alertdialog" aria-modal="true" aria-labelledby="risk_t">' +
+      '<div class="modal-title" id="risk_t"><span aria-hidden="true">⚠️</span> Risk disclosure on derivatives</div>' +
+      '<ul class="risk-list">' +
+      '<li>9 out of 10 individual traders in equity Futures and Options (F&amp;O) incurred net losses.</li>' +
+      '<li>On average, those who made losses lost close to ₹50,000.</li>' +
+      '<li>On top of their net trading losses, loss makers spent a further 28% of those losses on transaction costs.</li>' +
+      '<li>Even those who made net profits paid between 15% and 50% of those profits as transaction costs.</li>' +
+      '</ul>' +
+      '<p class="risk-src">Source: <a href="https://www.sebi.gov.in/reports-and-statistics/research/jan-2023/study-analysis-of-profit-and-loss-of-individual-traders-dealing-in-equity-fando-segment_67525.html" target="_blank" rel="noopener noreferrer">SEBI study dated 25 January 2023</a>, "Analysis of Profit and Loss of Individual Traders dealing in equity Futures and Options (F&amp;O) Segment". The findings cover individual traders in equity F&amp;O during FY 2021-22.</p>' +
+      '<p class="risk-src">TradeMath is a calculation and journal tool. It does not give investment advice, and its figures are estimates.</p>' +
+      '<div class="tm-dialog-actions"><button type="button" class="btn btn-primary" id="risk_ok" style="width:100%">I understand</button></div></div>';
+    document.body.appendChild(ov);
+    const ok = ov.querySelector("#risk_ok"); ok.focus();
+    ov.addEventListener("keydown", e => { if (e.key === "Tab") { e.preventDefault(); ok.focus(); } });   // keep focus on the button until it is pressed
+    ok.onclick = () => { tmSet(KEY, Date.now()); ov.remove(); open = false; };
+  }
+  const due = afterLogin => { const l = last(); return !l || Date.now() - l > (afterLogin ? AFTER_LOGIN : WEEK); };
+  setTimeout(() => { if (due(false)) show(); }, 700);
+  document.addEventListener("tm:signedin", () => { if (due(true)) show(); });
+})();
