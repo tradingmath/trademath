@@ -56,7 +56,7 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
         <div class="alert-pop-title">How much do you want to see?</div>
         <button type="button" role="menuitemradio" aria-checked="false" class="lvl-item" data-ui="quick"><span class="lvl-ico" aria-hidden="true">⚡</span><span class="lvl-txt"><b>Quick</b><small>Entry, stop-loss, risk and target, an options toggle, and the beep.</small></span></button>
         <button type="button" role="menuitemradio" aria-checked="false" class="lvl-item" data-ui="trader"><span class="lvl-ico" aria-hidden="true">📈</span><span class="lvl-txt"><b>Trader</b><small>Adds targets, fees, symbols, filters, and tags.</small></span></button>
-        <button type="button" role="menuitemradio" aria-checked="false" class="lvl-item" data-ui="pro"><span class="lvl-ico" aria-hidden="true">🛠</span><span class="lvl-txt"><b>Pro</b><small>Everything: F&amp;O lots, projection, checklist, partial exits, themes.</small></span></button>
+        <button type="button" role="menuitemradio" aria-checked="false" class="lvl-item" data-ui="pro"><span class="lvl-ico" aria-hidden="true">🛠</span><span class="lvl-txt"><b>Pro</b><small>Everything: F&amp;O lots, planner, checklist, partial exits, themes.</small></span></button>
       </div>
     </div>
     <div class="alert-wrap" id="alert_wrap">
@@ -297,7 +297,7 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
     <div class="jnl-top">
       <div class="jnl-title">Trade Journal</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-ghost btn-sm" id="projBtn" data-level="pro" title="Fill the Projection tab with your own closed trades (win rate, average win and loss, trades per day)">🎯 Projection</button>
+        <button class="btn btn-ghost btn-sm" id="projBtn" data-level="pro" title="Fill the Planner with your own closed trades (win rate, average win and loss, trades per day)">🎯 Planner</button>
         <button class="btn btn-ghost btn-sm" id="exportBtn">↓ Export CSV</button>
         <button class="btn btn-primary btn-sm" id="showAddBtn">+ Add Trade</button>
       </div>
@@ -385,11 +385,11 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
     <div class="empty-state" id="jnl_empty" style="display:none"><strong>No trades yet</strong>Click "+ Add Trade" to log your first trade</div>
   </div>
 
-  <!-- Projection lives inside the Journal tab; opened from the 🎯 Projection button -->
+  <!-- The Planner lives inside the Journal tab; opened from the 🎯 Planner button (internal name: projection) -->
   <div id="jnl_projection" hidden>
     <div class="proj-back"><button type="button" class="btn btn-ghost btn-sm" id="projBack">← Back to journal</button></div>
     <div class="proj-warn" role="note">
-      <strong>⚠ This is a projection, not a promise.</strong>
+      <strong>⚠ This is an illustration, not a promise.</strong>
       <span>It is a simulation built only from the numbers you type in. Real trading has slippage, missed stop-losses, emotions, changing markets and losing streaks that can push results far below this. Never risk money you cannot afford to lose.</span>
     </div>
 
@@ -435,7 +435,7 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
     <div class="panel proj-panel"><div class="p-title">Day-wise breakdown</div><div id="proj_cal"></div></div>
     <div class="panel proj-panel"><div class="p-title">Month by month <span class="proj-hint">tap a month to see its trades</span></div><div id="proj_months" class="proj-scroll"></div></div>
     <div class="panel proj-panel"><div class="p-title" id="proj_log_title">Trade log</div><div id="proj_log"></div></div>
-    <p class="note">Projection only. Not investment advice, not a forecast, and not a guarantee of any return.</p>
+    <p class="note">Illustration only. Not investment advice, not a forecast, and not a guarantee of any return.</p>
   </div>
 </div>
 
@@ -649,7 +649,7 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
         <select id="pf_level">
           <option value="quick">Beginner: Quick (only the essentials)</option>
           <option value="trader">Intermediate: Trader (targets, fees, journal tools)</option>
-          <option value="pro">Advanced: Pro (F&amp;O lots, projection, checklist)</option>
+          <option value="pro">Advanced: Pro (F&amp;O lots, planner, checklist)</option>
         </select>
       </div>
     </div>
@@ -922,11 +922,11 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
 <p class="note" style="text-align:center;margin:10px 0 8px">Guides: <a href="position-size-calculator-india.html" style="color:inherit">Position size</a> · <a href="risk-reward-ratio-explained.html" style="color:inherit">Risk-reward</a> · <a href="nse-fno-lot-sizes.html" style="color:inherit">F&amp;O lot sizes</a> · <a href="trading-journal-india.html" style="color:inherit">Trading journal</a><br><a href="about.html" style="color:inherit">About</a> · <a href="contact.html" style="color:inherit">Contact</a> · <a href="privacy.html" style="color:inherit">Privacy</a> · <a href="terms.html" style="color:inherit">Terms</a> · Not investment advice</p>
 <script src="calc.js?v=edd9b7dc"></script>
 <script src="journal.js?v=402d3ff4"></script>
-<script src="projection.js?v=76e2f8eb"></script>
+<script src="projection.js?v=cf62eebd"></script>
 <script src="alerts.js?v=0a43bf1d"></script>
-<script src="app.js?v=624ad110"></script>
+<script src="app.js?v=3997704b"></script>
 <script src="cloud.js?v=459e79da"></script>
-<script src="profile.js?v=59ed14d6"></script>
+<script src="profile.js?v=e5c74a52"></script>
 
 </body>
 </html>

@@ -115,7 +115,7 @@
       <div class="field"><label for="o_rr">Target reward for 1 of risk</label><input type="number" id="o_rr" min="0.1" max="50" step="0.5" value="${o.rr}"></div></div>
       <p class="onb-hint">Many traders risk 0.5 to 2% of capital per trade and aim for at least 1 : 2.</p>`;
     if (o.step === 2) b.innerHTML = `<h2 id="onb_title" class="onb-title">Your experience</h2><p class="onb-sub">This decides how much you see. You can switch any time from the top bar.</p>
-      <div class="cards">${[["quick", "🌱", "Beginner", "Only the essentials: entry, stop-loss, risk and target."], ["trader", "📈", "Intermediate", "Adds targets, charges, symbols, filters and journal tags."], ["pro", "🛠", "Advanced", "Everything: F&amp;O lots, projection and checklist."]].map(([k, i, t, d]) => `<button type="button" class="lvl-card${o.level === k ? " on" : ""}" data-lvl="${k}"><span>${i}</span><b>${t}</b><small>${d}</small></button>`).join("")}</div>
+      <div class="cards">${[["quick", "🌱", "Beginner", "Only the essentials: entry, stop-loss, risk and target."], ["trader", "📈", "Intermediate", "Adds targets, charges, symbols, filters and journal tags."], ["pro", "🛠", "Advanced", "Everything: F&amp;O lots, planner and checklist."]].map(([k, i, t, d]) => `<button type="button" class="lvl-card${o.level === k ? " on" : ""}" data-lvl="${k}"><span>${i}</span><b>${t}</b><small>${d}</small></button>`).join("")}</div>
       <p class="onb-sub" style="margin-top:14px">How do you usually trade?</p><div class="chips">${chip("intraday", "Intraday (5× leverage)", o.style === "intraday")}${chip("swing", "Swing / positional (delivery)", o.style === "swing")}</div>`;
     if (o.step === 3) {
       const l = o.look;
@@ -178,7 +178,7 @@
     { tab: "calc", sel: () => $("r_content") && !$("r_content").hidden ? document.querySelector(".tiles") : null, title: "2. See your answer instantly", text: "How many shares or lots to buy, the margin needed, your maximum loss, and the profit at your target." },
     { tab: "calc", sel: () => $("logTradeBtn"), title: "3. Log the trade in one click", text: "It goes straight into your journal. Shortcut for computers: Ctrl+Enter." },
     { tab: "calc", sel: () => document.querySelector('.tab-btn[data-tab="journal"]'), title: "4. Your journal", text: "Every trade, your win rate, profit and loss, and reports by month, setup and mistake." },
-    { tab: "calc", sel: () => $("lvl_btn"), title: "5. Choose how much you see", text: "Quick shows only the essentials. Trader and Pro add charges, F&O lots, projection and more. Switch any time." },
+    { tab: "calc", sel: () => $("lvl_btn"), title: "5. Choose how much you see", text: "Quick shows only the essentials. Trader and Pro add charges, F&O lots, planner and more. Switch any time." },
     { tab: "calc", sel: () => (vis($("avatarBtn")) ? $("avatarBtn") : vis($("acctBtn")) ? $("acctBtn") : null), title: "6. Your account", text: "Sign in with Google or email to keep a copy of your trades in the cloud and set your profile: capital, risk, daily limits. It is optional." },
     { tab: null, sel: null, title: "You're ready", text: "Want to see it with sample trades? Demo data is clearly marked and removed with one click.", final: true },
   ];

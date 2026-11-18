@@ -195,3 +195,5 @@ git push origin main
 ## Permissions Already Granted
 - Read/write all files in `C:\Users\Anirudh\Desktop\trademath\`
 - Git operations (commit, push) — user runs manually or approves
+
+> Naming: the user-facing name of the projection feature is **Planner** (button "🎯 Planner"). Internally it is still called `projection` (projection.js, route `#journal/projection`, storage key `tm_proj`, element ids), so old links and saved data keep working. Never call it a forecast or projection in visible text: it is an illustration, not a promise.

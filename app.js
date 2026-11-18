@@ -254,7 +254,7 @@ function showRoute(tab, sub) {
     $("tab-"+t).hidden = t !== tab;
     const tb = document.querySelector('.tab-btn[data-tab="'+t+'"]'); if (tb) tb.classList.toggle("active", t === tab);   // Profile has no tab button
   });
-  document.title = sub === "projection" && tab === "journal" ? "TradeMath · Projection" : PAGE_TITLES[tab];
+  document.title = sub === "projection" && tab === "journal" ? "TradeMath · Planner" : PAGE_TITLES[tab];
   if (tab === "calc")    { renderTodayTrades(); renderDailyBanner(); }
   if (tab === "profile" && window.tmProfileShow) window.tmProfileShow();
   if (tab === "journal") {

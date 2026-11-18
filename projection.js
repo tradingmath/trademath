@@ -1,5 +1,5 @@
 "use strict";
-/* ══════════════ EARNINGS PROJECTION ══════════════
+/* ══════════════ PLANNER (internally "projection": the route, storage key and ids keep that name) ══════════════
    Seeded, trade-by-trade simulation. A win streak longer than the chosen limit is never allowed,
    and each month's win rate wobbles around the target so some months turn red, like real trading.
    This is an illustration built from user inputs, not a forecast. */
@@ -227,7 +227,7 @@
     let ticks = "", cum = 0;
     res.months.forEach((m, k) => { if (k) ticks += `<line class="pl-tick" x1="${x(cum).toFixed(1)}" x2="${x(cum).toFixed(1)}" y1="${PT}" y2="${H - PB}"/>`; cum += m.trades; });
     const base = y(cfg.capital).toFixed(1);
-    return `<svg class="pl-curve" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Projected account balance over ${res.months.length} months, from ${money(cfg.capital)} to ${money(res.endCap)}">
+    return `<svg class="pl-curve" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Simulated account balance over ${res.months.length} months, from ${money(cfg.capital)} to ${money(res.endCap)}">
       ${ticks}<line class="pl-base" x1="${PL}" x2="${W - PR}" y1="${base}" y2="${base}"/>
       <path class="pl-fill" d="${fill}"/><path class="pl-line" d="${line}"/></svg>
       <div class="pl-axis"><span>Start ${money(cfg.capital)}</span><span>Low ${money(lo)} · High ${money(hi)}</span><span>End ${money(res.endCap)}</span></div>`;
