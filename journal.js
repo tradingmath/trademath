@@ -171,6 +171,12 @@ function applyRestore() {
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
+/* Profit already booked: a closed trade, or a trade with some of its position sold (a partial exit). Profit and loss totals
+   count it straight away, the same way the daily-loss bar does. Win rate and risk-reward still wait for the full close. */
+function hasRealized(t) {
+  if (isClosed(t)) return true;
+  return !!(t.exits && t.exits.length && t.exits.some(ex => (ex.qty || 0) > 0));
+}
 function isClosed(t) {
   if (t.exit) return true;
   if (t.exits && t.exits.length) {
@@ -213,7 +219,8 @@ function rrActual(t) {
 function renderStats() {
   const closed = trades.filter(t => isClosed(t));
   const wins   = closed.filter(t => (pnlForTrade(t) || 0) > 0);
-  const totalPnl = closed.reduce((s, t) => s + (pnlForTrade(t) || 0), 0);
+  const realized = trades.filter(hasRealized);
+  const totalPnl = realized.reduce((s, t) => s + (pnlForTrade(t) || 0), 0);   // includes profit booked on partly closed trades
   const rrs    = closed.map(rrActual).filter(r => r !== null);
   const avgRR  = rrs.length ? rrs.reduce((a, b) => a + b, 0) / rrs.length : null;
   $("st_trades").textContent = trades.length;
@@ -223,8 +230,8 @@ function renderStats() {
   pnlEl.className    = "stat-card-val " + (totalPnl > 0 ? "pos" : totalPnl < 0 ? "neg" : "acc");
   $("st_rr").textContent = avgRR !== null ? avgRR.toFixed(2) : "—";
   const cap = getAppSettings().defaultCap || 100000, ret = $("st_ret");
-  ret.textContent = closed.length ? pctTxt(totalPnl / cap * 100) : "—";
-  ret.className = "stat-card-val " + (!closed.length ? "acc" : totalPnl > 0 ? "pos" : totalPnl < 0 ? "neg" : "acc");
+  ret.textContent = realized.length ? pctTxt(totalPnl / cap * 100) : "—";
+  ret.className = "stat-card-val " + (!realized.length ? "acc" : totalPnl > 0 ? "pos" : totalPnl < 0 ? "neg" : "acc");
   $("st_ret_sub").textContent = "of your " + fullINR(cap, true) + " capital";
 }
 
@@ -729,11 +736,12 @@ function renderTodayTrades() {
   if (!todays.length) { list.innerHTML = ""; empty.style.display = "flex"; return; }
   empty.style.display = "none";
 
-  const closedTodays = todays.filter(t => isClosed(t));
-  const todayPnlVal = closedTodays.reduce((s, t) => s + (pnlForTrade(t) || 0), 0);
-  const pnlSummaryHTML = closedTodays.length ? `
+  const closedTodays = todays.filter(t => isClosed(t)), realizedTodays = todays.filter(hasRealized);
+  const todayPnlVal = realizedTodays.reduce((s, t) => s + (pnlForTrade(t) || 0), 0);
+  const partialToday = realizedTodays.length - closedTodays.length;
+  const pnlSummaryHTML = realizedTodays.length ? `
     <div class="today-sum ${todayPnlVal > 0 ? "pos" : todayPnlVal < 0 ? "neg" : ""}">
-      <span style="font-size:11px;color:var(--fg2);font-weight:500">Today's Realized P&amp;L · ${closedTodays.length} closed</span>
+      <span style="font-size:11px;color:var(--fg2);font-weight:500">Today's Realized P&amp;L · ${closedTodays.length} closed${partialToday ? " + " + partialToday + " partly closed" : ""}</span>
       <span class="td-mono ${todayPnlVal>=0?'td-pos':'td-neg'}" style="font-weight:700;font-size:16px">${todayPnlVal > 0 ? "+" : ""}${fmtINR(todayPnlVal)}</span>
     </div>` : "";
 
@@ -771,7 +779,7 @@ function renderCalendar() {
   if (!trades.length) { wrap.innerHTML = ""; return; }
   const dayPnl = {};
   trades.forEach(t => {
-    if (!isClosed(t) || !t.date) return;
+    if (!hasRealized(t) || !t.date) return;
     const pnl = pnlForTrade(t); if (pnl === null) return;
     dayPnl[t.date] = (dayPnl[t.date] || 0) + pnl;
   });
@@ -956,7 +964,8 @@ function renderReports() {
     if (!allTrades.length) return "";
     const moClosed = allTrades.filter(t => isClosed(t));
     const moWins   = moClosed.filter(t => (pnlForTrade(t)||0) > 0);
-    const moPnl    = moClosed.reduce((s,t) => s + (pnlForTrade(t)||0), 0);
+    const moReal   = allTrades.filter(hasRealized);
+    const moPnl    = moReal.reduce((s,t) => s + (pnlForTrade(t)||0), 0);
     const moLabel  = mo === "unknown" ? "Unknown" : new Date(mo+"-01").toLocaleString("default",{month:"long",year:"numeric"});
     const pnlCls   = moPnl > 0 ? "td-pos" : moPnl < 0 ? "td-neg" : "";
 
@@ -964,7 +973,8 @@ function renderReports() {
       const filteredDay = dayTrades.filter(t => fset.has(t));
       if (!filteredDay.length) return "";
       const dayClosed = filteredDay.filter(t => isClosed(t));
-      const dayPnlVal = dayClosed.reduce((s,t) => s + (pnlForTrade(t)||0), 0);
+      const dayReal   = filteredDay.filter(hasRealized);
+      const dayPnlVal = dayReal.reduce((s,t) => s + (pnlForTrade(t)||0), 0);
       const dayWins   = dayClosed.filter(t => (pnlForTrade(t)||0) > 0);
       const dayLosses = dayClosed.filter(t => (pnlForTrade(t)||0) <= 0);
       const pCls      = dayPnlVal > 0 ? "td-pos" : dayPnlVal < 0 ? "td-neg" : "td-muted";
@@ -974,22 +984,22 @@ function renderReports() {
 
       repDays.set(dayId, { trades: filteredDay, mo: mo.replace(/[^a-z0-9]/gi, "") });
 
-      const dayCap = peakMargin(filteredDay), dayRet = dayCap && dayClosed.length ? dayPnlVal / dayCap * 100 : null;
-      const dayFees = dayClosed.reduce((s, t) => s + (grossPnl(t) - pnlForTrade(t)), 0);
+      const dayCap = peakMargin(filteredDay), dayRet = dayCap && dayReal.length ? dayPnlVal / dayCap * 100 : null;
+      const dayFees = dayReal.reduce((s, t) => s + (grossPnl(t) - pnlForTrade(t)), 0);
       return `<tr class="dy-row" data-mo="${mo.replace(/[^a-z0-9]/gi,'')}" data-grp="${dayId}" onclick="toggleDay(this,'${dayId}')">
         <td class="c-inst" colspan="4"><span class="rep-caret">▶</span><b>${esc(day === "unknown" ? "Unknown" : day)}</b> <span class="t-dim">· ${filteredDay.length} trade${filteredDay.length!==1?"s":""} · Daily total</span></td>
-        <td class="num"><b class="${dayClosed.length ? tone(dayPnlVal) : ""}">${dayClosed.length ? signed(dayPnlVal) : "—"}</b></td>
+        <td class="num"><b class="${dayReal.length ? tone(dayPnlVal) : ""}">${dayReal.length ? signed(dayPnlVal) : "—"}</b></td>
         <td class="num" title="Peak margin: the most capital in use at one time that day"><span class="t-dim">peak</span> <b>${dayCap ? fullINR(dayCap, true) : "—"}</b></td>
         <td class="num"><b class="${dayRet !== null ? tone(dayRet) : ""}">${dayRet !== null ? pctTxt(dayRet) : "—"}</b></td>
         <td class="c-res t-dim">${wl}</td>
-        <td class="num fee-col">${dayClosed.length ? fullINR(dayFees, true) : "—"}</td>
+        <td class="num fee-col">${dayReal.length ? fullINR(dayFees, true) : "—"}</td>
         <td></td>
       </tr>`;
     }).join("");
 
     const moId = mo.replace(/[^a-z0-9]/gi,"");
-    const moCap = peakMargin(allTrades), moRet = moCap && moClosed.length ? moPnl / moCap * 100 : null;
-    const moFees = moClosed.reduce((s, t) => s + (grossPnl(t) - pnlForTrade(t)), 0);
+    const moCap = peakMargin(allTrades), moRet = moCap && moReal.length ? moPnl / moCap * 100 : null;
+    const moFees = moReal.reduce((s, t) => s + (grossPnl(t) - pnlForTrade(t)), 0);
     return `<div class="rep-log">
       <div class="rep-log-top">
         <button class="btn btn-ghost btn-sm" data-level="trader" onclick="openReportCard('${mo}')">📊 Share card</button>
@@ -999,11 +1009,11 @@ function renderReports() {
         <tbody>
           <tr class="mo-row" onclick="toggleMonth(this,'${moId}')">
             <td class="c-inst" colspan="4"><span class="rep-caret open">▶</span><b>${moLabel}</b> <span class="t-dim">· ${allTrades.length} trade${allTrades.length!==1?"s":""} · Monthly total</span></td>
-            <td class="num"><b class="${moClosed.length ? tone(moPnl) : ""}">${moClosed.length ? signed(moPnl) : "—"}</b></td>
+            <td class="num"><b class="${moReal.length ? tone(moPnl) : ""}">${moReal.length ? signed(moPnl) : "—"}</b></td>
             <td class="num" title="Peak margin: the most capital in use at one time this month. Trades that overlap are added together; trades that do not overlap are not."><span class="t-dim">peak</span> <b>${moCap ? fullINR(moCap, true) : "—"}</b></td>
             <td class="num"><b class="${moRet !== null ? tone(moRet) : ""}">${moRet !== null ? pctTxt(moRet) : "—"}</b></td>
             <td class="c-res t-dim">${moWins.length}W / ${moClosed.length-moWins.length}L</td>
-            <td class="num fee-col">${moClosed.length ? fullINR(moFees, true) : "—"}</td>
+            <td class="num fee-col">${moReal.length ? fullINR(moFees, true) : "—"}</td>
             <td></td>
           </tr>
           ${daysHTML}
@@ -1059,7 +1069,7 @@ function openReportCard(monthStr) {
   const moTrades  = trades.filter(t => t.date && t.date.startsWith(monthStr));
   const moClosed  = moTrades.filter(t => isClosed(t));
   const moWins    = moClosed.filter(t => (pnlForTrade(t)||0) > 0);
-  const moPnl     = moClosed.reduce((s,t) => s + (pnlForTrade(t)||0), 0);
+  const moPnl     = moTrades.filter(hasRealized).reduce((s,t) => s + (pnlForTrade(t)||0), 0);
   const moWR      = moClosed.length ? Math.round(moWins.length / moClosed.length * 100) : 0;
   const rrs       = moClosed.map(rrActual).filter(r => r !== null);
   const avgRR     = rrs.length ? (rrs.reduce((a,b)=>a+b,0)/rrs.length).toFixed(2) : "—";

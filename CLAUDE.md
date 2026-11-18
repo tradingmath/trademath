@@ -59,6 +59,7 @@ Script load order matters: `calc.js` → `journal.js` → `projection.js` → `a
 
 ## Journal (journal.js)
 - `isClosed(t)` — checks `t.exit` OR sum of `t.exits[].qty >= t.qty` (partial exits)
+- `hasRealized(t)` — closed OR has any partial exit. Profit/loss totals (stats card, today, calendar, day/month rows, report card) sum `pnlForTrade` over `hasRealized` trades, so booked partial profit counts at once. Win rate, W/L counts and risk-reward still use `isClosed` (fully closed trades only).
 - `pnlForTrade(t)` — uses `t.exits[]` array if present, else legacy `t.exit`
 - Setup tags: `SETUP_PRESETS` array, stored in `t.setup`
 - Mistake tags: `MISTAKE_PRESETS` array, stored in `t.mistakes[]`
