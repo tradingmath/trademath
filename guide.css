@@ -20,6 +20,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans); line-h
 .g-doc li { margin:5px 0; }
 .g-doc b { color:var(--fg); font-weight:600; }
 .g-doc a { color:var(--accent); }
+.g-doc a.g-btn, .g-doc a.g-cta { color:var(--on-accent); }   /* the gold button keeps its dark text (link colour would make it gold on gold) */
 .g-formula { background:var(--card); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:10px; padding:14px 16px; margin:14px 0; font:500 15px var(--mono); color:var(--fg); overflow-x:auto; }
 .g-note { background:var(--warn-dim); border:1px solid var(--warn); border-radius:10px; padding:12px 14px; color:var(--fg); }
 .g-box { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px; margin:34px 0 14px; color:var(--fg2); font-size:14px; }
