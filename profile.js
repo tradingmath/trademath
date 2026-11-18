@@ -331,7 +331,7 @@
       '<li>Even those who made net profits paid between 15% and 50% of those profits as transaction costs.</li>' +
       '</ul>' +
       '<p class="risk-src">Source: <a href="https://www.sebi.gov.in/reports-and-statistics/research/jan-2023/study-analysis-of-profit-and-loss-of-individual-traders-dealing-in-equity-fando-segment_67525.html" target="_blank" rel="noopener noreferrer">SEBI study dated 25 January 2023</a>, "Analysis of Profit and Loss of Individual Traders dealing in equity Futures and Options (F&amp;O) Segment". The findings cover individual traders in equity F&amp;O during FY 2021-22.</p>' +
-      '<p class="risk-src">TradeMath is a calculation and journal tool. It does not give investment advice, and its figures are estimates.</p>' +
+      '<p class="risk-src">TradeMath is a calculation and journal tool. It does not give investment advice, and its figures are estimates. By continuing you agree to the <a href="terms.html" target="_blank" rel="noopener noreferrer">Terms of use</a>.</p>' +
       '<div class="tm-dialog-actions"><button type="button" class="btn btn-primary" id="risk_ok" style="width:100%">I understand</button></div></div>';
     document.body.appendChild(ov);
     const ok = ov.querySelector("#risk_ok"); ok.focus();
