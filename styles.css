@@ -981,7 +981,7 @@ html.tm-boot body { visibility:hidden; }
 .day-bar.flat { background:var(--accent-dim); border:1px solid var(--border); }
 .day-bar.flat .db-fill { background:rgba(255,180,0,.22); }
 .day-bar.collapsed { min-height:0; padding:2px 8px; gap:0; }
-.day-bar.collapsed .db-hide { padding:0 10px; font-size:11px; line-height:18px; }
+.day-bar.collapsed .db-hide { padding:0 9px; font-size:10px; line-height:12px; border-radius:6px; }
 .db-trades { font-size:13px; }
 .db-pnl { font-family:"JetBrains Mono",monospace; font-size:15px; font-weight:700; }
 .day-bar.pos .db-pnl { color:var(--green); }
@@ -1090,4 +1090,4 @@ html[data-fees="off"] .fee-col, html[data-fees="off"] .fee-field { display:none 
 .tiles .tile:last-child .tile-target b { font-size:13px; font-weight:800; }
 
 /* Today bar hidden: a thin coloured strip with only the Show button (must come after the responsive rules above) */
-.risk-banner.day-bar.collapsed { min-height:0; padding:2px 8px; gap:0; }
+.risk-banner.day-bar.collapsed { min-height:0; padding:1px 8px; gap:0; }
