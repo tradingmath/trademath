@@ -5,7 +5,15 @@
    This is an illustration built from user inputs, not a forecast. */
 (function () {
   const LS_KEY = "tm_proj";
-  const DEFAULTS = { capital: 100000, win: 40, rr: 2, risk: 1000, riskmode: "abs", tpd: 3, days: 22, months: 6, cost: 0, vary: "5", maxw: "3", seed: 0 };
+  /* Typical, not flattering: a 38% win rate at 1 : 2 is a small edge (0.14R a trade), and ₹50 a trade covers brokerage and taxes.
+     Some months and many days come out red, as they do in real trading. A year is shown so months and the full year can be read. */
+  const DEFAULTS = { capital: 100000, win: 38, rr: 2, risk: 1000, riskmode: "abs", tpd: 3, days: 22, months: 12, cost: 50, vary: "5", maxw: "3", seed: 0 };
+  const EXAMPLES = {
+    typical:   { win: 38, rr: 2,   cost: 50, tpd: 3, days: 22, risk: 1000, riskmode: "abs", months: 12, vary: "5", maxw: "3" },
+    breakeven: { win: 33, rr: 2,   cost: 50, tpd: 3, days: 22, risk: 1000, riskmode: "abs", months: 12, vary: "5", maxw: "3" },
+    losing:    { win: 35, rr: 1.5, cost: 50, tpd: 3, days: 22, risk: 1000, riskmode: "abs", months: 12, vary: "5", maxw: "3" },
+    strong:    { win: 55, rr: 2,   cost: 50, tpd: 3, days: 22, risk: 1000, riskmode: "abs", months: 12, vary: "5", maxw: "3" },
+  };
   const FIELDS = { capital: "p_capital", win: "p_win", rr: "p_rr", risk: "p_risk", riskmode: "p_riskmode", tpd: "p_tpd", days: "p_days", months: "p_months", cost: "p_cost", vary: "p_var", maxw: "p_maxw", seed: "p_seed" };
   // Calibrated from a real 2-year NIFTY SL-strangle backtest: 474 trading days, 291 winning days (61%),
   // average win ₹1,452, average loss ₹1,694 (payoff 0.857), ~19 trading days a month, longest win streak 12.
@@ -166,6 +174,8 @@
     if (noteText) msgs.push(["info", noteText]);
     if (cfg.winClamped || clampNotice) msgs.push(["warn", isFinite(K) ? `With a maximum of ${K} wins in a row, the highest possible win rate is ${cfg.wmax}%. Using ${cfg.wmax}%.` : `The win rate is limited to ${cfg.wmax}%.`]);
     if (expTrade <= 0) msgs.push(["bad", `At ${cfg.win}% wins and 1 : ${cfg.rr} reward, each trade loses ${money(Math.abs(expTrade))} on average. You need a win rate above ${pct1(breakEven)} just to break even, so this strategy loses money over time.`]);
+    const edgeR = p * (cfg.rr + 1) - 1;                       // average result of one trade, in units of the amount risked
+    if (edgeR > 0.5) msgs.push(["warn", `Very strong edge: about ${edgeR.toFixed(2)}R per trade (${money(edgeR * risk0)} for every ${money(risk0)} risked). That is why no month turns red here. Few traders keep an edge this big for long, and win rates usually fall when targets get bigger, so ${cfg.win}% wins at 1 : ${cfg.rr} is rare. Try a lower win rate or the typical example to see a more usual mix of green and red.`]);
     if (res.blown) msgs.push(["bad", `Account wiped out in month ${res.blown.month}, day ${res.blown.day}. The simulation stops there.`]);
     if (cfg.riskmode === "pct" && cfg.risk > 5 || cfg.riskmode === "abs" && cfg.risk > cfg.capital * 0.05) msgs.push(["warn", "Risking more than 5% of your balance per trade makes deep drawdowns and wipe-outs very likely."]);
     $("proj_msgs").innerHTML = msgs.map(m => `<div class="proj-msg ${m[0]}" role="${m[0] === "info" ? "note" : "alert"}">${m[1]}</div>`).join("");
@@ -197,12 +207,16 @@
     ends.sort((a, b) => a - b);
     const q = f => ends[Math.min(ends.length - 1, Math.floor(f * ends.length))];
     const profitable = ends.filter(e => e > cfg.capital).length / ends.length * 100;
+    const allDays = res.months.reduce((a, m) => a.concat(m.days || []), []);
+    const redDays = allDays.length ? Math.round(allDays.filter(d => d.pnl < 0).length / allDays.length * 100) : 0;
+    const flatDays = allDays.length ? Math.round(allDays.filter(d => d.pnl === 0).length / allDays.length * 100) : 0;
     const avgRed = redShare.length ? redShare.reduce((a, b) => a + b, 0) / redShare.length * 100 : 0;
     $("proj_range").innerHTML = `<strong>Same strategy, ${runs} different lucky/unlucky paths</strong>
       <span>Bad luck (10th pct) <b class="${cls(q(0.1) - cfg.capital)}">${money(q(0.1))}</b></span>
       <span>Middle <b class="${cls(q(0.5) - cfg.capital)}">${money(q(0.5))}</b></span>
       <span>Good luck (90th pct) <b class="${cls(q(0.9) - cfg.capital)}">${money(q(0.9))}</b></span>
       <span><b>${Math.round(profitable)}%</b> of paths ended in profit</span>
+      <span>About <b>${redDays}%</b> of days were red${flatDays ? " and " + flatDays + "% flat" : ""} (this run)</span>
       <span>About <b>${Math.round(avgRed)}%</b> of months were red</span>`;
 
     $("proj_curve").innerHTML = curveSvg(res, cfg);
@@ -307,6 +321,12 @@
     $("p_seed").value = Math.floor(Math.random() * 900000) + 100000;
     saveInputs(); render();
   });
+  $("p_example").addEventListener("change", () => {
+    const ex = EXAMPLES[$("p_example").value]; if (!ex) return;
+    Object.keys(ex).forEach(k => { const el = $(FIELDS[k]); if (el) el.value = ex[k]; });
+    $("p_example").value = ""; selMonth = 1; noteText = ""; clampNotice = false;
+    saveInputs(); render();
+  });
   $("p_preset").addEventListener("click", () => {
     Object.keys(REAL).forEach(k => { const el = $(FIELDS[k]); if (el) el.value = REAL[k]; });
     selMonth = 1; noteText = REAL_NOTE; clampNotice = false;
@@ -354,7 +374,7 @@
     if (proj) render();
     window.scrollTo(0, 0);
   }
-  $("projBtn").addEventListener("click", () => switchTab("journal", "projection"));
+  $("projBtn").addEventListener("click", () => switchTab("journal", "planner"));
   $("projBack").addEventListener("click", () => switchTab("journal"));
   window.showJournalView = showJournalView;
   const pick = e => { const t = e.target.closest("[data-m]"); if (t) selectMonth(parseInt(t.dataset.m, 10)); };

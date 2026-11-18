@@ -397,6 +397,13 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
       <div class="proj-title-row">
         <div class="p-title" style="margin-bottom:0">Your strategy</div>
         <button type="button" class="btn btn-ghost btn-sm" id="p_from_journal" title="Fill the form with your own closed journal trades (win rate, average win and loss, trades per day)">📒 Use my journal trades</button>
+      <select class="filter-select" id="p_example" aria-label="Try an example strategy" title="Fill the form with an example">
+        <option value="">Try an example…</option>
+        <option value="typical">Typical: 38% wins at 1 : 2</option>
+        <option value="breakeven">Break-even: 33% wins at 1 : 2</option>
+        <option value="losing">Losing: 35% wins at 1 : 1.5</option>
+        <option value="strong">Strong edge: 55% wins at 1 : 2 (rare)</option>
+      </select>
       <button type="button" class="btn btn-ghost btn-sm" id="p_preset" title="Fill the form with numbers from a real 2-year NIFTY SL-strangle backtest">📊 Try real backtest numbers</button>
       </div>
       <div class="proj-grid">
@@ -922,9 +929,9 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
 <p class="note" style="text-align:center;margin:10px 0 8px">Guides: <a href="position-size-calculator-india.html" style="color:inherit">Position size</a> · <a href="risk-reward-ratio-explained.html" style="color:inherit">Risk-reward</a> · <a href="nse-fno-lot-sizes.html" style="color:inherit">F&amp;O lot sizes</a> · <a href="trading-journal-india.html" style="color:inherit">Trading journal</a><br><a href="about.html" style="color:inherit">About</a> · <a href="contact.html" style="color:inherit">Contact</a> · <a href="privacy.html" style="color:inherit">Privacy</a> · <a href="terms.html" style="color:inherit">Terms</a> · Not investment advice</p>
 <script src="calc.js?v=edd9b7dc"></script>
 <script src="journal.js?v=402d3ff4"></script>
-<script src="projection.js?v=cf62eebd"></script>
+<script src="projection.js?v=c29db057"></script>
 <script src="alerts.js?v=24467fdf"></script>
-<script src="app.js?v=3997704b"></script>
+<script src="app.js?v=40828908"></script>
 <script src="cloud.js?v=459e79da"></script>
 <script src="profile.js?v=e5c74a52"></script>
 

@@ -234,18 +234,19 @@ document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("setCon
 window.addEventListener("beforeunload", e => { if (changes().length) { e.preventDefault(); e.returnValue = ""; } });
 
 /* ══════════════ TABS ══════════════ */
-/* Every page has its own link: #calc (home), #journal, #journal/projection, #settings.
+/* Every page has its own link: #calc (home), #journal, #journal/planner, #settings. (The old #journal/projection still works and is renamed on arrival.)
    Hash links work on any host, on localhost and when index.html is opened straight from disk. */
 const PAGES = ["calc", "journal", "settings", "profile"];
 const PAGE_TITLES = { calc: document.title, journal: "TradeMath · Journal", settings: "TradeMath · Settings", profile: "TradeMath · Profile" };
 let currentRoute = null;
 
 function parseRoute() {
-  const [tab, sub] = location.hash.replace(/^#\/?/, "").split("/");
-  return { tab: PAGES.includes(tab) ? tab : "calc", sub: sub || "" };
+  const [tab, sub0] = location.hash.replace(/^#\/?/, "").split("/");
+  const sub = sub0 === "projection" ? "planner" : (sub0 || "");           // old links keep working
+  return { tab: PAGES.includes(tab) ? tab : "calc", sub };
 }
 function showRoute(tab, sub) {
-  if (tab === "journal" && sub === "projection" && getLevel() !== "pro") {   // Projection belongs to Pro
+  if (tab === "journal" && sub === "planner" && getLevel() !== "pro") {   // The Planner belongs to Pro
     sub = "";
     if (location.hash !== "#journal") location.hash = "#journal";
   }
@@ -254,11 +255,11 @@ function showRoute(tab, sub) {
     $("tab-"+t).hidden = t !== tab;
     const tb = document.querySelector('.tab-btn[data-tab="'+t+'"]'); if (tb) tb.classList.toggle("active", t === tab);   // Profile has no tab button
   });
-  document.title = sub === "projection" && tab === "journal" ? "TradeMath · Planner" : PAGE_TITLES[tab];
+  document.title = sub === "planner" && tab === "journal" ? "TradeMath · Planner" : PAGE_TITLES[tab];
   if (tab === "calc")    { renderTodayTrades(); renderDailyBanner(); }
   if (tab === "profile" && window.tmProfileShow) window.tmProfileShow();
   if (tab === "journal") {
-    const proj = sub === "projection";
+    const proj = sub === "planner";
     showJournalView(proj ? "projection" : "main");
     if (!proj) refreshJournal();
   }
@@ -270,7 +271,8 @@ function switchTab(tab, sub) {
   if (tab === "calc") { if (location.hash) history.pushState(null, "", location.pathname + location.search); }
   else if (location.hash !== h) location.hash = h; // hashchange then fires, but showRoute is skipped (already on this route)
 }
-if (location.hash === "#calc") history.replaceState(null, "", location.pathname + location.search);   // old links to #calc show the clean address
+if (location.hash === "#calc") history.replaceState(null, "", location.pathname + location.search);
+if (location.hash === "#journal/projection") history.replaceState(null, "", location.pathname + location.search + "#journal/planner");   // show the new name in the address   // old links to #calc show the clean address
 window.addEventListener("hashchange", () => {  // back/forward buttons, typed or bookmarked links
   const { tab, sub } = parseRoute();
   if (tab + "/" + sub !== currentRoute) showRoute(tab, sub);
@@ -311,7 +313,7 @@ function setLevel(level, init) {
       setInstrType(baseInstr()); rememberInstr();
       const sym = getSelectedSymbol(); if (sym && sym.indexOnly) { $("sym_input").value = ""; updateLotLabel(); }
     }
-    if (currentRoute === "journal/projection") switchTab("journal");
+    if (currentRoute === "journal/planner") switchTab("journal");
   }
   if (rank < 1) {                                   // Trader features are now hidden: back to the plain defaults
     const d = getAppSettings();
