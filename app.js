@@ -386,7 +386,7 @@ $("popBtn").addEventListener("click", () => {
   const top  = Math.max(0, Math.round((screen.height - h) / 2));
   const win  = window.open(location.origin + location.pathname + "?popout=1#calc", "trademath_popout",
     `width=${w},height=${h},left=${left},top=${top},resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no,status=no`);
-  if (!win) alert("Pop-up blocked — please allow pop-ups for this site in your browser.");
+  if (!win) tmAsk({ title: "Pop-up blocked", body: "Please allow pop-ups for this site in your browser.", ok: "OK", cancel: false });
 });
 
 if (new URLSearchParams(location.search).get("popout") === "1") {

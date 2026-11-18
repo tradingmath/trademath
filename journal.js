@@ -58,8 +58,8 @@ function showRescueBanner() {
   if (!raw) { tmBannerOff("tm_rescue_banner"); return; }
   tmBanner("tm_rescue_banner", '<span><b>Part of your saved journal could not be read.</b> A copy of the original data was kept so nothing is lost.</span><button type="button" id="rescue_dl">Download copy</button><button type="button" id="rescue_dismiss">Dismiss</button>', b => {
     b.querySelector("#rescue_dl").onclick = () => tmDownload("trademath-unreadable-journal.json", raw);
-    b.querySelector("#rescue_dismiss").onclick = () => {
-      if (confirm("Delete the kept copy? Download it first if you might need it.")) { try { localStorage.removeItem("tm_trades_corrupt"); } catch (e) {} tmBannerOff("tm_rescue_banner"); }
+    b.querySelector("#rescue_dismiss").onclick = async () => {
+      if (await tmAsk({ title: "Delete the kept copy?", body: "Download it first if you might need it. This cannot be undone.", ok: "Delete", danger: true })) { try { localStorage.removeItem("tm_trades_corrupt"); } catch (e) {} tmBannerOff("tm_rescue_banner"); }
     };
   });
 }
@@ -467,8 +467,8 @@ $("saveTradeBtn").addEventListener("click", () => {
     mistakes: [...selectedMistakeTags],
     exits: [],
   };
-  if (!t.entry || !t.qty) { alert("Entry price and Qty are required."); return; }
-  if (t.entry <= 0 || t.qty <= 0 || [t.sl, t.target, t.exit].some(v => v != null && v <= 0) || t.fees < 0) { alert("Prices and quantity must be greater than zero, and fees cannot be negative."); return; }
+  if (!t.entry || !t.qty) { tmAsk({ title: "Missing details", body: "Entry price and Qty are required.", ok: "OK", cancel: false }); return; }
+  if (t.entry <= 0 || t.qty <= 0 || [t.sl, t.target, t.exit].some(v => v != null && v <= 0) || t.fees < 0) { tmAsk({ title: "Check the numbers", body: "Prices and quantity must be greater than zero, and fees cannot be negative.", ok: "OK", cancel: false }); return; }
   if (editId) { trades = trades.map(x => x.id === editId ? t : x); }
   else { trades.push(t); }
   saveTrades();
@@ -1199,22 +1199,22 @@ function removeEstimatedFees() {
 (function () {
   const msg = (t, bad) => { const m = $("fee_old_msg"); m.textContent = t; m.className = "bk-msg" + (bad ? " bad" : ""); };
   const redraw = () => { saveTrades(); refreshJournal(); if (typeof renderDailyBanner === "function") renderDailyBanner(); };
-  $("fee_calc_old").addEventListener("click", () => {
+  $("fee_calc_old").addEventListener("click", async () => {
     if (!getAppSettings().showFees) { msg("Turn fees on and press Save changes first.", true); return; }
     if (changes().length) { msg("Save your settings first, so the right rates are used.", true); return; }
     const p = oldFeePlan();
     if (!p.plan.length) { msg(p.skipped ? p.skipped + " trade(s) could not be estimated (unknown market). Nothing else needs fees." : "Nothing to do: every closed trade already has fees, or there are none.", false); return; }
     const parts = [p.india ? p.india + " stock/F&O" : "", p.crypto ? p.crypto + " crypto" : ""].filter(Boolean).join(" and ");
-    if (!confirm("Add estimated fees to " + parts + " closed trade" + (p.plan.length === 1 ? "" : "s") + " that have no fees recorded?\n\nThese are rough estimates only. Your real charges can differ. You can undo this, or remove the estimates later.")) return;
+    if (!await tmAsk({ title: "Add estimated fees?", body: "Add estimated fees to " + parts + " closed trade" + (p.plan.length === 1 ? "" : "s") + " that have no fees recorded?\n\nThese are rough estimates only. Your real charges can differ. You can undo this, or remove the estimates later.", ok: "Add fees" })) return;
     const snap = JSON.stringify(trades);
     applyOldFees(p.plan); redraw();
     msg("Added estimated fees to " + p.plan.length + " trade" + (p.plan.length === 1 ? "" : "s") + (p.skipped ? " (" + p.skipped + " skipped: unknown market)" : "") + ".", false);
     showToast("Estimated fees added to " + p.plan.length + " trade" + (p.plan.length === 1 ? "" : "s"), { label: "Undo", fn: () => { trades = JSON.parse(snap); redraw(); msg("Undone.", false); showToast("Undone"); } });
   });
-  $("fee_remove_old").addEventListener("click", () => {
+  $("fee_remove_old").addEventListener("click", async () => {
     const n = trades.filter(t => t.feesEst).length;
     if (!n) { msg("There are no estimated fees to remove.", false); return; }
-    if (!confirm("Remove the estimated fees from " + n + " trade" + (n === 1 ? "" : "s") + "? Fees you typed yourself stay.")) return;
+    if (!await tmAsk({ title: "Remove estimated fees?", body: "Remove the estimated fees from " + n + " trade" + (n === 1 ? "" : "s") + "? Fees you typed yourself stay.", ok: "Remove", danger: true })) return;
     const snap = JSON.stringify(trades);
     removeEstimatedFees(); redraw();
     msg("Removed estimated fees from " + n + " trade" + (n === 1 ? "" : "s") + ".", false);

@@ -998,3 +998,26 @@ if (feeToggleBtn && feeBody) {
 initSymbolAutocomplete();
 setInstrType("equity");
 setLeverage("5");
+
+/* Themed dialog that replaces the browser's own confirm()/alert(). Returns a promise: true = OK, false = Cancel.
+   tmAsk({ title, body (plain text, 
+
+ = new paragraph), ok, cancel (false = no cancel button), danger }) */
+function tmAsk(o) {
+  return new Promise(resolve => {
+    const prev = document.activeElement, ov = document.createElement("div");
+    ov.className = "modal-overlay"; ov.style.zIndex = 300;
+    const box = document.createElement("div"); box.className = "modal tm-dialog"; box.setAttribute("role", "alertdialog"); box.setAttribute("aria-modal", "true");
+    const h = document.createElement("div"); h.className = "modal-title"; h.textContent = o.title || "Are you sure?"; box.appendChild(h);
+    String(o.body || "").split("\n\n").forEach(p => { const d = document.createElement("p"); d.className = "tm-dialog-body"; d.textContent = p; box.appendChild(d); });
+    const row = document.createElement("div"); row.className = "tm-dialog-actions";
+    const done = v => { document.removeEventListener("keydown", key, true); ov.remove(); try { prev && prev.focus(); } catch (e) {} resolve(v); };
+    if (o.cancel !== false) { const b = document.createElement("button"); b.type = "button"; b.className = "btn btn-ghost"; b.textContent = o.cancelLabel || "Cancel"; b.onclick = () => done(false); row.appendChild(b); }
+    const ok = document.createElement("button"); ok.type = "button"; ok.className = "btn " + (o.danger ? "btn-danger-solid" : "btn-primary"); ok.textContent = o.ok || "OK"; ok.onclick = () => done(true); row.appendChild(ok);
+    box.appendChild(row); ov.appendChild(box);
+    const key = e => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); done(false); } else if (e.key === "Tab") { const f = box.querySelectorAll("button"); if (!f.length) return; const first = f[0], last = f[f.length - 1]; if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); } else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); } } };
+    document.addEventListener("keydown", key, true);
+    ov.addEventListener("mousedown", e => { if (e.target === ov && o.cancel !== false) done(false); });
+    document.body.appendChild(ov); ok.focus();
+  });
+}

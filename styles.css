@@ -960,3 +960,11 @@ html.tm-boot body { visibility:hidden; }
 .fee-note { font-size:11px; color:var(--fg3); line-height:1.6; margin-top:6px; }
 .fee-disc { font-size:11px; color:var(--fg3); margin-top:8px; }
 .set-warn { color:var(--warn); font-size:12px; list-style:none; margin-top:8px; }
+
+/* Themed confirm dialog */
+.tm-dialog { max-width:420px; box-shadow:0 20px 60px rgba(0,0,0,.5); }
+.tm-dialog .modal-title { font-size:17px; margin-bottom:10px; }
+.tm-dialog-body { font-size:13px; line-height:1.65; color:var(--fg2); margin:0 0 10px; }
+.tm-dialog-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:18px; }
+.tm-dialog-actions .btn { min-width:96px; }
+.btn-danger-solid { background:var(--red); color:#fff; border:1px solid var(--red); }

@@ -177,7 +177,7 @@
   el("au_code").addEventListener("keydown", e => { if (e.key === "Enter") el("au_verify").click(); });
 
   el("ac_push").addEventListener("click", () => push(false));
-  el("ac_pull").addEventListener("click", () => { if (confirm("Replace the data on this device with your cloud copy? A copy of what is here is kept first.")) pull(); });
+  el("ac_pull").addEventListener("click", async () => { if (await tmAsk({ title: "Replace data on this device?", body: "This replaces the data on this device with your cloud copy. A copy of what is here is kept first.", ok: "Replace" })) pull(); });
   el("ac_auto").addEventListener("change", e => setMeta({ auto: e.target.checked }));
   el("ac_signout").addEventListener("click", async () => {
     await api("logout.php", {}); st.signedIn = false; tmBannerOff("tm_cloud_banner"); render();
