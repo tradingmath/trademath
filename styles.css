@@ -1146,3 +1146,29 @@ h1.logo { margin:0; line-height:inherit; }
 /* the log table fills the card (the scroll box is its wrapper) */
 .rep-scroll { overflow-x:auto; }
 .rep-log-tbl { display:table; width:100%; }
+
+/* Planner: compact, aligned form (6 columns on a computer, 3 on a tablet, 2 on a phone) */
+.proj-inputs { padding:12px 14px; margin-bottom:12px; }
+.proj-title-row { align-items:center; justify-content:space-between; margin-bottom:10px; }
+.proj-tools { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-left:auto; }
+.proj-tools .filter-select { width:auto; min-width:0; }
+.proj-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; align-items:end; }
+@media (min-width:640px) { .proj-grid { grid-template-columns:repeat(3, minmax(0, 1fr)); } }
+@media (min-width:960px) { .proj-grid { grid-template-columns:repeat(6, minmax(0, 1fr)); } }
+.proj-grid .field.wide { grid-column:span 2; }
+.proj-grid .field { gap:4px; }
+.proj-grid .field label { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; min-height:1.2em; }
+.proj-grid .field input, .proj-grid .field select { padding:7px 10px; font-size:14px; height:36px; }
+.proj-seed { display:flex; gap:6px; }
+.proj-seed input { flex:1 1 auto; min-width:0; }
+.proj-seed .btn { padding:0 10px; height:36px; font-size:16px; line-height:1; }
+.proj-rule { margin-top:10px; font-size:12px; line-height:1.55; }
+.proj-warn { margin-bottom:10px; padding:10px 12px; font-size:12.5px; }
+.proj-back { margin-bottom:10px; }
+.proj-msg { margin-bottom:8px; padding:8px 12px; }
+@media (max-width:639px) {
+  .proj-tools { width:100%; display:grid; grid-template-columns:1fr 1fr; }
+  .proj-tools .filter-select { grid-column:1 / -1; width:100%; }
+  .proj-tools .btn { white-space:normal; line-height:1.25; }
+  .proj-title-row { gap:8px; }
+}

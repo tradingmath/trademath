@@ -29,7 +29,7 @@
 <link rel="preload" href="fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts.css?v=140c3a0f">
 <link rel="icon" href="logo-icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css?v=7e73c99c">
+<link rel="stylesheet" href="styles.css?v=84a9cb73">
 <script>
 /* Runs before the page paints: apply the saved theme and level now, and keep the page hidden until the app has
    finished setting itself up, so nothing flashes dark, then light, or jumps between modes. */
@@ -396,40 +396,39 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
     <div class="panel proj-inputs">
       <div class="proj-title-row">
         <div class="p-title" style="margin-bottom:0">Your strategy</div>
-        <button type="button" class="btn btn-ghost btn-sm" id="p_from_journal" title="Fill the form with your own closed journal trades (win rate, average win and loss, trades per day)">📒 Use my journal trades</button>
-      <select class="filter-select" id="p_example" aria-label="Try an example strategy" title="Fill the form with an example">
+        <div class="proj-tools">
+          <select class="filter-select" id="p_example" aria-label="Try an example strategy" title="Fill the form with an example">
         <option value="">Try an example…</option>
         <option value="typical">Typical: 38% wins at 1 : 2</option>
         <option value="breakeven">Break-even: 33% wins at 1 : 2</option>
         <option value="losing">Losing: 35% wins at 1 : 1.5</option>
         <option value="strong">Strong edge: 55% wins at 1 : 2 (rare)</option>
       </select>
-      <button type="button" class="btn btn-ghost btn-sm" id="p_preset" title="Fill the form with numbers from a real 2-year NIFTY SL-strangle backtest">📊 Try real backtest numbers</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="p_from_journal" title="Fill the form with your own closed journal trades (win rate, average win and loss, trades per day)">📒 Use my journal trades</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="p_preset" title="Fill the form with numbers from a real 2-year NIFTY SL-strangle backtest">📊 Try real backtest numbers</button>
+        </div>
       </div>
       <div class="proj-grid">
         <div class="field"><label for="p_capital">Starting capital (₹)</label><input type="number" id="p_capital" min="1000" step="1000" autocomplete="off"></div>
         <div class="field"><label for="p_win">Win rate (%) <span class="proj-hint" id="p_win_hint">max 75</span></label><input type="number" id="p_win" min="1" max="75" step="any" autocomplete="off"></div>
-        <div class="field"><label for="p_rr">Reward per 1 risked <span class="proj-hint">R:R = 1 : x</span></label><input type="number" id="p_rr" min="0.1" max="20" step="any" autocomplete="off"></div>
-        <div class="field wide"><label for="p_risk">Risk per trade (stop-loss)</label>
+        <div class="field"><label for="p_rr" title="Reward for every 1 risked. 2 means a 1 : 2 trade">Reward <span class="proj-hint">1 : x</span></label><input type="number" id="p_rr" min="0.1" max="20" step="any" autocomplete="off"></div>
+        <div class="field"><label for="p_tpd">Trades / day</label><input type="number" id="p_tpd" min="1" max="50" step="1" autocomplete="off"></div>
+        <div class="field wide"><label for="p_risk">Risk per trade <span class="proj-hint">stop-loss</span></label>
           <div class="proj-risk">
             <input type="number" id="p_risk" min="1" step="any" autocomplete="off">
             <select id="p_riskmode" aria-label="Risk unit"><option value="abs">₹ flat</option><option value="pct">% of balance</option></select>
           </div>
         </div>
-        <div class="field"><label for="p_tpd">Trades per day</label><input type="number" id="p_tpd" min="1" max="50" step="1" autocomplete="off"></div>
-        <div class="field"><label for="p_days">Trading days / month</label><input type="number" id="p_days" min="1" max="31" step="1" autocomplete="off"></div>
-        <div class="field"><label for="p_months">Months to simulate</label><input type="number" id="p_months" min="1" max="36" step="1" autocomplete="off"></div>
-        <div class="field"><label for="p_cost">Cost per trade (₹) <span class="proj-hint">fees &amp; taxes</span></label><input type="number" id="p_cost" min="0" step="any" autocomplete="off"></div>
-        <div class="field"><label for="p_var">Month-to-month luck</label>
+        <div class="field"><label for="p_days">Days / month</label><input type="number" id="p_days" min="1" max="31" step="1" autocomplete="off"></div>
+        <div class="field"><label for="p_months">Months</label><input type="number" id="p_months" min="1" max="36" step="1" autocomplete="off"></div>
+        <div class="field"><label for="p_cost" title="Brokerage, taxes and slippage for each trade">Cost / trade (₹)</label><input type="number" id="p_cost" min="0" step="any" autocomplete="off"></div>
+        <div class="field"><label for="p_var" title="How much each month's win rate drifts around your number">Month luck</label>
           <select id="p_var"><option value="0">Steady (same every month)</option><option value="5">Realistic (±5 pts)</option><option value="10">Choppy (±10 pts)</option></select>
         </div>
-        <div class="field"><label for="p_maxw">Max wins in a row</label>
+        <div class="field"><label for="p_maxw">Max win streak</label>
           <select id="p_maxw"><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="8">8</option><option value="12">12</option><option value="inf">No limit</option></select>
         </div>
-      </div>
-      <div class="proj-seedrow">
-        <div class="field"><label for="p_seed">Seed <span class="proj-hint">same seed = same result</span></label><input type="number" id="p_seed" min="1" step="1" autocomplete="off"></div>
-        <button type="button" class="btn btn-ghost btn-sm" id="p_reroll">🎲 Re-roll luck</button>
+        <div class="field"><label for="p_seed" title="Same seed gives the same result">Seed</label><div class="proj-seed"><input type="number" id="p_seed" min="1" step="1" autocomplete="off"><button type="button" class="btn btn-ghost btn-sm" id="p_reroll" title="Re-roll luck: a new random seed" aria-label="Re-roll luck">&#127922;</button></div></div>
       </div>
       <div class="proj-rule" id="proj_rule"></div>
     </div>
