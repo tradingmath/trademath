@@ -216,14 +216,46 @@ function rrActual(t) {
   return ((t.exit - t.entry) * dir) / slDist;
 }
 
+/* ── Date range filter (Journal): applies to the stats, the calendars and the trade log ── */
+const isoOf = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+function rangeBounds() { return { from: $("flt_from") ? $("flt_from").value : "", to: $("flt_to") ? $("flt_to").value : "" }; }
+function rangeActive() { const r = rangeBounds(); return !!(r.from || r.to); }
+function inRange(t) {
+  const r = rangeBounds(); if (!r.from && !r.to) return true;
+  if (!t.date) return false;
+  return (!r.from || t.date >= r.from) && (!r.to || t.date <= r.to);
+}
+function applyPreset(v) {
+  const now = new Date(), y = now.getFullYear(), m = now.getMonth();
+  let from = "", to = "";
+  if (v === "today") from = to = isoOf(now);
+  else if (v === "7d")  { const d = new Date(now); d.setDate(d.getDate() - 6);  from = isoOf(d); to = isoOf(now); }
+  else if (v === "30d") { const d = new Date(now); d.setDate(d.getDate() - 29); from = isoOf(d); to = isoOf(now); }
+  else if (v === "month")     { from = isoOf(new Date(y, m, 1)); to = isoOf(new Date(y, m + 1, 0)); }
+  else if (v === "lastmonth") { from = isoOf(new Date(y, m - 1, 1)); to = isoOf(new Date(y, m, 0)); }
+  else if (v === "3m")   { from = isoOf(new Date(y, m - 2, 1)); to = isoOf(new Date(y, m + 1, 0)); }
+  else if (v === "year") { from = y + "-01-01"; to = y + "-12-31"; }
+  $("flt_from").value = from; $("flt_to").value = to;
+  $("flt_clear").hidden = !(from || to);
+}
+function clearRange() { $("flt_range").value = ""; applyPreset(""); refreshJournal(); }
+$("flt_range").addEventListener("change", () => { if ($("flt_range").value !== "custom") applyPreset($("flt_range").value); else $("flt_clear").hidden = !rangeActive(); refreshJournal(); });
+["flt_from", "flt_to"].forEach(id => $(id).addEventListener("change", () => {
+  const r = rangeBounds();
+  if (r.from && r.to && r.from > r.to) { if (id === "flt_from") $("flt_to").value = r.from; else $("flt_from").value = r.to; }   // keep From before To
+  $("flt_range").value = rangeActive() ? "custom" : ""; $("flt_clear").hidden = !rangeActive(); refreshJournal();
+}));
+$("flt_clear").addEventListener("click", clearRange);
+
 function renderStats() {
-  const closed = trades.filter(t => isClosed(t));
+  const list   = trades.filter(inRange);
+  const closed = list.filter(t => isClosed(t));
   const wins   = closed.filter(t => (pnlForTrade(t) || 0) > 0);
-  const realized = trades.filter(hasRealized);
+  const realized = list.filter(hasRealized);
   const totalPnl = realized.reduce((s, t) => s + (pnlForTrade(t) || 0), 0);   // includes profit booked on partly closed trades
   const rrs    = closed.map(rrActual).filter(r => r !== null);
   const avgRR  = rrs.length ? rrs.reduce((a, b) => a + b, 0) / rrs.length : null;
-  $("st_trades").textContent = trades.length;
+  $("st_trades").textContent = list.length;
   $("st_wr").textContent     = closed.length ? Math.round(wins.length / closed.length * 100) + "%" : "—";
   const pnlEl = $("st_pnl");
   pnlEl.textContent  = fmtINR(totalPnl);
@@ -779,15 +811,16 @@ function renderCalendar() {
   if (!trades.length) { wrap.innerHTML = ""; return; }
   const dayPnl = {};
   trades.forEach(t => {
-    if (!hasRealized(t) || !t.date) return;
+    if (!hasRealized(t) || !t.date || !inRange(t)) return;
     const pnl = pnlForTrade(t); if (pnl === null) return;
     dayPnl[t.date] = (dayPnl[t.date] || 0) + pnl;
   });
   const today     = todayStr();
-  const monthsWithData = [...new Set(trades.filter(t => t.date).map(t => t.date.slice(0,7)))].sort();
+  /* Only months that hold trades are shown (plus the current month). Dates outside a chosen range are left out. */
+  const monthsWithData = [...new Set(trades.filter(t => t.date && inRange(t)).map(t => t.date.slice(0,7)))].sort();
   const currentMo = today.slice(0,7);
-  if (!monthsWithData.includes(currentMo)) monthsWithData.push(currentMo);
-  const showMonths = monthsWithData.slice(-2);
+  if (!monthsWithData.includes(currentMo) && (!rangeActive() || inRange({ date: today }))) monthsWithData.push(currentMo);
+  const showMonths = monthsWithData;
   const DOWS = ["S","M","T","W","T","F","S"];
 
   const monthHTML = showMonths.map(mo => {
@@ -815,12 +848,36 @@ function renderCalendar() {
       <div class="cal-grid">${cells.join("")}</div>
       <div class="cal-summary">${pnlStr}</div>
     </div>`;
-  }).join("");
+  });
 
-  wrap.innerHTML = `<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--fg3);margin-bottom:10px">Monthly Performance</div><div class="cal-section">${monthHTML}</div>`;
+  const byYear = {};
+  showMonths.forEach((mo, i) => { (byYear[mo.slice(0,4)] = byYear[mo.slice(0,4)] || []).push(monthHTML[i]); });
+  const years = Object.keys(byYear).sort((x, y) => y - x);                     // newest year first
+  let html;
+  if (years.length <= 1) {
+    html = `<div class="cal-section">${monthHTML.join("")}</div>`;              // one year: no year group, just the months
+  } else {
+    html = years.map(y => {
+      const yPnl = Object.entries(dayPnl).filter(([d]) => d.startsWith(y)).reduce((s2, [, v]) => s2 + v, 0);
+      const yDays = Object.keys(dayPnl).filter(d => d.startsWith(y)).length;
+      const ysum = yDays ? `<span class="${yPnl >= 0 ? "td-pos" : "td-neg"}">${fmtINR(yPnl)}</span> \u00b7 ${yDays} day${yDays !== 1 ? "s" : ""}` : "No closed trades";
+      return `<details class="cal-year"${y === today.slice(0,4) ? " open" : ""}><summary>${y}<span class="cal-ysum">${ysum}</span></summary><div class="cal-section">${byYear[y].join("")}</div></details>`;
+    }).join("");
+  }
+
+  wrap.innerHTML = `<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--fg3);margin-bottom:10px">Monthly Performance</div>${html}`;
 }
 
 /* ══════════════ TOGGLE FUNCTIONS (called from HTML onclick) ══════════════ */
+function toggleYear(btn, yr) {
+  const caret = btn.querySelector('.rep-caret'), opening = !caret.classList.contains('open');
+  document.querySelectorAll('tr.mo-row[data-yr="' + yr + '"]').forEach(r => { r.style.display = opening ? '' : 'none'; });
+  if (!opening) {                                   // folding a year folds everything under it
+    document.querySelectorAll('tr.dy-row[data-mo^="' + yr + '"], tr.tr-row[data-mo^="' + yr + '"]').forEach(r => { r.style.display = 'none'; });
+    document.querySelectorAll('tr.mo-row[data-yr="' + yr + '"] .rep-caret, tr.dy-row[data-mo^="' + yr + '"] .rep-caret').forEach(x => x.classList.remove('open'));
+  }
+  caret.classList.toggle('open');
+}
 function toggleMonth(btn, moId) {
   const opening = !btn.querySelector('.rep-caret').classList.contains('open');
   document.querySelectorAll('tr.dy-row[data-mo="'+moId+'"]').forEach(r => { r.style.display = opening ? '' : 'none'; });
@@ -937,6 +994,7 @@ function renderReports() {
   const fDir = $("flt_dir").value;
   const fRes = $("flt_result").value;
   const filtered = trades.filter(t => {
+    if (!inRange(t))                                        return false;
     if (fMkt && t.market !== fMkt)                          return false;
     if (fDir && t.dir !== fDir)                             return false;
     if (fRes === "win"  && !(isClosed(t) && (pnlForTrade(t)||0) > 0))  return false;
@@ -945,7 +1003,7 @@ function renderReports() {
     return true;
   });
 
-  if (!filtered.length) { $("rep_body").innerHTML = ""; showJournalEmpty("filtered"); return; }
+  if (!filtered.length) { $("rep_body").innerHTML = ""; if ($("rng_note")) { $("rng_note").hidden = !rangeActive(); if (rangeActive()) $("rng_note").textContent = "No trades in this date range."; } showJournalEmpty("filtered"); return; }
   showJournalEmpty(null);
 
   const fset = new Set(filtered);
@@ -959,7 +1017,16 @@ function renderReports() {
     byMonth[mo].days[day].push(t);
   });
 
-  $("rep_body").innerHTML = Object.entries(byMonth).map(([mo, {days}]) => {
+  const REP_HEAD = `<thead><tr><th class="c-inst">Instrument</th><th class="num">Entry</th><th class="num">Exit</th><th class="num">Lots</th><th class="num">Net P&amp;L</th><th class="num" title="Margin used by each trade. Day and month totals show the PEAK: the most capital in use at one time.">Margin</th><th class="num">Return</th><th class="c-res">Result</th><th class="num fee-col">Fees</th><th class="c-act"></th></tr></thead>`;
+  const monthKeys = Object.keys(byMonth), yearsSeen = [...new Set(monthKeys.filter(k => k !== "unknown").map(k => k.slice(0,4)))];
+  const showYears = yearsSeen.length > 1;                       // year rows appear only once the journal covers more than one year
+  const yrFirst = {}; yearsSeen.forEach(y => { yrFirst[monthKeys.find(k => k.slice(0,4) === y)] = true; });
+  const yearRowHTML = y => {
+    const ts = filtered.filter(t => t.date && t.date.startsWith(y)), real = ts.filter(hasRealized);
+    const yp = real.reduce((s2, t) => s2 + (pnlForTrade(t) || 0), 0);
+    return `<tbody><tr class="yr-row" onclick="toggleYear(this,'${y}')"><td class="c-inst" colspan="4"><span class="rep-caret open">&#9654;</span><b>${y}</b> <span class="t-dim">&middot; ${ts.length} trade${ts.length !== 1 ? "s" : ""} &middot; Yearly total</span></td><td class="num"><b class="${real.length ? tone(yp) : ""}">${real.length ? signed(yp) : "&mdash;"}</b></td><td></td><td></td><td></td><td class="fee-col"></td><td></td></tr></tbody>`;   // one cell per column, so the hidden Fees column is skipped when fees are off
+  };
+  $("rep_body").innerHTML = '<div class="rep-log"><div class="rep-scroll"><table class="rep-log-tbl">' + REP_HEAD + Object.entries(byMonth).map(([mo, {days}]) => {
     const allTrades = Object.values(days).flat().filter(t => fset.has(t));
     if (!allTrades.length) return "";
     const moClosed = allTrades.filter(t => isClosed(t));
@@ -1000,28 +1067,26 @@ function renderReports() {
     const moId = mo.replace(/[^a-z0-9]/gi,"");
     const moCap = peakMargin(allTrades), moRet = moCap && moReal.length ? moPnl / moCap * 100 : null;
     const moFees = moReal.reduce((s, t) => s + (grossPnl(t) - pnlForTrade(t)), 0);
-    return `<div class="rep-log">
-      <div class="rep-log-top">
-        <button class="btn btn-ghost btn-sm" data-level="trader" onclick="openReportCard('${mo}')">📊 Share card</button>
-      </div>
-      <div class="rep-scroll"><table class="rep-log-tbl">
-        <thead><tr><th class="c-inst">Instrument</th><th class="num">Entry</th><th class="num">Exit</th><th class="num">Lots</th><th class="num">Net P&amp;L</th><th class="num" title="Margin used by each trade. Day and month totals show the PEAK: the most capital in use at one time.">Margin</th><th class="num">Return</th><th class="c-res">Result</th><th class="num fee-col">Fees</th><th class="c-act"></th></tr></thead>
-        <tbody>
-          <tr class="mo-row" onclick="toggleMonth(this,'${moId}')">
+    const yrRow = (showYears && mo !== "unknown" && yrFirst[mo]) ? yearRowHTML(mo.slice(0,4)) : "";
+    return yrRow + `<tbody>
+          <tr class="mo-row" data-yr="${mo.slice(0,4)}" onclick="toggleMonth(this,'${moId}')">
             <td class="c-inst" colspan="4"><span class="rep-caret open">▶</span><b>${moLabel}</b> <span class="t-dim">· ${allTrades.length} trade${allTrades.length!==1?"s":""} · Monthly total</span></td>
             <td class="num"><b class="${moReal.length ? tone(moPnl) : ""}">${moReal.length ? signed(moPnl) : "—"}</b></td>
             <td class="num" title="Peak margin: the most capital in use at one time this month. Trades that overlap are added together; trades that do not overlap are not."><span class="t-dim">peak</span> <b>${moCap ? fullINR(moCap, true) : "—"}</b></td>
             <td class="num"><b class="${moRet !== null ? tone(moRet) : ""}">${moRet !== null ? pctTxt(moRet) : "—"}</b></td>
             <td class="c-res t-dim">${moWins.length}W / ${moClosed.length-moWins.length}L</td>
             <td class="num fee-col">${moReal.length ? fullINR(moFees, true) : "—"}</td>
-            <td></td>
+            <td class="c-act"><button type="button" class="btn btn-ghost btn-sm rep-share" data-level="trader" onclick="event.stopPropagation();openReportCard('${mo}')" title="Share this month as a card">&#128202;</button></td>
           </tr>
           ${daysHTML}
-        </tbody>
-      </table></div>
-    </div>`;
-  }).join("");
-
+        </tbody>`;
+  }).join("") + '</table></div></div>';
+  const rn = $("rng_note");
+  if (rn) {
+    const r = rangeBounds(), fmt = d => new Date(d + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+    rn.hidden = !rangeActive();
+    if (rangeActive()) rn.textContent = "Showing " + (r.from ? fmt(r.from) : "the start") + " to " + (r.to ? fmt(r.to) : "today") + " \u00b7 " + filtered.length + " trade" + (filtered.length === 1 ? "" : "s");
+  }
 }
 
 $("rep_body").addEventListener("click", e => {

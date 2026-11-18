@@ -1122,3 +1122,27 @@ h1.logo { margin:0; line-height:inherit; }
   .hdr-right .theme-btn { padding:6px 8px; }
   #lvl_label, .lvl-caret { display:none; }
 }
+
+/* Journal: date range, year groups, one table for all months */
+.filter-row { flex-wrap:wrap; align-items:center; }
+.rng-date { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--fg2); }
+.rng-date input.filter-select { width:auto; min-width:138px; padding:6px 8px; }
+.rng-note { font-size:12px; color:var(--fg2); margin:8px 0 0; }
+.cal-year { margin-bottom:8px; border:1px solid var(--border); border-radius:12px; background:var(--card); }
+.cal-year > summary { cursor:pointer; list-style:none; padding:10px 14px; display:flex; align-items:center; gap:10px; font-size:13px; font-weight:700; color:var(--fg); }
+.cal-year > summary::-webkit-details-marker { display:none; }
+.cal-year > summary::before { content:"\25B6"; font-size:10px; color:var(--fg3); transition:transform .15s; }
+.cal-year[open] > summary::before { transform:rotate(90deg); }
+.cal-year .cal-ysum { margin-left:auto; font-size:12px; font-weight:500; color:var(--fg3); }
+.cal-year .cal-ysum .td-pos { color:var(--green); font-weight:600; }
+.cal-year .cal-ysum .td-neg { color:var(--red); font-weight:600; }
+.cal-year .cal-section { padding:0 14px 14px; }
+.rep-log-tbl tr.yr-row { cursor:pointer; }
+.rep-log-tbl tr.yr-row td { background:rgba(255,180,0,.08); font-weight:700; font-size:13px; padding:10px 12px; border-top:1px solid var(--border); }
+.rep-log-tbl tr.yr-row:hover td { background:rgba(255,180,0,.13); }
+.rep-log-tbl tr.mo-row .rep-share { padding:2px 8px; font-size:12px; }
+.rep-log { margin-bottom:0; }
+
+/* the log table fills the card (the scroll box is its wrapper) */
+.rep-scroll { overflow-x:auto; }
+.rep-log-tbl { display:table; width:100%; }

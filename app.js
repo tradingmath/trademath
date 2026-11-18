@@ -319,7 +319,8 @@ function setLevel(level, init) {
     if (!parseFloat($("i_flat").value)) $("i_flat").value = Math.round((d.defaultCap || 100000) * (d.defaultRisk || 1) / 100);
     setLeverage(d.defaultLev || "5");
     if ($("sym_input").value) { $("sym_input").value = ""; updateLotLabel(); }
-    ["flt_market", "flt_dir", "flt_result"].forEach(id => { $(id).value = ""; });
+    ["flt_market", "flt_dir", "flt_result", "flt_range", "flt_from", "flt_to"].forEach(id => { $(id).value = ""; });
+    $("flt_clear").hidden = true;
     if (typeof renderReports === "function") renderReports();
   }
   calc();

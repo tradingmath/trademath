@@ -29,7 +29,7 @@
 <link rel="preload" href="fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts.css?v=140c3a0f">
 <link rel="icon" href="logo-icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css?v=23522dfa">
+<link rel="stylesheet" href="styles.css?v=7e73c99c">
 <script>
 /* Runs before the page paints: apply the saved theme and level now, and keep the page hidden until the app has
    finished setting itself up, so nothing flashes dark, then light, or jumps between modes. */
@@ -363,7 +363,15 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
         <option value="">All Results</option>
         <option value="win">Wins</option><option value="loss">Losses</option><option value="open">Open</option>
       </select>
+      <select class="filter-select" id="flt_range" aria-label="Date range">
+        <option value="">All time</option><option value="today">Today</option><option value="7d">Last 7 days</option><option value="30d">Last 30 days</option>
+        <option value="month">This month</option><option value="lastmonth">Last month</option><option value="3m">Last 3 months</option><option value="year">This year</option><option value="custom">Custom range</option>
+      </select>
+      <label class="rng-date">From <input type="date" class="filter-select" id="flt_from" aria-label="From date"></label>
+      <label class="rng-date">To <input type="date" class="filter-select" id="flt_to" aria-label="To date"></label>
+      <button type="button" class="btn btn-ghost btn-sm" id="flt_clear" hidden>Clear dates</button>
     </div>
+    <div id="rng_note" class="rng-note" hidden></div>
     <div id="jnl_empty" class="empty-state" style="display:none">
       <div class="es-ico" aria-hidden="true">📒</div>
       <div class="es-new">
@@ -913,10 +921,10 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
 <p class="note" style="max-width:720px;margin:24px auto 0;text-align:center;line-height:1.7">TradeMath is a free position size calculator and trade journal for Indian traders. Enter your entry, stop-loss, capital and risk to get quantity, margin, targets and charges for NSE stocks, F&amp;O lots, MCX and crypto futures. Then log the trade and review your results.</p>
 <p class="note" style="text-align:center;margin:10px 0 8px">Guides: <a href="position-size-calculator-india.html" style="color:inherit">Position size</a> · <a href="risk-reward-ratio-explained.html" style="color:inherit">Risk-reward</a> · <a href="nse-fno-lot-sizes.html" style="color:inherit">F&amp;O lot sizes</a> · <a href="trading-journal-india.html" style="color:inherit">Trading journal</a><br><a href="about.html" style="color:inherit">About</a> · <a href="contact.html" style="color:inherit">Contact</a> · <a href="privacy.html" style="color:inherit">Privacy</a> · <a href="terms.html" style="color:inherit">Terms</a> · Not investment advice</p>
 <script src="calc.js?v=edd9b7dc"></script>
-<script src="journal.js?v=a6626e0e"></script>
+<script src="journal.js?v=402d3ff4"></script>
 <script src="projection.js?v=76e2f8eb"></script>
 <script src="alerts.js?v=0a43bf1d"></script>
-<script src="app.js?v=84c428c5"></script>
+<script src="app.js?v=624ad110"></script>
 <script src="cloud.js?v=459e79da"></script>
 <script src="profile.js?v=59ed14d6"></script>
 
