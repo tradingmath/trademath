@@ -8,7 +8,7 @@
   const SESSION_START = 555, SESSION_END = 930;   // 9:15 and 15:30, in minutes of the day
   const LOOKAHEAD_MS = 125000;
 
-  const cfg = { min: 5, anchor: 555, hours: false, vol: 60, sound: "chime", lead: 0 };
+  const cfg = { min: 5, anchor: 555, hours: false, vol: 60, sound: "radar", lead: 0 };
   let running = false, ctx = null, nextAt = null, timer = null, played = 0;
   let keep = null, warned = false;               // keep = silent tone that stops the browser idling the audio device
   let noteMsg = "", noteUntil = 0;                // short-lived message shown in place of the normal note
@@ -26,12 +26,13 @@
     o.start(t); o.stop(t + dur + 0.02);
   }
   const SOUNDS = {
-    chime:  { label: "Chime",         play: (c, o, t) => { tone(c, o, t, 880, 0.2, "sine"); tone(c, o, t + 0.24, 1175, 0.2, "sine"); } },
-    bell:   { label: "Bell",          play: (c, o, t) => { [[784, 1, 1.4], [1568, 0.5, 0.9], [2164, 0.3, 0.6], [4234, 0.12, 0.3]].forEach(([f, g, d]) => tone(c, o, t, f, d, "sine", g, 0.005)); } },
-    double: { label: "Double beep",   play: (c, o, t) => { tone(c, o, t, 1000, 0.13, "triangle"); tone(c, o, t + 0.2, 1000, 0.13, "triangle"); } },
-    ticks:  { label: "Triple tick",   play: (c, o, t) => { for (let i = 0; i < 3; i++) tone(c, o, t + i * 0.13, 1500, 0.06, "sine", 1, 0.003); } },
-    alarm:  { label: "Digital alarm", play: (c, o, t) => { for (let i = 0; i < 4; i++) tone(c, o, t + i * 0.17, 1760, 0.1, "square", 0.5, 0.004); } },
-    soft:   { label: "Soft pulse",    play: (c, o, t) => { tone(c, o, t, 440, 0.8, "sine", 1, 0.18); } },
+    radar:   { label: "Radar ping",  play: (c, o, t) => { tone(c, o, t, 1200, 1.0, "sine", 1, 0.004); tone(c, o, t, 2400, 0.4, "sine", 0.25, 0.004); } },
+    bell:    { label: "Bell",        play: (c, o, t) => { [[784, 1, 1.4], [1568, 0.5, 0.9], [2164, 0.3, 0.6], [4234, 0.12, 0.3]].forEach(([f, g, d]) => tone(c, o, t, f, d, "sine", g, 0.005)); } },
+    double:  { label: "Double beep", play: (c, o, t) => { tone(c, o, t, 1000, 0.13, "triangle"); tone(c, o, t + 0.2, 1000, 0.13, "triangle"); } },
+    marimba: { label: "Marimba",     play: (c, o, t) => { tone(c, o, t, 523, 0.35, "triangle", 1, 0.004); tone(c, o, t + 0.18, 784, 0.45, "triangle", 1, 0.004); } },
+    coin:    { label: "Coin",        play: (c, o, t) => { tone(c, o, t, 988, 0.07, "square", 0.35, 0.003); tone(c, o, t + 0.07, 1319, 0.35, "square", 0.35, 0.003); } },
+    door:    { label: "Doorbell",    play: (c, o, t) => { tone(c, o, t, 784, 0.55, "sine", 1, 0.006); tone(c, o, t + 0.42, 622, 0.8, "sine", 1, 0.006); } },
+    gong:    { label: "Soft gong",   play: (c, o, t) => { [[196, 1, 1.8], [392, 0.4, 1.2], [588, 0.2, 0.8]].forEach(([f, g, d]) => tone(c, o, t, f, d, "sine", g, 0.01)); } },
   };
 
   /* Next candle close strictly after nowMs. anchor = minute of day the candles start from. */
@@ -116,7 +117,7 @@
     const g = ctx.createGain();
     g.gain.value = c.vol / 100 * 0.6;
     g.connect(ctx.destination);
-    (SOUNDS[c.sound] || SOUNDS.chime).play(ctx, g, when);
+    (SOUNDS[c.sound] || SOUNDS.radar).play(ctx, g, when);
     return g;
   }
   function scheduleAhead() {
@@ -236,7 +237,7 @@
       anchor: +c.anchor === 0 ? 0 : 555,
       hours:  !!c.hours,
       vol:    Math.min(100, Math.max(5, Math.round(+c.vol) || 60)),
-      sound:  SOUNDS[c.sound] ? c.sound : "chime",
+      sound:  SOUNDS[c.sound] ? c.sound : "radar",
       lead:   Math.max(0, Math.round(+c.lead) || 0),
     };
   }
