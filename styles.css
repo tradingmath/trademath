@@ -969,29 +969,27 @@ html.tm-boot body { visibility:hidden; }
 .tm-dialog-actions .btn { min-width:96px; }
 .btn-danger-solid { background:var(--red); color:#fff; border:1px solid var(--red); }
 
-/* Today card (daily limits) */
-.risk-banner.day-card { display:block; padding:12px 14px; }
-.day-card.pos  { background:var(--green-dim); border:1px solid var(--green); color:var(--fg); }
-.day-card.neg  { background:var(--red-dim); border:1px solid rgba(239,68,68,.45); color:var(--fg); }
-.day-card.flat { background:var(--accent-dim); border:1px solid var(--border); color:var(--fg); }
-.day-card.danger { background:var(--red-dim); border:1px solid var(--red); color:var(--fg); }
-.db-head { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-.db-title { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:var(--fg2); }
-.db-pnl { font-family:"JetBrains Mono",monospace; font-size:18px; font-weight:700; }
-.day-card.pos .db-pnl { color:var(--green); }
-.day-card.neg .db-pnl, .day-card.danger .db-pnl { color:var(--red); }
-.db-sub { font-size:12px; color:var(--fg3); }
-.db-hide { margin-left:auto; background:transparent; border:1px solid var(--border); color:var(--fg2); border-radius:8px; padding:4px 12px; font-size:12px; cursor:pointer; }
-.db-hide:hover:not(:disabled) { color:var(--fg); border-color:var(--fg3); }
-.db-hide:disabled { opacity:.45; cursor:not-allowed; }
-.db-body { margin-top:12px; display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px 20px; }
-.db-lbl { display:flex; justify-content:space-between; gap:8px; font-size:12px; color:var(--fg2); margin-bottom:5px; }
-.db-val { font-family:"JetBrains Mono",monospace; color:var(--fg); }
-.db-track { height:10px; border-radius:999px; background:rgba(128,128,128,.22); overflow:hidden; }
-.db-fill { height:100%; border-radius:999px; transition:width .4s ease; min-width:0; }
-.db-fill.ok  { background:linear-gradient(90deg,var(--accent-solid),#ffd34d); }
-.db-fill.bad { background:linear-gradient(90deg,#f97316,var(--red)); }
-.db-lock { grid-column:1/-1; font-size:12px; color:var(--red); }
+/* Today bar (daily limits): one slim line, tinted and filled left to right */
+.risk-banner.day-bar { position:relative; display:flex; align-items:center; gap:12px; flex-wrap:wrap; min-height:46px; padding:8px 14px; overflow:hidden; color:var(--fg); }
+.day-bar > * { position:relative; z-index:1; }
+.day-bar .db-fill { position:absolute; z-index:0; left:0; top:0; bottom:0; transition:width .4s ease; }
+.day-bar.pos  { background:var(--green-dim); border:1px solid var(--green); }
+.day-bar.pos .db-fill { background:rgba(34,197,94,.28); }
+.day-bar.neg, .day-bar.stop { background:var(--red-dim); border:1px solid rgba(239,68,68,.55); }
+.day-bar.neg .db-fill, .day-bar.stop .db-fill { background:rgba(239,68,68,.26); }
+.day-bar.stop { border-color:var(--red); }
+.day-bar.flat { background:var(--accent-dim); border:1px solid var(--border); }
+.day-bar.flat .db-fill { background:rgba(255,180,0,.22); }
+.day-bar.collapsed { min-height:32px; padding-top:4px; padding-bottom:4px; }
+.db-trades { font-size:13px; }
+.db-pnl { font-family:"JetBrains Mono",monospace; font-size:15px; font-weight:700; }
+.day-bar.pos .db-pnl { color:var(--green); }
+.day-bar.neg .db-pnl, .day-bar.stop .db-pnl { color:var(--red); }
+.db-note { font-size:12px; color:var(--red); }
+.db-note.dim { color:var(--fg3); }
+.db-hide { margin-left:auto; background:transparent; border:1px solid var(--border-strong,var(--border)); color:var(--fg2); border-radius:8px; padding:3px 12px; font-size:12px; cursor:pointer; }
+.db-hide:hover:not(:disabled) { color:var(--fg); }
+.db-hide:disabled { opacity:.4; cursor:not-allowed; }
 
 /* Today's trades: green for profit, red for loss */
 .today-sum { display:flex; align-items:center; justify-content:space-between; background:var(--card); border-radius:8px; padding:10px 14px; margin-bottom:10px; border:1px solid var(--border); }

@@ -628,8 +628,9 @@ function checkDailyLimits() {
   };
 }
 
-/* Today card: net P&L (green when up, red when down), a bar for trades used and a bar for loss used.
-   It can be hidden, except once half of the daily loss limit is used: then it stays and says why. */
+/* Today bar: one slim line. The whole bar is tinted green (net profit) or red (net loss) and fills left to right as the
+   day's trade count is used up. It shows net P&L only; the loss limit appears beside it when the day is at a loss.
+   Hide works until half of the daily loss limit is used. After that it stays visible and says why. */
 let dailyHidden = false;
 function renderDailyBanner() {
   const el = $("daily_banner");
@@ -638,20 +639,23 @@ function renderDailyBanner() {
   if (!(lim.maxTrades > 0 || lim.maxLoss > 0)) { el.hidden = true; return; }
   const lossUsed = net < 0 ? -net : 0;
   const lossPct = lim.maxLoss > 0 ? Math.min(100, lossUsed / lim.maxLoss * 100) : 0;
-  const tradePct = lim.maxTrades > 0 ? Math.min(100, lim.todayCount / lim.maxTrades * 100) : 0;
+  const fillPct = lim.maxTrades > 0 ? Math.min(100, lim.todayCount / lim.maxTrades * 100) : lossPct;
   const locked = lim.lossExceeded || lim.tradesExceeded || lossPct >= 50;
   if (locked) dailyHidden = false;
-  const tone = lim.lossExceeded || lim.tradesExceeded ? "danger" : net > 0 ? "pos" : net < 0 ? "neg" : "flat";
+  const tone = net > 0 ? "pos" : net < 0 ? "neg" : "flat";
+  const stop = lim.lossExceeded || lim.tradesExceeded ? " stop" : "";
   const sign = net > 0 ? "+" : "";
-  const bar = (label, val, pct, cls) => `<div class="db-row"><div class="db-lbl"><span>${label}</span><span class="db-val">${val}</span></div><div class="db-track"><div class="db-fill ${cls}" style="width:${pct}%"></div></div></div>`;
-  let bars = "";
-  if (lim.maxTrades > 0) bars += bar("Trades", `${lim.todayCount} of ${lim.maxTrades}` + (lim.tradesExceeded ? " · limit reached" : ""), tradePct, lim.tradesExceeded ? "bad" : "ok");
-  if (lim.maxLoss > 0)   bars += bar("Loss limit", `${fmtINR(lossUsed)} of ${fmtINR(lim.maxLoss)}` + (lim.lossExceeded ? " · limit hit" : ""), lossPct, lossPct >= 50 ? "bad" : "ok") ;
-  const lockMsg = locked ? `<div class="db-lock">🔒 ${lim.lossExceeded ? "Daily loss limit hit. Stop trading for today." : lim.tradesExceeded ? "Max trades reached for today." : "You have used " + Math.round(lossPct) + "% of your daily loss limit, so this stays visible."}</div>` : "";
-  el.className = "risk-banner day-card " + tone + (dailyHidden ? " collapsed" : "");
-  el.innerHTML = `<div class="db-head"><span class="db-title">Today</span><span class="db-pnl">${sign}${fmtINR(net)}</span><span class="db-sub">${lim.todayCount} trade${lim.todayCount === 1 ? "" : "s"}</span>` +
-    `<button type="button" class="db-hide" id="db_hide" ${locked ? 'disabled aria-disabled="true" title="Cannot be hidden once half of the daily loss limit is used"' : ""}>${dailyHidden ? "Show" : "Hide"}</button></div>` +
-    (dailyHidden ? "" : `<div class="db-body">${bars}${lockMsg}</div>`);
+  const trades = lim.maxTrades > 0 ? `${lim.todayCount}/${lim.maxTrades} trades` : `${lim.todayCount} trade${lim.todayCount === 1 ? "" : "s"}`;
+  let note = "";
+  if (lim.lossExceeded) note = `<span class="db-note">🔒 Daily loss limit hit. Stop trading for today.</span>`;
+  else if (lim.tradesExceeded) note = `<span class="db-note">🔒 Max trades reached for today.</span>`;
+  else if (lossPct >= 50) note = `<span class="db-note">🔒 ${Math.round(lossPct)}% of ${fmtINR(lim.maxLoss)} loss limit used. Can't hide.</span>`;
+  else if (net < 0 && lim.maxLoss > 0 && !dailyHidden) note = `<span class="db-note dim">of ${fmtINR(lim.maxLoss)} loss limit</span>`;
+  el.className = "risk-banner day-bar " + tone + stop + (dailyHidden ? " collapsed" : "");
+  el.innerHTML = `<div class="db-fill" style="width:${fillPct}%"></div>` +
+    (dailyHidden ? "" : `<span class="db-trades">Today: ${trades}</span>`) +
+    `<span class="db-pnl">${sign}${fmtINR(net)}</span>` + (dailyHidden ? `<span class="db-trades">${trades}</span>` : note) +
+    `<button type="button" class="db-hide" id="db_hide" ${locked ? 'disabled aria-disabled="true" title="Cannot be hidden once half of the daily loss limit is used"' : ""}>${dailyHidden ? "Show" : "Hide"}</button>`;
   el.hidden = false;
   const hb = $("db_hide"); if (hb && !locked) hb.onclick = () => { dailyHidden = !dailyHidden; renderDailyBanner(); };
 }
