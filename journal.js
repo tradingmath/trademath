@@ -98,10 +98,34 @@ function buildBackup() {
   Object.keys(BACKUP_KEYS).forEach(k => { out[k] = tmGet(BACKUP_KEYS[k], null); });
   return out;
 }
-function downloadBackup() {
-  tmDownload("trademath-backup-" + todayStr() + ".json", JSON.stringify(buildBackup(), null, 1));
-  tmSet("tm_last_backup", new Date().toISOString());
-  renderBackupInfo();
+/* Backups are encrypted (AES-256-GCM), so the file is unreadable outside TradeMath and any edit to it is detected on restore.
+   The key is built into the app, which stops other tools and casual copying but is not a password: anyone with this
+   page's source could still derive it. Older, unencrypted backups can still be restored. */
+const BK_SECRET = "TradeMath/backup/v2/7f3c9a1e5b8d4062";
+const bkB64  = u8 => { let s = ""; u8.forEach(b => { s += String.fromCharCode(b); }); return btoa(s); };
+const bkUnB64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+async function bkKey(salt) {
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(BK_SECRET), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: 150000, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+}
+async function bkEncrypt(obj) {
+  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await bkKey(salt), new TextEncoder().encode(JSON.stringify(obj))));
+  return JSON.stringify({ app: "TradeMath", format: "encrypted-backup", v: 2, salt: bkB64(salt), iv: bkB64(iv), data: bkB64(ct) });
+}
+async function bkDecrypt(w) {
+  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: bkUnB64(w.iv) }, await bkKey(bkUnB64(w.salt)), bkUnB64(w.data));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+async function downloadBackup() {
+  const msg = $("bk_msg");
+  if (!(window.crypto && crypto.subtle)) { msg.textContent = "This browser cannot encrypt the backup here. Open TradeMath over https and try again."; msg.className = "bk-msg bad"; return; }
+  try {
+    tmDownload("trademath-backup-" + todayStr() + ".tmbackup", await bkEncrypt(buildBackup()));
+    tmSet("tm_last_backup", new Date().toISOString());
+    renderBackupInfo();
+    msg.textContent = "Encrypted backup downloaded. It can only be restored in TradeMath."; msg.className = "bk-msg";
+  } catch (e) { msg.textContent = "Could not create the backup. Try again."; msg.className = "bk-msg bad"; }
 }
 function renderBackupInfo() {
   const el = $("bk_info"); if (!el) return;
@@ -118,9 +142,13 @@ function readBackupFile(file) {
   if (file.size > 20 * 1024 * 1024) return fail("That file is too large to be a TradeMath backup.");
   const r = new FileReader();
   r.onerror = () => fail("Could not read that file.");
-  r.onload = () => {
+  r.onload = async () => {
     let data;
-    try { data = JSON.parse(r.result); } catch (e) { return fail("That file is not a valid backup (it is not readable JSON)."); }
+    try { data = JSON.parse(r.result); } catch (e) { return fail("That file is not a TradeMath backup."); }
+    if (data && data.format === "encrypted-backup") {
+      if (!(window.crypto && crypto.subtle)) return fail("This browser cannot open encrypted backups here. Open TradeMath over https and try again.");
+      try { data = await bkDecrypt(data); } catch (e) { return fail("Could not open that backup. It may be damaged, edited, or not made by TradeMath."); }
+    }
     if (!data || data.app !== "TradeMath" || !Array.isArray(data.trades)) return fail("That file is not a TradeMath backup.");
     const good = data.trades.filter(t => t && typeof t === "object" && (t.dir === "LONG" || t.dir === "SHORT"));
     if (!good.length && data.trades.length) return fail("No usable trades were found in that backup.");

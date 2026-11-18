@@ -596,12 +596,12 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
   <!-- Your data -->
   <div class="settings-section" id="your_data">
     <div class="p-title">Your data</div>
-    <div style="font-size:12px;color:var(--fg2);margin-bottom:6px">Everything lives only in this browser. Clearing site data or switching browser or device loses it, so keep a backup file.</div>
+    <div style="font-size:12px;color:var(--fg2);margin-bottom:6px">Everything lives only in this browser. Clearing site data or switching browser or device loses it, so keep a backup file. Backups are encrypted, so they can only be restored in TradeMath.</div>
     <div id="bk_info" class="bk-info"></div>
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">
       <button type="button" class="btn btn-primary btn-sm" id="bk_download">Download backup</button>
       <button type="button" class="btn btn-ghost btn-sm" id="bk_pick">Restore from backup…</button>
-      <input type="file" id="bk_file" accept=".json,application/json" hidden>
+      <input type="file" id="bk_file" accept=".tmbackup,.json,application/json" hidden>
     </div>
     <div id="bk_msg" class="bk-msg" aria-live="polite"></div>
     <div id="bk_confirm" class="bk-confirm" hidden>
@@ -907,7 +907,7 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
 
 <p class="note" style="text-align:center;margin:24px 0 8px">Guides: <a href="position-size-calculator-india.html" style="color:inherit">Position size</a> · <a href="risk-reward-ratio-explained.html" style="color:inherit">Risk-reward</a> · <a href="nse-fno-lot-sizes.html" style="color:inherit">F&amp;O lot sizes</a> · <a href="trading-journal-india.html" style="color:inherit">Trading journal</a><br><a href="about.html" style="color:inherit">About</a> · <a href="contact.html" style="color:inherit">Contact</a> · <a href="privacy.html" style="color:inherit">Privacy</a> · Not investment advice</p>
 <script src="calc.js?v=64f15469"></script>
-<script src="journal.js?v=47517ebd"></script>
+<script src="journal.js?v=a0bcf3c3"></script>
 <script src="projection.js?v=76e2f8eb"></script>
 <script src="alerts.js?v=0a43bf1d"></script>
 <script src="app.js?v=ac472b84"></script>
