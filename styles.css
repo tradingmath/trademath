@@ -1091,3 +1091,15 @@ html[data-fees="off"] .fee-col, html[data-fees="off"] .fee-field { display:none 
 
 /* Today bar hidden: a thin coloured strip with only the Show button (must come after the responsive rules above) */
 .risk-banner.day-bar.collapsed { min-height:0; padding:1px 8px; gap:0; }
+
+/* Today bar on phones: one tidy, vertically centred line (the loss-limit note shortens with "…" if it must) */
+@media (max-width:560px) {
+  .risk-banner.day-bar { flex-wrap:nowrap; align-items:center; gap:6px; min-height:34px; padding:4px 8px; }
+  .day-bar .db-trades { font-size:12px; white-space:nowrap; }
+  .day-bar .db-pnl { font-size:13px; white-space:nowrap; }
+  .day-bar .db-note { font-size:10.5px; min-width:0; flex:1 1 auto; }
+  .day-bar .db-note.dim { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .day-bar .db-hide { flex:0 0 auto; margin-left:auto; padding:2px 9px; font-size:11px; line-height:1.2; }
+  .risk-banner.day-bar.collapsed { min-height:0; padding:1px 8px; }
+  .risk-banner.day-bar.collapsed .db-hide { padding:0 9px; font-size:10px; line-height:12px; }
+}
