@@ -237,7 +237,7 @@ window.addEventListener("beforeunload", e => { if (changes().length) { e.prevent
 /* Every page has its own link: #calc (home), #journal, #journal/projection, #settings.
    Hash links work on any host, on localhost and when index.html is opened straight from disk. */
 const PAGES = ["calc", "journal", "settings", "profile"];
-const PAGE_TITLES = { calc: "TradeMath", journal: "TradeMath · Journal", settings: "TradeMath · Settings", profile: "TradeMath · Profile" };
+const PAGE_TITLES = { calc: document.title, journal: "TradeMath · Journal", settings: "TradeMath · Settings", profile: "TradeMath · Profile" };
 let currentRoute = null;
 
 function parseRoute() {

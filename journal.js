@@ -202,8 +202,9 @@ function rrActual(t) {
   if (!slDist) return null;
   const dir = t.dir === "LONG" ? 1 : -1;
   if (t.exits && t.exits.length) {
-    const avgExit = t.exits.reduce((s, ex) => s + ex.price * ex.qty, 0) /
-                    t.exits.reduce((s, ex) => s + ex.qty, 0);
+    const exQty = t.exits.reduce((s, ex) => s + (ex.qty || 0), 0);
+    if (!(exQty > 0)) return null;                                  // an exit with no quantity cannot give a ratio
+    const avgExit = t.exits.reduce((s, ex) => s + ex.price * (ex.qty || 0), 0) / exQty;
     return ((avgExit - t.entry) * dir) / slDist;
   }
   return ((t.exit - t.entry) * dir) / slDist;

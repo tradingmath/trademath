@@ -1113,3 +1113,12 @@ html[data-fees="off"] .fee-col, html[data-fees="off"] .fee-field { display:none 
 
 /* the logo is now the page's h1: keep it looking like the logo */
 h1.logo { margin:0; line-height:inherit; }
+
+/* Small phones: keep the header on one line, with no sideways scroll */
+@media (max-width:400px) {
+  .header { gap:4px; }
+  .logo { font-size:15px; }
+  .hdr-right { gap:5px; }
+  .hdr-right .theme-btn { padding:6px 8px; }
+  #lvl_label, .lvl-caret { display:none; }
+}

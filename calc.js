@@ -802,6 +802,10 @@ function sizeCrypto(c) {
 function calc() {
   const { entry, sl, cap, rsk, rr: defRR, riskINR, flatOn } = getInputs();
   if (!entry || !sl || entry === sl || entry <= 0 || sl <= 0) { showEmpty(); return; }
+  /* A typed zero (or negative) is not the same as an empty box: say so, instead of quietly using a default. */
+  const capRaw = $("i_cap").value.trim(), rskRaw = $("i_rsk").value.trim();
+  if ((capRaw !== "" && !(parseFloat(capRaw) > 0)) || (!flatOn && rskRaw !== "" && !(parseFloat(rskRaw) > 0))) { showEmpty("Capital and risk must be above zero"); return; }
+  if (entry > 1e7 || sl > 1e7 || cap > 1e11) { showEmpty("That number is too large to size a trade. Check entry, stop-loss and capital"); return; }
   const isLong  = sl < entry;
   const slDist  = Math.abs(entry - sl);
   const sym     = getSelectedSymbol();
@@ -858,12 +862,15 @@ function calc() {
   if (totalMgn > cap) {
     if (instrType === "equity") {
       const maxAffordable = Math.floor((cap * (leverageMultiplier || 1)) / entry);
-      warns.push(`⚠ Margin required (${fmtINR(totalMgn)}) exceeds capital (${fmtINR(cap)}). Max affordable with ${leverageMultiplier}× leverage: <strong>${comma(maxAffordable)} shares</strong>.${typeof getLevel === "function" && getLevel() === "quick" ? " Change your capital in Settings → Default capital." : ""}`);
+      warns.push(`⚠ Margin required (${fmtINR(totalMgn)}) exceeds capital (${fmtINR(cap)}). Max affordable with ${leverageMultiplier}× leverage: <strong>${comma(maxAffordable)} shares</strong>.${typeof getLevel === "function" && getLevel() === "quick" ? " Change your capital in <a href='#profile'>Profile → Default capital</a>." : ""}`);
     } else {
-      warns.push(`⚠ Margin required (${fmtINR(totalMgn)}) exceeds your capital (${fmtINR(cap)}).${typeof getLevel === "function" && getLevel() === "quick" ? " Change your capital in Settings → Default capital." : ""}`);
+      warns.push(`⚠ Margin required (${fmtINR(totalMgn)}) exceeds your capital (${fmtINR(cap)}).${typeof getLevel === "function" && getLevel() === "quick" ? " Change your capital in <a href='#profile'>Profile → Default capital</a>." : ""}`);
     }
   }
-  if (M.sellOpt) warns.push(`⚠ You are SELLING an option. The broker blocks margin (about ${fmtINR(M.mgnLow)}–${fmtINR(M.mgnHigh)} here, an estimate), far more than the premium, and a loss is not capped at the premium. Strike, VIX and expiry change it a lot: check your broker's margin calculator.`);
+  if (M.sellOpt) warns.push(`⚠ You are SELLING an option. The broker blocks margin (this calculator estimates ${fmtINR(M.mgnLow)}–${fmtINR(M.mgnHigh)}, which can be well below the real figure; check your broker's margin calculator), far more than the premium, and a loss is not capped at the premium. Strike, VIX and expiry change it a lot: check your broker's margin calculator.`);
+  if (!crypto && M.units === 1 && M.actualRisk > riskINR * 1.001) {
+    warns.push(`⚠ One ${instrType === "equity" ? "share" : "lot"} is the smallest you can trade, and it risks ${fmtINR(M.actualRisk)}, more than your ${fmtINR(riskINR)} risk budget. Tighten the stop-loss, raise your risk, or skip this trade.`);
+  }
   if (actualRiskPct > 5) {
     warns.push(`⚠ Max risk is ${actualRiskPct.toFixed(1)}% of your capital.`);
   }
@@ -902,7 +909,7 @@ function calc() {
 
     // Tile 1: Margin Required
     $("t1val").textContent = (M.sellOpt ? "≈ " : "") + fmtINR(totalMgn);
-    if (M.sellOpt) $("t1sub").textContent = `Selling: approx. ${fmtINR(M.mgnLow)}–${fmtINR(M.mgnHigh)} · ${mgnPct.toFixed(0)}% of capital`;
+    if (M.sellOpt) $("t1sub").textContent = `Selling: rough, often low · check broker · ${mgnPct.toFixed(0)}% of capital`;
     else $("t1sub").textContent = `${mgnPct.toFixed(1)}% of capital · ${instrType === "equity" ? leverageMultiplier + "×" : orderType}${instrType === "futures" ? " · approx., brokers vary" : ""}`;
   }
 
@@ -932,7 +939,10 @@ function calc() {
   renderDailyBanner();
 }
 
-function showEmpty() {
+function showEmpty(msg) {
+  const re = $("r_empty");
+  if (!re.dataset.def) re.dataset.def = re.innerHTML;
+  re.innerHTML = msg ? "<strong>" + msg + "</strong>" : re.dataset.def;
   $("r_empty").hidden   = false;
   $("r_content").hidden = true;
   $("tgt_wrap").hidden  = true;

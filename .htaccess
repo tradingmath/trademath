@@ -1,3 +1,10 @@
+# ── One address: www.trademath.in goes to trademath.in (permanent redirect) ──
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTP_HOST} ^www\.trademath\.in$ [NC]
+  RewriteRule ^(.*)$ https://trademath.in/$1 [R=301,L]
+</IfModule>
+
 # ── Friendly 404 page ──
 ErrorDocument 404 /404.html
 
