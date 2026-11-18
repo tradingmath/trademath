@@ -300,6 +300,7 @@ function quickLogTrade() {
   const t = {
     id: uid(),
     date: todayStr(),
+    ts: Date.now(),
     margin: lc.margin > 0 ? Math.round(lc.margin) : null,   // margin the calculator says this trade needs (an estimate; short options can be corrected on close)
     marginActual: false,
     market: lc.market || "NSE Equity",
@@ -394,6 +395,7 @@ $("pl_confirm").addEventListener("click", () => {
   const t = {
     id: uid(),
     date: todayStr(),
+    ts: Date.now(),
     margin: lc.margin > 0 ? Math.round(lc.margin) : null,   // margin the calculator says this trade needs (an estimate; short options can be corrected on close)
     marginActual: false,
     market: lc.market || "NSE Equity",
@@ -629,7 +631,7 @@ $("cm_confirm").addEventListener("click", () => {
     if (t.instrument === "crypto") updated.funding = (t.funding || 0) + funding;
     const realMgn = parseFloat($("cm_margin").value);
     if (!$("cm_margin_wrap").hidden && realMgn >= 0) { if (realMgn !== t.margin) updated.marginActual = true; updated.margin = realMgn; }
-    const partialExit = { price: exit, qty: exitQty || t.qty, fees: exitFees, date: todayStr() };
+    const partialExit = { price: exit, qty: exitQty || t.qty, fees: exitFees, date: todayStr(), ts: Date.now() };
     if (!updated.exits) updated.exits = [];
     updated.exits = [...updated.exits, partialExit];
     if (!partialMode) {
@@ -811,6 +813,34 @@ function capitalUsed(t) {
   const v = (t.entry || 0) * (t.qty || 0) * fxOf(t);
   return v > 0 ? v : null;
 }
+/* Peak margin: the most capital in use at any one time.
+   Trades that overlap (a position held across the same days, or two intraday trades open at once) are added together;
+   trades that do not overlap are NOT, because the same money is used again. Without clock times, intraday trades on one day
+   are treated as one after another, so that day counts the largest one. */
+const dayNum = s => /^\d{4}-\d{2}-\d{2}$/.test(s || "") ? Math.floor(Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10)) / 864e5) : null;
+function peakMargin(list) {
+  const multi = {}, same = {}, today = dayNum(todayStr());
+  list.forEach(t => {
+    const m = capitalUsed(t), s = dayNum(t.date); if (!m || s === null) return;
+    let e = isClosed(t) ? dayNum(exitDateOf(t) || t.date) : today;
+    if (e === null || e < s) e = s;
+    if (e > s) { for (let d = s; d <= Math.min(e, s + 400); d++) multi[d] = (multi[d] || 0) + m; }
+    else (same[s] = same[s] || []).push({ m, a: t.ts, b: t.exits && t.exits.length ? t.exits[t.exits.length - 1].ts : null });
+  });
+  let peak = 0;
+  new Set([...Object.keys(multi), ...Object.keys(same)].map(Number)).forEach(d => {
+    const g = same[d] || []; let intra = 0;
+    if (g.length) {
+      if (g.every(x => x.a && x.b)) {                                           // real times known: sweep through the day
+        const ev = []; g.forEach(x => ev.push([x.a, x.m], [x.b, -x.m]));
+        ev.sort((p, q) => p[0] - q[0] || p[1] - q[1]);                           // a close frees its money before the next open
+        let cur = 0; ev.forEach(([, v]) => { cur += v; intra = Math.max(intra, cur); });
+      } else intra = Math.max(...g.map(x => x.m));
+    }
+    peak = Math.max(peak, (multi[d] || 0) + intra);
+  });
+  return peak;
+}
 function exitDateOf(t) { return t.exits && t.exits.length ? t.exits[t.exits.length - 1].date : null; }
 function daysHeld(t) {
   const a = t.date, b = exitDateOf(t) || (isClosed(t) ? t.date : todayStr());
@@ -903,12 +933,12 @@ function renderReports() {
 
       repDays.set(dayId, { trades: filteredDay, mo: mo.replace(/[^a-z0-9]/gi, "") });
 
-      const dayCap = dayClosed.reduce((s, t) => s + (capitalUsed(t) || 0), 0), dayRet = dayCap ? dayPnlVal / dayCap * 100 : null;
+      const dayCap = peakMargin(filteredDay), dayRet = dayCap && dayClosed.length ? dayPnlVal / dayCap * 100 : null;
       const dayFees = dayClosed.reduce((s, t) => s + (grossPnl(t) - pnlForTrade(t)), 0);
       return `<tr class="dy-row" data-mo="${mo.replace(/[^a-z0-9]/gi,'')}" data-grp="${dayId}" onclick="toggleDay(this,'${dayId}')">
         <td class="c-inst" colspan="4"><span class="rep-caret">▶</span><b>${esc(day === "unknown" ? "Unknown" : day)}</b> <span class="t-dim">· ${filteredDay.length} trade${filteredDay.length!==1?"s":""} · Daily total</span></td>
         <td class="num"><b class="${dayClosed.length ? tone(dayPnlVal) : ""}">${dayClosed.length ? signed(dayPnlVal) : "—"}</b></td>
-        <td class="num"><b>${dayCap ? fullINR(dayCap, true) : "—"}</b></td>
+        <td class="num" title="Peak margin: the most capital in use at one time that day"><span class="t-dim">peak</span> <b>${dayCap ? fullINR(dayCap, true) : "—"}</b></td>
         <td class="num"><b class="${dayRet !== null ? tone(dayRet) : ""}">${dayRet !== null ? pctTxt(dayRet) : "—"}</b></td>
         <td class="c-res t-dim">${wl}</td>
         <td class="num">${dayClosed.length ? fullINR(dayFees, true) : "—"}</td>
@@ -917,19 +947,19 @@ function renderReports() {
     }).join("");
 
     const moId = mo.replace(/[^a-z0-9]/gi,"");
-    const moCap = moClosed.reduce((s, t) => s + (capitalUsed(t) || 0), 0), moRet = moCap ? moPnl / moCap * 100 : null;
+    const moCap = peakMargin(allTrades), moRet = moCap && moClosed.length ? moPnl / moCap * 100 : null;
     const moFees = moClosed.reduce((s, t) => s + (grossPnl(t) - pnlForTrade(t)), 0);
     return `<div class="rep-log">
       <div class="rep-log-top">
         <button class="btn btn-ghost btn-sm" data-level="trader" onclick="openReportCard('${mo}')">📊 Share card</button>
       </div>
       <div class="rep-scroll"><table class="rep-log-tbl">
-        <thead><tr><th class="c-inst">Instrument</th><th class="num">Entry</th><th class="num">Exit</th><th class="num">Lots</th><th class="num">Net P&amp;L</th><th class="num">Margin</th><th class="num">Return</th><th class="c-res">Result</th><th class="num">Fees</th><th class="c-act"></th></tr></thead>
+        <thead><tr><th class="c-inst">Instrument</th><th class="num">Entry</th><th class="num">Exit</th><th class="num">Lots</th><th class="num">Net P&amp;L</th><th class="num" title="Margin used by each trade. Day and month totals show the PEAK: the most capital in use at one time.">Margin</th><th class="num">Return</th><th class="c-res">Result</th><th class="num">Fees</th><th class="c-act"></th></tr></thead>
         <tbody>
           <tr class="mo-row" onclick="toggleMonth(this,'${moId}')">
             <td class="c-inst" colspan="4"><span class="rep-caret open">▶</span><b>${moLabel}</b> <span class="t-dim">· ${allTrades.length} trade${allTrades.length!==1?"s":""} · Monthly total</span></td>
             <td class="num"><b class="${moClosed.length ? tone(moPnl) : ""}">${moClosed.length ? signed(moPnl) : "—"}</b></td>
-            <td class="num"><b>${moCap ? fullINR(moCap, true) : "—"}</b></td>
+            <td class="num" title="Peak margin: the most capital in use at one time this month. Trades that overlap are added together; trades that do not overlap are not."><span class="t-dim">peak</span> <b>${moCap ? fullINR(moCap, true) : "—"}</b></td>
             <td class="num"><b class="${moRet !== null ? tone(moRet) : ""}">${moRet !== null ? pctTxt(moRet) : "—"}</b></td>
             <td class="c-res t-dim">${moWins.length}W / ${moClosed.length-moWins.length}L</td>
             <td class="num">${moClosed.length ? fullINR(moFees, true) : "—"}</td>

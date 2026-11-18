@@ -247,21 +247,39 @@
   /* ───────── demo data ───────── */
   function dstr(back) { const d = new Date(); d.setDate(d.getDate() - back); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
   function demoTrades() {
-    const eq = (i, back, sym, dir, entry, sl, target, exit, qty, fees, setup, notes) => ({ id: "demo-" + i, demo: true, date: dstr(back), market: "NSE Equity", symbol: sym, instrument: "equity", dir, entry, sl, target, exit, qty, fees, setup, notes, margin: Math.round(entry * qty / 5), mistakes: [], exits: [], confidence: 3, checklistSkipped: false });   // intraday: about a fifth of the value
-    const op = (i, back, dir, entry, sl, target, exit, lots, fees, setup, notes, ot) => ({ id: "demo-" + i, demo: true, date: dstr(back), market: "Nifty F&O", symbol: "NIFTY", instrument: "options", optType: ot, dir, entry, sl, target, exit, lots, lotSize: 65, qty: lots * 65, fees, setup, notes, margin: Math.round(entry * lots * 65), mistakes: [], exits: [], confidence: 3, checklistSkipped: false });   // option buyer: the premium paid
-    const t = [
-      eq(1, 13, "RELIANCE", "LONG", 1420, 1405, 1450, 1448, 66, 74, "Breakout", "Broke the day's high on volume. Held to target."),
-      eq(2, 12, "TCS", "SHORT", 3560, 3585, 3510, 3585, 40, 82, "Reversal", "Stopped out. The reversal needed more confirmation."),
-      op(3, 10, "LONG", 112, 92, 152, 150, 2, 96, "Trend", "Followed the trend after the first pullback.", "CE"),
-      eq(4, 9, "INFY", "LONG", 1580, 1566, 1608, 1566, 71, 78, "Pullback", "Entered early before the pullback held. Stopped out."),
-      eq(5, 8, "HDFCBANK", "LONG", 1655, 1640, 1685, 1683, 66, 72, "Breakout", "Clean breakout, exited at target."),
-      op(6, 6, "LONG", 98, 78, 138, 78, 2, 88, "Reversal", "Reversal did not follow through. Stop hit.", "PE"),
-      eq(7, 5, "SBIN", "LONG", 812, 804, 828, 826, 125, 68, "Pullback", "Pullback to support, tidy trade."),
-      eq(8, 3, "ITC", "SHORT", 468, 473, 458, 459, 200, 70, "Trend", "Short in a downtrend. Took profit near target."),
-      eq(9, 2, "AXISBANK", "LONG", 1190, 1178, 1214, 1214, 83, 71, "Breakout", "Held the full position to target."),
-      eq(10, 1, "LT", "LONG", 3720, 3695, 3770, 3695, 40, 80, "Pullback", "Stopped out. Moved on without revenge trading."),
-    ];
-    return t;
+    /* About three months of sample trades, generated the same way every time (fixed seed). Mostly intraday, a few multi-day
+       positional trades that overlap within a week so peak margin has something to show. */
+    let seed = 20260101; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+    const pick = a => a[Math.floor(rnd() * a.length)];
+    const STK = [["RELIANCE", 1420], ["TCS", 3560], ["INFY", 1580], ["HDFCBANK", 1655], ["ICICIBANK", 1290], ["SBIN", 812], ["ITC", 468], ["AXISBANK", 1190], ["LT", 3720], ["TATASTEEL", 168], ["KOTAKBANK", 2010], ["BAJFINANCE", 7100]];
+    const SETUPS = ["Breakout", "Pullback", "Reversal", "Trend", "Gap play", "Range"];
+    const WIN_NOTES = ["Held to target.", "Clean entry, followed the plan.", "Trailed the stop and took profit.", "Waited for confirmation. It paid off."];
+    const LOSS_NOTES = ["Stopped out. Entered a little early.", "Setup failed. Respected the stop.", "Choppy market, took the small loss.", "Stopped out and moved on."];
+    const RISK = 500, out = []; let n = 0;
+    const dstrOf = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    const round2 = v => Math.round(v * 100) / 100;
+    for (let back = 92; back >= 1; back--) {
+      const d = new Date(); d.setDate(d.getDate() - back); const dow = d.getDay(); if (dow === 0 || dow === 6) continue;
+      const count = rnd() < 0.22 ? 0 : rnd() < 0.62 ? 1 : 2;
+      for (let k = 0; k < count; k++) {
+        n++; const win = rnd() < 0.52, long = rnd() < 0.7, opt = rnd() < 0.18, positional = !opt && rnd() < 0.2;
+        const hold = positional ? 2 + Math.floor(rnd() * 4) : 0, xd = new Date(d); xd.setDate(xd.getDate() + hold);
+        if (xd > new Date()) continue;                                        // never end in the future
+        const R = win ? 1.1 + rnd() * 0.9 : 1, setup = pick(SETUPS), id = "demo-" + n;
+        if (opt) {
+          const lots = 1 + Math.floor(rnd() * 2), entry = round2(80 + rnd() * 90), sl = round2(entry * 0.82), tgt = round2(entry * (1 + 0.18 * R)), exit = win ? tgt : sl, ot = rnd() < 0.5 ? "CE" : "PE";
+          out.push({ id, demo: true, date: dstrOf(d), market: "Nifty F&O", symbol: "NIFTY", instrument: "options", optType: ot, dir: "LONG", entry, sl, target: tgt, exit, lots, lotSize: 65, qty: lots * 65, fees: 90 + lots * 12, setup, notes: win ? pick(WIN_NOTES) : pick(LOSS_NOTES), margin: Math.round(entry * lots * 65), mistakes: [], exits: [], confidence: 3, checklistSkipped: false });
+          continue;
+        }
+        const [sym, base] = pick(STK), entry = round2(base * (0.97 + rnd() * 0.06)), dist = entry * (0.008 + rnd() * 0.006), dir = long ? "LONG" : "SHORT", sg = long ? 1 : -1;
+        const qty = Math.max(1, Math.floor(RISK / dist)), sl = round2(entry - sg * dist), target = round2(entry + sg * dist * 2);
+        const exit = round2(win ? entry + sg * dist * R : entry - sg * dist * (rnd() < 0.15 ? 1.1 : 1));
+        const value = entry * qty, t = { id, demo: true, date: dstrOf(d), market: "NSE Equity", symbol: sym, instrument: "equity", dir, entry, sl, target, exit, qty, fees: Math.round(45 + value * 0.0003), setup, notes: win ? pick(WIN_NOTES) : pick(LOSS_NOTES), margin: Math.round(positional ? value : value / 5), mistakes: [], exits: [], confidence: 3, checklistSkipped: false };
+        if (positional) t.exits = [{ price: exit, qty, fees: t.fees, date: dstrOf(xd) }];
+        out.push(t);
+      }
+    }
+    return out;
   }
   function loadDemo() {
     trades = trades.filter(t => !t.demo).concat(demoTrades());
