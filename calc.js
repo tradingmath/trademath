@@ -661,8 +661,7 @@ function renderDailyBanner() {
   else if (net < 0 && lim.maxLoss > 0 && !dailyHidden) note = `<span class="db-note dim">of ${fmtINR(lim.maxLoss)} loss limit</span>`;
   el.className = "risk-banner day-bar " + tone + stop + (dailyHidden ? " collapsed" : "");
   el.innerHTML = `<div class="db-fill" style="width:${fillPct}%"></div>` +
-    (dailyHidden ? "" : `<span class="db-trades">Today: ${trades}</span>`) +
-    `<span class="db-pnl">${sign}${fmtINR(net)}</span>` + (dailyHidden ? `<span class="db-trades">${trades}</span>` : note) +
+    (dailyHidden ? "" : `<span class="db-trades">Today: ${trades}</span><span class="db-pnl">${sign}${fmtINR(net)}</span>${note}`) +
     `<button type="button" class="db-hide" id="db_hide" ${locked ? 'disabled aria-disabled="true" title="Cannot be hidden once half of the daily loss limit is used"' : ""}>${dailyHidden ? "Show" : "Hide"}</button>`;
   el.hidden = false;
   const hb = $("db_hide"); if (hb && !locked) hb.onclick = () => { dailyHidden = !dailyHidden; renderDailyBanner(); };
