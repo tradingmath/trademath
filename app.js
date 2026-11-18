@@ -440,13 +440,14 @@ document.documentElement.classList.remove("tm-boot");   // everything is set up:
    Ctrl+Enter (Cmd+Enter on a Mac) logs the trade from any calculator box. Plain Enter is left alone so a stray Enter
    never logs half-typed numbers. On a computer the Entry box is focused when the page opens; on a phone it is not,
    because that would pop the keyboard up before you have looked at anything. */
-document.addEventListener("keydown", e => {
-  if (e.key !== "Enter" || !(e.ctrlKey || e.metaKey) || e.isComposing) return;
-  const inCalc = e.target.closest && e.target.closest("#tab-calc") && !$("tab-calc").hidden;
-  if (!inCalc || document.querySelector(".modal-overlay:not([hidden])") || typeof lastCalc === "undefined" || !lastCalc) return;
+window.addEventListener("keydown", e => {
+  if ((e.key !== "Enter" && e.code !== "NumpadEnter") || !(e.ctrlKey || e.metaKey) || e.isComposing) return;
+  if ($("tab-calc").hidden || document.querySelector(".modal-overlay:not([hidden])")) return;
+  const t = e.target;
+  if (t && t.closest && (t.closest("#tab-journal, #tab-settings, #tab-profile") || t.tagName === "TEXTAREA")) return;   // only from the calculator page (a focused box, a button, or nothing)
   e.preventDefault();
-  $("logTradeBtn").click();
-});
+  $("logTradeBtn").click();          // shows "Enter valid Entry & Stop Loss first" if there is nothing to log yet
+}, true);
 if (window.matchMedia("(pointer: fine)").matches && !$("tab-calc").hidden && !document.querySelector(".modal-overlay:not([hidden])")) {
   try { $("i_entry").focus({ preventScroll: true }); } catch (e) {}
 }
