@@ -225,8 +225,15 @@ function renderSetupChips(containerId, presets, selected, onToggle) {
 
 /* ── Market dropdowns come from the single MARKETS list, so they can never drift apart ── */
 function fillMarketSelects() {
-  const opts = MARKETS.map(m => `<option>${m.replace("&", "&amp;")}</option>`).join("");
-  ["j_market", "d_market", "s_default_market"].forEach(id => { const el = $(id); if (el) el.innerHTML = opts; });
+  const mk = m => `<option>${m.replace("&", "&amp;")}</option>`;
+  const opts = MARKETS.map(mk).join("");
+  /* New-trade and default-market lists only offer markets the user trades; the edit form and filters keep every market,
+     so an older trade in a market that was switched off can still be opened. */
+  const p = typeof marketPrefs === "function" ? marketPrefs() : { stocks: true, fno: true, crypto: true };
+  const allowed = m => m === "NSE Equity" ? p.stocks : FNO_MARKETS.includes(m) ? p.fno : m === "Crypto" ? p.crypto : true;
+  const mine = MARKETS.filter(allowed).map(mk).join("");
+  ["j_market", "s_default_market"].forEach(id => { const el = $(id); if (el) el.innerHTML = mine; });
+  const dm = $("d_market"); if (dm) dm.innerHTML = opts;
   const f = $("flt_market"); if (f) f.innerHTML = '<option value="">All Markets</option>' + opts;
   const dl = $("sym_list"); if (dl) dl.innerHTML = SYMBOLS.map(x => `<option value="${x.name}">`).join("");
 }
@@ -566,7 +573,7 @@ let feesTouched = false;
 /* Fill the Fees box with the round-trip taker fee + GST for the quantity being closed, unless the user typed their own. */
 function autoCryptoFees() {
   const t = trades.find(x => x.id === closeTradeId);
-  if (!t || t.instrument !== "crypto" || feesTouched) return;
+  if (!t || t.instrument !== "crypto" || feesTouched || getAppSettings().showFees !== true) return;   // fees are only filled in when the user has turned them on
   const exit = parseFloat($("cm_exit").value), qty = parseFloat($("cm_qty").value) || t.qty;
   if (!(exit > 0) || !(qty > 0)) return;
   const f = cryptoFeeCfg(), entry = parseFloat($("cm_entry").value) || t.entry;
@@ -865,7 +872,7 @@ function repTradeRow(t, dayId, moKey) {
       <td class="num">${cap ? fullINR(cap, true) : "—"}</td>
       <td class="num ${ret !== null ? tone(ret) : "td-muted"}">${ret !== null ? pctTxt(ret) : "—"}</td>
       <td class="c-res">${result}</td>
-      <td class="num">${fees !== null ? fullINR(fees, true) : "—"}</td>
+      <td class="num">${fees !== null ? fullINR(fees, true) + (t.feesEst ? ' <span class="t-dim" title="Estimated by TradeMath, not from your broker">est.</span>' : "") : "—"}</td>
       <td class="c-act">
         ${!closed ? `<button type="button" class="rep-act rep-add-btn" data-id="${t.id}" title="Bought more? Add to this position and see your new average">＋ Add</button><button type="button" class="rep-act rep-close-btn" data-id="${t.id}">Close</button>` : ""}
         <button type="button" class="rep-act rep-edit-btn" data-id="${t.id}" title="Edit market, symbol and notes">✎</button>
@@ -1143,3 +1150,74 @@ $("ap_save").addEventListener("click", () => {
   showToast("Position updated: average " + (t.instrument === "crypto" ? "$" + fmtUsd(t.entry) : "₹" + fmtP(t.entry, 2)) + ", quantity " + t.qty,
     { label: "Undo", fn: () => { const i = trades.findIndex(x => x.id === id); if (i >= 0) { trades[i] = JSON.parse(before); saveTrades(); refreshJournal(); showToast("Undone"); } } });
 });
+
+/* ══════════════ ESTIMATED FEES FOR PAST TRADES (Settings → Fees and charges) ══════════════
+   Adds a rough fee to CLOSED trades that have no fees recorded. Fees the user typed are never touched. Every estimate is
+   flagged (t.feesEst, exit.est) so "Remove estimated fees" can take back exactly what was added. */
+function feeSegmentFor(t) {
+  const m = t.market || "";
+  if (t.instrument === "crypto") return "crypto";
+  if (t.instrument === "options") return "options";
+  if (t.instrument === "futures" || /^MCX/.test(m)) return "futures";
+  if (m === "Other" || !t.entry) return null;                                    // cannot tell what it was: skip rather than guess
+  return daysHeld(t) > 0 ? "eqDelivery" : "eqIntraday";                           // held past the day = delivery
+}
+function estimateLegFee(t, seg, qty, price) {
+  if (seg === "crypto") { const f = cryptoFeeCfg(); return qty * (t.entry + price) * (f.taker / 100) * (1 + f.gst / 100) * (t.fx || rememberedFx()); }
+  return calcFees(t.entry, price, qty, 1, t.dir === "LONG", seg).total;          // qty here is already in units
+}
+function oldFeePlan() {
+  const plan = []; let india = 0, crypto = 0, skipped = 0;
+  trades.forEach(t => {
+    if (t.demo || !isClosed(t)) return;
+    const legs = t.exits && t.exits.length ? t.exits.map(ex => ({ ex, qty: ex.qty, price: ex.price })) : [{ ex: null, qty: t.qty, price: t.exit }];
+    const need = legs.filter(l => l.price > 0 && l.qty > 0 && !(l.ex ? l.ex.fees : t.fees));
+    if (!need.length) return;
+    const seg = feeSegmentFor(t);
+    if (!seg) { skipped++; return; }
+    plan.push({ t, seg, legs: need }); if (seg === "crypto") crypto++; else india++;
+  });
+  return { plan, india, crypto, skipped };
+}
+function applyOldFees(plan) {
+  plan.forEach(({ t, seg, legs }) => {
+    legs.forEach(l => { const f = Math.round(estimateLegFee(t, seg, l.qty, l.price) * 100) / 100; if (l.ex) { l.ex.fees = f; l.ex.est = true; } else t.fees = f; });
+    if (t.exits && t.exits.length && t.exit) t.fees = Math.round(t.exits.reduce((s, ex) => s + (ex.fees || 0), 0) * 100) / 100;
+    t.feesEst = true;
+  });
+}
+function removeEstimatedFees() {
+  let n = 0;
+  trades.forEach(t => {
+    if (!t.feesEst) return;
+    (t.exits || []).forEach(ex => { if (ex.est) { ex.fees = 0; delete ex.est; } });
+    if (t.exits && t.exits.length && t.exit) t.fees = Math.round(t.exits.reduce((s, ex) => s + (ex.fees || 0), 0) * 100) / 100; else t.fees = 0;
+    delete t.feesEst; n++;
+  });
+  return n;
+}
+(function () {
+  const msg = (t, bad) => { const m = $("fee_old_msg"); m.textContent = t; m.className = "bk-msg" + (bad ? " bad" : ""); };
+  const redraw = () => { saveTrades(); refreshJournal(); if (typeof renderDailyBanner === "function") renderDailyBanner(); };
+  $("fee_calc_old").addEventListener("click", () => {
+    if (!getAppSettings().showFees) { msg("Turn fees on and press Save changes first.", true); return; }
+    if (changes().length) { msg("Save your settings first, so the right rates are used.", true); return; }
+    const p = oldFeePlan();
+    if (!p.plan.length) { msg(p.skipped ? p.skipped + " trade(s) could not be estimated (unknown market). Nothing else needs fees." : "Nothing to do: every closed trade already has fees, or there are none.", false); return; }
+    const parts = [p.india ? p.india + " stock/F&O" : "", p.crypto ? p.crypto + " crypto" : ""].filter(Boolean).join(" and ");
+    if (!confirm("Add estimated fees to " + parts + " closed trade" + (p.plan.length === 1 ? "" : "s") + " that have no fees recorded?\n\nThese are rough estimates only. Your real charges can differ. You can undo this, or remove the estimates later.")) return;
+    const snap = JSON.stringify(trades);
+    applyOldFees(p.plan); redraw();
+    msg("Added estimated fees to " + p.plan.length + " trade" + (p.plan.length === 1 ? "" : "s") + (p.skipped ? " (" + p.skipped + " skipped: unknown market)" : "") + ".", false);
+    showToast("Estimated fees added to " + p.plan.length + " trade" + (p.plan.length === 1 ? "" : "s"), { label: "Undo", fn: () => { trades = JSON.parse(snap); redraw(); msg("Undone.", false); showToast("Undone"); } });
+  });
+  $("fee_remove_old").addEventListener("click", () => {
+    const n = trades.filter(t => t.feesEst).length;
+    if (!n) { msg("There are no estimated fees to remove.", false); return; }
+    if (!confirm("Remove the estimated fees from " + n + " trade" + (n === 1 ? "" : "s") + "? Fees you typed yourself stay.")) return;
+    const snap = JSON.stringify(trades);
+    removeEstimatedFees(); redraw();
+    msg("Removed estimated fees from " + n + " trade" + (n === 1 ? "" : "s") + ".", false);
+    showToast("Estimated fees removed", { label: "Undo", fn: () => { trades = JSON.parse(snap); redraw(); showToast("Undone"); } });
+  });
+})();

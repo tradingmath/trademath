@@ -49,7 +49,10 @@ const SETTINGS_FIELDS = [
   { scope: "settings", key: "baseTheme",   label: "Dark terminal theme", fb: "midnight", get: () => draftBase,                              set: v => { draftBase = v; },            fmt: v => BASE_NAMES[v] || v },
   { scope: "settings", key: "accentColor", label: "Accent colour",       fb: "gold",     get: () => draftAccent,                            set: v => { draftAccent = v; },          fmt: paletteName },
   { scope: "settings", key: "quickLog",    label: "One-click quick log", fb: true,       get: () => $("tog_quick_log").checked,            set: v => { $("tog_quick_log").checked = v; }, fmt: onOff },
-  { scope: "settings", key: "showFees",    label: "Show fee breakdown",  fb: true,       get: () => $("tog_show_fees").checked,            set: v => { $("tog_show_fees").checked = v; }, fmt: onOff },
+  { scope: "settings", key: "showFees",    label: "Include estimated fees", fb: false,     get: () => $("tog_show_fees").checked,            set: v => { $("tog_show_fees").checked = v; }, fmt: onOff },
+  { scope: "settings", key: "tradeStocks", label: "Trade stocks",        fb: true,       get: () => $("tog_stocks").checked,               set: v => { $("tog_stocks").checked = v; },   fmt: onOff },
+  { scope: "settings", key: "tradeFno",    label: "Trade F&O",           fb: true,       get: () => $("tog_fno").checked,                  set: v => { $("tog_fno").checked = v; },      fmt: onOff },
+  { scope: "settings", key: "tradeCrypto", label: "Trade crypto",        fb: true,       get: () => $("tog_crypto").checked,               set: v => { $("tog_crypto").checked = v; },   fmt: onOff },
   { scope: "settings", key: "brokerage",   label: "Brokerage per order", fb: 20,         get: () => Math.min(nonNeg("s_brokerage", 20), 10000),             set: v => { $("s_brokerage").value = v; },   fmt: v => "₹" + v },
   { scope: "settings", key: "gstPct",      label: "GST",                 fb: 18,         get: () => Math.min(nonNeg("s_gst_pct", 18), 100),               set: v => { $("s_gst_pct").value = v; },     fmt: v => v + "%" },
   { scope: "settings", key: "cryptoTaker",   label: "Crypto taker fee",      fb: 0.05, get: () => nonNeg("s_cry_taker", 0.05),  set: v => { $("s_cry_taker").value = v; }, fmt: v => v + "%" },
@@ -107,13 +110,18 @@ function refreshDirty() {
   document.querySelector('.tab-btn[data-tab="settings"]').classList.toggle("dirty", n > 0);
 }
 
+/* The fee warning and the "past trades" tools appear only while the fee switch is on. */
+function syncFeeUI() {
+  const on = $("tog_show_fees").checked;
+  $("fee_warn").hidden = !on; $("fee_tools").hidden = !on;
+}
 /* Fill every control from what is saved (page load, and Discard). */
 function populateForm() {
   SETTINGS_FIELDS.forEach(f => {
     if (f.scope === "checklist") draftChecklist = getChecklistItems().slice();
     else f.set(savedOf(f));
   });
-  paintChoices(); renderChecklistSettings(); refreshDirty();
+  paintChoices(); renderChecklistSettings(); refreshDirty(); syncFeeUI();
 }
 
 /* Apply what is saved to the running app (page load). */
@@ -133,8 +141,10 @@ function loadSettings() {
 /* ── confirm, then save ── */
 function openSettingsConfirm() {
   const ch = changes(); if (!ch.length) return;
+  if (!$("tog_stocks").checked && !$("tog_fno").checked && !$("tog_crypto").checked) { showToast("Keep at least one of stocks, F&O or crypto turned on."); return; }
   const show = (f, v) => esc(f.fmt ? f.fmt(v) : String(v));
-  $("set_changes").innerHTML = ch.map(c => `<li><b>${esc(c.f.label)}</b><span><s>${show(c.f, c.from)}</s> → ${show(c.f, c.to)}</span></li>`).join("");
+  $("set_changes").innerHTML = ch.map(c => `<li><b>${esc(c.f.label)}</b><span><s>${show(c.f, c.from)}</s> → ${show(c.f, c.to)}</span></li>`).join("") +
+    (ch.some(c => c.f.key === "showFees" && c.to === true) ? '<li class="set-warn">⚠ Fees are rough estimates only. Your real charges can differ.</li>' : "");
   $("setConfirm").hidden = false;
   $("set_confirm_yes").focus();
 }
@@ -161,6 +171,7 @@ function commitSettings() {
     setLeverage(s.defaultLev || "5");
   }
   if (changed.has("maxDailyLoss") || changed.has("maxDailyTrades")) renderDailyBanner();
+  if (["tradeStocks", "tradeFno", "tradeCrypto"].some(k => changed.has(k))) applyMarkets();
   calc();
   renderFeeBreakdown();
 
@@ -172,11 +183,12 @@ function discardSettings() { populateForm(); showToast("Changes discarded"); }
 
 /* ── wiring: every control only updates the draft ── */
 ["tog_dark", "tog_quick_log",
- "tog_show_fees", "s_brokerage", "s_gst_pct", "s_cry_taker", "s_cry_gst", "s_cry_fund", "s_cry_mmr",
+ "tog_show_fees", "tog_stocks", "tog_fno", "tog_crypto", "s_brokerage", "s_gst_pct", "s_cry_taker", "s_cry_gst", "s_cry_fund", "s_cry_mmr",
  "alert_anchor", "alert_lead", "alert_hours", "alert_vol"].forEach(id => {
   const el = $(id); if (!el) return;
   ["input", "change"].forEach(ev => el.addEventListener(ev, refreshDirty));
 });
+$("tog_show_fees").addEventListener("change", syncFeeUI);
 document.querySelectorAll(".palette-card").forEach(card => card.addEventListener("click", () => { draftAccent = card.dataset.color; paintChoices(); refreshDirty(); }));
 document.querySelectorAll(".theme-preset-btn").forEach(btn => btn.addEventListener("click", () => { draftBase = btn.dataset.base || "midnight"; paintChoices(); refreshDirty(); }));
 const stagedBeep = () => ({ sound: $("alert_sound").value, vol: +$("alert_vol").value });
@@ -275,7 +287,7 @@ function setLevel(level, init) {
   const rank = LEVEL_ORDER.indexOf(level);
   if (rank < 2) {                                   // Pro features are now hidden
     if (instrType === "futures") {                  // futures are Pro only; options and crypto have their own toggles at every level
-      setInstrType("equity"); rememberInstr();
+      setInstrType(baseInstr()); rememberInstr();
       const sym = getSelectedSymbol(); if (sym && sym.indexOnly) { $("sym_input").value = ""; updateLotLabel(); }
     }
     if (currentRoute === "journal/projection") switchTab("journal");
@@ -399,6 +411,7 @@ calc();
 renderTodayTrades();
 setLevel(getLevel(), true);                              // apply the saved level (and reset anything it hides)
 { const st = getAppSettings(); if (st.cryptoOn) setInstrType("crypto"); else if (st.optionsOn) setInstrType("options"); else if (st.futuresOn && getLevel() === "pro") setInstrType("futures"); }   // reopen in the mode you left
+applyMarkets();                                      // hide markets the user turned off
 { const r = parseRoute(); showRoute(r.tab, r.sub); }   // open the page named in the link
 document.documentElement.classList.remove("tm-boot");   // everything is set up: show the page
 

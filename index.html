@@ -25,7 +25,7 @@
 <link rel="preload" href="fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts.css?v=140c3a0f">
 <link rel="icon" href="logo-icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css?v=7a1c3f76">
+<link rel="stylesheet" href="styles.css?v=cbf34d59">
 <script>
 /* Runs before the page paints: apply the saved theme and level now, and keep the page hidden until the app has
    finished setting itself up, so nothing flashes dark, then light, or jumps between modes. */
@@ -489,6 +489,14 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
     <button type="button" class="btn btn-primary btn-sm" data-go="profile">Open Profile</button>
   </div>
 
+  <div class="settings-section" id="markets_settings">
+    <div class="p-title">What you trade</div>
+    <div style="font-size:12px;color:var(--fg2);margin-bottom:12px">Turn off what you do not trade, to keep the calculator and journal simple. At least one stays on.</div>
+    <div class="toggle-row"><div><div class="toggle-label">Stocks</div><div class="toggle-sub">Cash and intraday equity</div></div><label class="toggle-switch"><input type="checkbox" id="tog_stocks" checked><span class="toggle-track"></span></label></div>
+    <div class="toggle-row"><div><div class="toggle-label">F&amp;O</div><div class="toggle-sub">Options and futures, traded in lots</div></div><label class="toggle-switch"><input type="checkbox" id="tog_fno" checked><span class="toggle-track"></span></label></div>
+    <div class="toggle-row"><div><div class="toggle-label">Crypto</div><div class="toggle-sub">Perpetual futures priced in USDT</div></div><label class="toggle-switch"><input type="checkbox" id="tog_crypto" checked><span class="toggle-track"></span></label></div>
+  </div>
+
   <!-- Workflow & Simplicity Preferences -->
   <div class="settings-section" data-level="trader">
     <div class="p-title">Calculator Preferences</div>
@@ -499,24 +507,44 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
       </div>
       <label class="toggle-switch"><input type="checkbox" id="tog_quick_log" checked><span class="toggle-track"></span></label>
     </div>
-    <div class="toggle-row" data-level="trader">
+  </div>
+
+  <!-- Fees and charges: stocks, F&O and crypto together -->
+  <div class="settings-section" id="fees_settings" data-level="trader">
+    <div class="p-title">Fees and charges <span class="proj-hint">rough estimates</span></div>
+    <div class="toggle-row">
       <div>
-        <div class="toggle-label">Show fee breakdown</div>
-        <div class="toggle-sub">Show net P&amp;L after broker charges and taxes in targets and breakdown</div>
+        <div class="toggle-label">Include estimated fees</div>
+        <div class="toggle-sub">Off by default. Shows profit after estimated charges in the calculator, and fills in crypto fees when you close a trade.</div>
       </div>
-      <label class="toggle-switch"><input type="checkbox" id="tog_show_fees" checked><span class="toggle-track"></span></label>
+      <label class="toggle-switch"><input type="checkbox" id="tog_show_fees"><span class="toggle-track"></span></label>
     </div>
-    <div class="fee-settings-row" id="fee_inputs_row" data-level="pro" style="margin-top:14px">
-      <div class="field">
-        <label for="s_brokerage">Brokerage per order (₹)</label>
-        <input type="number" id="s_brokerage" value="20" min="0" max="10000" step="1" autocomplete="off" placeholder="20">
+    <div class="fee-warn" id="fee_warn" hidden><b>These are rough estimates only.</b> Real charges depend on your broker or exchange plan, the contract, taxes and rule changes, so your contract note can differ. Use them for planning, not for your accounts or tax.</div>
+    <div class="fee-group">
+      <div class="fee-group-title">Stocks and F&amp;O</div>
+      <div class="field-row">
+        <div class="field"><label for="s_brokerage">Brokerage per order (₹)</label><input type="number" id="s_brokerage" value="20" min="0" max="10000" step="1" autocomplete="off" placeholder="20"></div>
+        <div class="field"><label for="s_gst_pct">GST %</label><input type="number" id="s_gst_pct" value="18" min="0" max="100" step="1" autocomplete="off" placeholder="18"></div>
       </div>
-      <div class="field">
-        <label for="s_gst_pct">GST %</label>
-        <input type="number" id="s_gst_pct" value="18" min="0" max="100" step="1" autocomplete="off" placeholder="18">
+      <div class="fee-note">Brokerage is capped at 0.03% per order for equity intraday and futures, flat for options, and ₹0 for delivery. STT, exchange, SEBI and stamp duty use the published NSE rates (F&amp;O STT as revised 1 Apr 2026).</div>
+    </div>
+    <div class="fee-group">
+      <div class="fee-group-title">Crypto <span class="proj-hint">typical defaults, not any one exchange's. Check your exchange's fee page.</span></div>
+      <div class="field-row">
+        <div class="field"><label for="s_cry_taker">Taker fee % <span class="proj-hint">per side, market orders</span></label><input type="number" id="s_cry_taker" step="any" min="0" autocomplete="off"></div>
+        <div class="field"><label for="s_cry_gst">GST on fees % <span class="proj-hint">0 if your exchange has none</span></label><input type="number" id="s_cry_gst" step="any" min="0" autocomplete="off"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label for="s_cry_fund">Funding % per 8 hours <span class="proj-hint">shown as an estimate</span></label><input type="number" id="s_cry_fund" step="any" min="0" autocomplete="off"></div>
+        <div class="field"><label for="s_cry_mmr">Maintenance margin % <span class="proj-hint">liquidation estimate, not a fee</span></label><input type="number" id="s_cry_mmr" step="any" min="0" autocomplete="off"></div>
       </div>
     </div>
-    <div style="font-size:11px;color:var(--fg3);margin-top:6px">Brokerage is capped at 0.03% per order for equity intraday &amp; futures, flat for options, ₹0 for delivery. STT, exchange, SEBI and stamp duty use the published NSE rates (F&amp;O STT as revised 1 Apr 2026).</div>
+    <div class="fee-group" id="fee_tools" hidden>
+      <div class="fee-group-title">Your past trades</div>
+      <div class="fee-note" style="margin-bottom:10px">Already have trades in your journal? Add estimated fees to your closed stock, F&amp;O and crypto trades that have no fees recorded yet. Trades where you typed your own fees are never changed.</div>
+      <div class="ac-row"><button type="button" class="btn btn-primary btn-sm" id="fee_calc_old">Calculate fees for my past trades</button><button type="button" class="btn btn-ghost btn-sm" id="fee_remove_old">Remove estimated fees</button></div>
+      <div id="fee_old_msg" class="bk-msg" aria-live="polite"></div>
+    </div>
   </div>
 
   <!-- Interval beep -->
@@ -540,20 +568,6 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
       <label class="toggle-switch"><input type="checkbox" id="alert_hours"><span class="toggle-track"></span></label>
     </div>
     <div style="margin-top:12px"><button type="button" class="btn btn-ghost btn-sm alert-test">▶ Test sound</button></div>
-  </div>
-
-  <!-- Crypto fees -->
-  <div class="settings-section" data-level="trader">
-    <div class="p-title">Crypto Fees</div>
-    <div style="font-size:12px;color:var(--fg2);margin-bottom:12px">Used when the Crypto toggle is on. These defaults are typical, not any one exchange's. Check your exchange's fee page and edit them.</div>
-    <div class="field-row">
-      <div class="field"><label for="s_cry_taker">Taker fee % <span class="proj-hint">per side, market orders</span></label><input type="number" id="s_cry_taker" step="any" min="0" autocomplete="off"></div>
-      <div class="field"><label for="s_cry_gst">GST on fees % <span class="proj-hint">0 if your exchange has none</span></label><input type="number" id="s_cry_gst" step="any" min="0" autocomplete="off"></div>
-    </div>
-    <div class="field-row">
-      <div class="field"><label for="s_cry_fund">Funding % per 8 hours <span class="proj-hint">shown as an estimate</span></label><input type="number" id="s_cry_fund" step="any" min="0" autocomplete="off"></div>
-      <div class="field"><label for="s_cry_mmr">Maintenance margin % <span class="proj-hint">for the liquidation estimate</span></label><input type="number" id="s_cry_mmr" step="any" min="0" autocomplete="off"></div>
-    </div>
   </div>
 
   <!-- Pre-trade checklist -->
@@ -881,13 +895,13 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
 </div>
 
 <p class="note" style="text-align:center;margin:24px 0 8px">Guides: <a href="position-size-calculator-india.html" style="color:inherit">Position size</a> · <a href="risk-reward-ratio-explained.html" style="color:inherit">Risk-reward</a> · <a href="nse-fno-lot-sizes.html" style="color:inherit">F&amp;O lot sizes</a> · <a href="trading-journal-india.html" style="color:inherit">Trading journal</a><br><a href="privacy.html" style="color:inherit">Privacy</a> · Not investment advice</p>
-<script src="calc.js?v=cd2b415e"></script>
-<script src="journal.js?v=fc348257"></script>
+<script src="calc.js?v=60cec214"></script>
+<script src="journal.js?v=88884ae4"></script>
 <script src="projection.js?v=76e2f8eb"></script>
 <script src="alerts.js?v=0a43bf1d"></script>
-<script src="app.js?v=53bda27a"></script>
+<script src="app.js?v=1bab24c5"></script>
 <script src="cloud.js?v=c0fe1086"></script>
-<script src="profile.js?v=dc488a74"></script>
+<script src="profile.js?v=ac537b2c"></script>
 
 </body>
 </html>

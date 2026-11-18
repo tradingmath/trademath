@@ -952,3 +952,11 @@ html.tm-boot body { visibility:hidden; }
 .rep-log-tbl th.c-res { width:96px; }
 .rep-log-tbl th:nth-child(9) { width:96px; }
 .rep-log-tbl th.c-act { width:150px; }
+
+/* Fees and charges, markets */
+.fee-warn { background:var(--warn-dim); border:1px solid var(--warn); color:var(--fg); border-radius:10px; padding:10px 12px; font-size:12px; line-height:1.6; margin:12px 0; }
+.fee-group { margin-top:18px; padding-top:14px; border-top:1px solid var(--border); }
+.fee-group-title { font-size:12px; font-weight:600; color:var(--fg); margin-bottom:10px; text-transform:uppercase; letter-spacing:.05em; }
+.fee-note { font-size:11px; color:var(--fg3); line-height:1.6; margin-top:6px; }
+.fee-disc { font-size:11px; color:var(--fg3); margin-top:8px; }
+.set-warn { color:var(--warn); font-size:12px; list-style:none; margin-top:8px; }

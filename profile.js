@@ -151,6 +151,8 @@
   }
   function finishWelcome() {
     const o = onb;
+    const anyMkt = o.stocks || o.fno || o.crypto;                          // what they trade also decides which markets are shown
+    saveSetting("tradeStocks", anyMkt ? o.stocks : true); saveSetting("tradeFno", anyMkt ? o.fno : true); saveSetting("tradeCrypto", anyMkt ? o.crypto : true);
     saveSetting("defaultCap", o.cap); saveSetting("defaultRisk", o.risk); saveSetting("defaultRR", o.rr);
     saveSetting("defaultLev", o.style === "swing" ? "1" : "5");
     saveSetting("maxDailyLoss", o.maxLoss); saveSetting("maxDailyTrades", o.maxTrades);
@@ -159,6 +161,7 @@
     $("i_cap").value = o.cap; $("i_rsk").value = o.risk; $("i_rr").value = o.rr; setLeverage(o.style === "swing" ? "1" : "5");
     if (o.crypto && !o.stocks && !o.fno) { setInstrType("crypto"); rememberInstr(); }
     else if (o.fno && !o.stocks && !o.crypto) { setInstrType("options"); rememberInstr(); }
+    applyMarkets();
     setLevel(o.level);
     calc(); renderDailyBanner(); fillProfile();
     closeWelcome(true);

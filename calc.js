@@ -589,12 +589,12 @@ function feeSegment() {
   return orderType === "NRML" ? "eqDelivery" : "eqIntraday";
 }
 
-function calcFees(entry, exit, qty, lotSize, isLong) {
+function calcFees(entry, exit, qty, lotSize, isLong, segOverride) {
   const units    = qty * lotSize;
   const buyVal   = (isLong ? entry : exit)  * units;
   const sellVal  = (isLong ? exit  : entry) * units;
   const turnover = buyVal + sellVal;
-  const seg = feeSegment(), r = FEE_RATES[seg];
+  const seg = segOverride || feeSegment(), r = FEE_RATES[seg];
   const { brok, gstPct } = feeSettings();
 
   let brokerage;
@@ -650,7 +650,7 @@ function renderFeeBreakdown() {
   const fb = $("fee_breakdown_body");
   if (!fb) return;
   // Check settings toggle
-  const showFees = typeof getAppSettings === "function" ? getAppSettings().showFees !== false : true;
+  const showFees = typeof getAppSettings === "function" ? getAppSettings().showFees === true : false;   // fees are OFF until the user turns them on
   const feeSection = $("fee_section");
   if (feeSection) feeSection.hidden = !showFees;
   if (!showFees || !lastCalc) { fb.innerHTML = ""; return; }
@@ -669,7 +669,8 @@ function renderFeeBreakdown() {
       <div class="fee-row"><span class="fee-lbl">GST (${f.gst}%)</span><span class="fee-val">${fmtINR(gst)}</span></div>
       <div class="fee-row total"><span class="fee-lbl">Total fees (1:2 trade)</span><span class="fee-val">${fmtINR(entryFee + exitFee + gst)}</span></div>
       <div class="fee-row"><span class="fee-lbl">Funding per 8h held (${f.funding}%, not included)</span><span class="fee-val">${fmtINR(units * entry * f.funding / 100 * fx)}</span></div>
-      <div class="fee-row"><span class="fee-lbl">Estimated liquidation price</span><span class="fee-val">$${fmtUsd(lastCalc.liq)}</span></div>`;
+      <div class="fee-row"><span class="fee-lbl">Estimated liquidation price</span><span class="fee-val">$${fmtUsd(lastCalc.liq)}</span></div>
+      <div class="fee-disc">Rough estimate. Your real charges can differ.</div>`;
     return;
   }
   const fees   = calcFees(entry, tp2, units, lotSize, isLong);
@@ -687,7 +688,8 @@ function renderFeeBreakdown() {
     <div class="fee-row"><span class="fee-lbl">SEBI fee</span><span class="fee-val">${fmtINR(fees.sebi)}</span></div>
     <div class="fee-row"><span class="fee-lbl">Stamp duty</span><span class="fee-val">${fmtINR(fees.stamp)}</span></div>
     <div class="fee-row"><span class="fee-lbl">GST (${gstPct}%)</span><span class="fee-val">${fmtINR(fees.gst)}</span></div>
-    <div class="fee-row total"><span class="fee-lbl">Total fees (1:2 trade)</span><span class="fee-val">${fmtINR(fees.total)}</span></div>`;
+    <div class="fee-row total"><span class="fee-lbl">Total fees (1:2 trade)</span><span class="fee-val">${fmtINR(fees.total)}</span></div>
+    <div class="fee-disc">Rough estimate. Your real charges can differ.</div>`;
 }
 
 function getInputs() {
@@ -716,7 +718,7 @@ $("flatRiskToggle").addEventListener("change", () => {
 /* Position sizing. Standard = equity / options / futures (whole shares or lots, ₹ prices).
    Crypto = fractional coins, USDT prices, risk and results in ₹ at the USD/INR rate. */
 const RRS = [1, 1.5, 2, 3];
-const feesOn = () => (typeof getAppSettings === "function" ? getAppSettings().showFees !== false : true);
+const feesOn = () => (typeof getAppSettings === "function" ? getAppSettings().showFees === true : false);   // OFF by default
 
 function sizeStandard(c) {
   const { entry, isLong, slDist, riskINR, defRR, sym, lotSize } = c;
@@ -892,7 +894,7 @@ function calc() {
   $("t_profit_val").textContent = crypto ? "+" + usd(profitGross) : "+₹" + fmtP(profitGross, 0);
   $("t_profit_sub").innerHTML = '<span class="tile-target"><i>🎯 Target</i><b>' + cur + (crypto ? fmtUsd(profitTP) : fmtP(profitTP, 2)) + '</b></span>' + (crypto ? '<div class="tile-ref">≈ ₹' + fmtP(profitGross, 0) + '</div>' : "");
 
-  const showFees = typeof getAppSettings === "function" ? getAppSettings().showFees !== false : true;
+  const showFees = typeof getAppSettings === "function" ? getAppSettings().showFees === true : false;   // fees are OFF until the user turns them on
   $("tgt_body").innerHTML = targets.map(t => `
     <div class="tgt-row">
       <div class="rr-pill">1:${t.rr}</div>
@@ -924,13 +926,13 @@ function showEmpty() {
 /* ── Options toggle and editable lot size ── */
 const optToggleEl = $("optToggle");
 if (optToggleEl) optToggleEl.addEventListener("change", () => {
-  setInstrType(optToggleEl.checked ? "options" : "equity");
+  setInstrType(optToggleEl.checked ? "options" : baseInstr());
   rememberInstr();
 });
 /* ── Futures toggle (Pro) ── */
 const futToggleEl = $("futToggle");
 if (futToggleEl) futToggleEl.addEventListener("change", () => {
-  setInstrType(futToggleEl.checked ? "futures" : "equity");
+  setInstrType(futToggleEl.checked ? "futures" : baseInstr());
   rememberInstr();
 });
 function rememberInstr() {                          // options, futures and crypto are mutually exclusive; remember which one is on
@@ -939,10 +941,26 @@ function rememberInstr() {                          // options, futures and cryp
   saveSetting("cryptoOn",  instrType === "crypto");
 }
 
+/* ── Which markets the user trades (Settings → What you trade) ── */
+function marketPrefs() {
+  const s = typeof getAppSettings === "function" ? getAppSettings() : {};
+  const p = { stocks: s.tradeStocks !== false, fno: s.tradeFno !== false, crypto: s.tradeCrypto !== false };
+  return p.stocks || p.fno || p.crypto ? p : { stocks: true, fno: true, crypto: true };   // never all off
+}
+function baseInstr() { const p = marketPrefs(); return p.stocks ? "equity" : p.fno ? "options" : "crypto"; }
+function applyMarkets() {
+  const p = marketPrefs();
+  ["opt_field", "fut_field"].forEach(id => { const el = $(id); if (el) el.hidden = !p.fno; });
+  const cf = $("cry_field"); if (cf) cf.hidden = !p.crypto;
+  const bad = (!p.fno && (instrType === "options" || instrType === "futures")) || (!p.crypto && instrType === "crypto") || (!p.stocks && instrType === "equity");
+  if (bad) { setInstrType(baseInstr()); rememberInstr(); }
+  if (typeof fillMarketSelects === "function") fillMarketSelects();
+}
+
 /* ── Crypto toggle, leverage and USD/INR (remembered) ── */
 const cryToggleEl = $("cryToggle");
 if (cryToggleEl) cryToggleEl.addEventListener("change", () => {
-  setInstrType(cryToggleEl.checked ? "crypto" : "equity");
+  setInstrType(cryToggleEl.checked ? "crypto" : baseInstr());
   rememberInstr();
 });
 const levEl = $("i_lev"), fxEl = $("i_fx");
