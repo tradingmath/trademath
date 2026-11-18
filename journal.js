@@ -203,7 +203,8 @@ function refreshJournal() { renderStats(); renderReports(); renderCalendar(); }
 
 
 /* ── Setup tags quick chips ── */
-const SETUP_PRESETS   = ["Breakout","Pullback","Reversal","Trend Follow","Gap Play","Range","EMA Cross","VWAP"];
+/* The user's own strategies (Settings → My strategies). None are added by default. */
+const myStrategies = () => String((typeof getAppSettings === "function" ? getAppSettings().strategies : "") || "").split("|").filter(Boolean);
 const MISTAKE_PRESETS = ["FOMO","Moved SL","Oversized","No Plan","Chased Entry","Revenge Trade","Early Exit"];
 
 let selectedSetupTags   = [];
@@ -212,6 +213,7 @@ let selectedMistakeTags = [];
 function renderSetupChips(containerId, presets, selected, onToggle) {
   const el = $(containerId);
   if (!el) return;
+  el.hidden = !presets.length;                     // no strategies saved: show only the text box
   el.innerHTML = presets.map(tag => `
     <span class="tag-chip${selected.includes(tag) ? " active" : ""}" data-tag="${tag}">${tag}</span>
   `).join("");
@@ -256,7 +258,7 @@ $("showAddBtn").addEventListener("click", () => {
   $("j_qty").value    = ""; $("j_fees").value = "";
   selectedSetupTags   = [];
   selectedMistakeTags = [];
-  renderSetupChips("j_setup_chips",   SETUP_PRESETS,   selectedSetupTags,   null);
+  renderSetupChips("j_setup_chips",   myStrategies(),   selectedSetupTags,   null);
   renderSetupChips("j_mistake_chips", MISTAKE_PRESETS, selectedMistakeTags, null);
   $("addForm").hidden = false;
   $("addForm").scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -358,7 +360,7 @@ function openPreLogModal() {
   renderStars(3);
   selectedSetupTags   = [];
   selectedMistakeTags = [];
-  renderSetupChips("pl_setup_chips",   SETUP_PRESETS,   selectedSetupTags,   null);
+  renderSetupChips("pl_setup_chips",   myStrategies(),   selectedSetupTags,   null);
   renderSetupChips("pl_mistake_chips", MISTAKE_PRESETS, selectedMistakeTags, null);
   renderPreLogChecklist();
   $("preLogModal").hidden = false;

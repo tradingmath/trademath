@@ -35,7 +35,7 @@ function saveChecklistItems(items) {
 const esc = t => String(t).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 /* ── draft state for controls that are not plain inputs ── */
-let draftBase = "midnight", draftAccent = "gold", draftChecklist = [];
+let draftBase = "midnight", draftAccent = "gold", draftChecklist = [], draftStrategies = [];
 const BASE_NAMES  = { midnight: "Midnight", oled: "OLED Black" };
 const paletteName = c => { const el = document.querySelector('.palette-card[data-color="' + c + '"] .palette-name'); return el ? el.textContent : c; };
 const onOff       = v => v ? "On" : "Off";
@@ -49,6 +49,7 @@ const SETTINGS_FIELDS = [
   { scope: "settings", key: "baseTheme",   label: "Dark terminal theme", fb: "midnight", get: () => draftBase,                              set: v => { draftBase = v; },            fmt: v => BASE_NAMES[v] || v },
   { scope: "settings", key: "accentColor", label: "Accent colour",       fb: "gold",     get: () => draftAccent,                            set: v => { draftAccent = v; },          fmt: paletteName },
   { scope: "settings", key: "quickLog",    label: "One-click quick log", fb: true,       get: () => $("tog_quick_log").checked,            set: v => { $("tog_quick_log").checked = v; }, fmt: onOff },
+  { scope: "settings", key: "strategies", label: "My strategies", fb: "",             get: () => draftStrategies.join("|"),            set: v => { draftStrategies = v ? String(v).split("|").filter(Boolean) : []; renderStrategySettings(); }, fmt: v => (v ? v.split("|").length : 0) + " strateg" + ((v ? v.split("|").length : 0) === 1 ? "y" : "ies") },
   { scope: "settings", key: "showFees",    label: "Include estimated fees", fb: false,     get: () => $("tog_show_fees").checked,            set: v => { $("tog_show_fees").checked = v; }, fmt: onOff },
   { scope: "settings", key: "tradeStocks", label: "Trade stocks",        fb: true,       get: () => $("tog_stocks").checked,               set: v => { $("tog_stocks").checked = v; },   fmt: onOff },
   { scope: "settings", key: "tradeFno",    label: "Trade F&O",           fb: true,       get: () => $("tog_fno").checked,                  set: v => { $("tog_fno").checked = v; },      fmt: onOff },
@@ -96,6 +97,14 @@ function renderChecklistSettings() {
       <button class="chk-del" onclick="deleteChecklistItem(${i})" title="Remove">✕</button>
     </div>`).join("");
 }
+function renderStrategySettings() {
+  const el = $("settings_strategies");
+  if (!el) return;
+  el.innerHTML = draftStrategies.length
+    ? draftStrategies.map((t, i) => `<span class="tag-chip active" style="cursor:default">${esc(t)} <button type="button" class="chk-del" aria-label="Remove ${esc(t)}" onclick="deleteStrategy(${i})" style="margin-left:4px">✕</button></span>`).join("")
+    : `<div style="font-size:12px;color:var(--fg3);padding:4px 0">No strategies yet. Add the ones you trade below.</div>`;
+}
+function deleteStrategy(i) { draftStrategies.splice(i, 1); renderStrategySettings(); refreshDirty(); }
 function deleteChecklistItem(i) {
   draftChecklist.splice(i, 1);
   renderChecklistSettings();
@@ -207,6 +216,13 @@ $("add_checklist_btn").addEventListener("click", () => {
   renderChecklistSettings();
   refreshDirty();
 });
+$("add_strategy_btn").addEventListener("click", () => {
+  const input = $("new_strategy"), text = input.value.replace(/\|/g, " ").trim();
+  if (!text) return;
+  if (!draftStrategies.some(t => t.toLowerCase() === text.toLowerCase()) && draftStrategies.length < 30) draftStrategies.push(text);
+  input.value = ""; renderStrategySettings(); refreshDirty();
+});
+$("new_strategy").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); $("add_strategy_btn").click(); } });
 $("new_checklist_item").addEventListener("keydown", e => { if (e.key === "Enter") $("add_checklist_btn").click(); });
 
 $("set_save").addEventListener("click", openSettingsConfirm);
