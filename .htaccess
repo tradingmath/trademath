@@ -5,6 +5,18 @@
   RewriteRule ^(.*)$ https://trademath.in/$1 [R=301,L]
 </IfModule>
 
+# ── Markdown copy of the home page for agents (served as a normal file; the home page points to it) ──
+AddType "text/markdown; charset=UTF-8" .md
+<IfModule mod_headers.c>
+  <FilesMatch "^index\.html$">
+    Header set Link "</llms.txt>; rel=\"describedby\"; type=\"text/plain\", </index.md>; rel=\"alternate\"; type=\"text/markdown\""
+  </FilesMatch>
+  <FilesMatch "^index\.md$">
+    Header set Link "<https://trademath.in/>; rel=\"canonical\""
+    Header set X-Robots-Tag "noindex"
+  </FilesMatch>
+</IfModule>
+
 # ── Friendly 404 page ──
 ErrorDocument 404 /404.html
 
