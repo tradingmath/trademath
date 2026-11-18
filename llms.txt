@@ -10,6 +10,12 @@
 - [Risk-reward ratio explained](https://trademath.in/risk-reward-ratio-explained.html): break-even win rate, expectancy and how to set targets
 - [NSE F&O lot sizes](https://trademath.in/nse-fno-lot-sizes.html): lot sizes and how to use them in position sizing
 - [Trading journal for Indian traders](https://trademath.in/trading-journal-india.html): what to record and how to review
+- [How much should you risk per trade? The 1% rule explained](https://trademath.in/how-much-to-risk-per-trade.html): Risk per trade, the 1% rule and losing streaks
+- [How to place a stop-loss: percentage, structure and ATR methods](https://trademath.in/stop-loss-placement-guide.html): Percentage, structure and ATR stops, with examples
+- [Position size for options and futures in lots](https://trademath.in/option-lot-position-size.html): Sizing options and futures in whole lots
+- [Drawdown and recovery explained: why a 50% loss needs a 100% gain](https://trademath.in/drawdown-and-recovery-explained.html): What drawdown is and the gain needed to recover
+- [MIS vs CNC (intraday vs delivery): margin, leverage and risk](https://trademath.in/mis-vs-cnc-intraday-delivery.html): Intraday vs delivery, leverage and risk
+- [Common trading mistakes and how a journal catches them](https://trademath.in/trading-mistakes-journal.html): Seven common mistakes and what each costs
 
 ## About
 - [About](https://trademath.in/about.html), [Contact](https://trademath.in/contact.html), [Privacy](https://trademath.in/privacy.html), [Terms](https://trademath.in/terms.html)

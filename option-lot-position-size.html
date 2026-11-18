@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Position Size for Options and Futures in Lots: Worked Examples | TradeMath</title>
+<meta name="description" content="How to size an options or futures trade in lots, with Nifty examples: loss per lot, how many lots your risk allows, and what to do when one lot is too big.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#050a1c">
+<link rel="canonical" href="https://trademath.in/option-lot-position-size.html">
+<link rel="icon" href="logo-icon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="TradeMath">
+<meta property="og:title" content="Position size for options and futures in lots">
+<meta property="og:description" content="How to size an options or futures trade in lots, with Nifty examples: loss per lot, how many lots your risk allows, and what to do when one lot is too big.">
+<meta property="og:url" content="https://trademath.in/option-lot-position-size.html">
+<meta property="og:image" content="https://trademath.in/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<script>try{var s=JSON.parse(localStorage.getItem("tm_settings")||"{}");document.documentElement.dataset.theme=s.darkMode===false?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
+<link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts.css?v=140c3a0f">
+<link rel="stylesheet" href="styles.css?v=84a9cb73">
+<link rel="stylesheet" href="guide.css?v=79f41817">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Position size for options and futures in lots", "description": "How to size an options or futures trade in lots, with Nifty examples: loss per lot, how many lots your risk allows, and what to do when one lot is too big.", "mainEntityOfPage": "https://trademath.in/option-lot-position-size.html", "dateModified": "2026-11-18", "inLanguage": "en-IN", "author": {"@type": "Organization", "name": "TradeMath"}, "publisher": {"@type": "Organization", "name": "TradeMath", "url": "https://trademath.in"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How many lots can I buy with ₹50,000?", "acceptedAnswer": {"@type": "Answer", "text": "That depends on your risk, not only on your capital. Work out the loss per lot (premium distance to your stop × lot size), then divide your rupee risk by it. Also check that the premium for those lots fits in your capital."}}, {"@type": "Question", "name": "Why does the calculator say one lot risks more than my budget?", "acceptedAnswer": {"@type": "Answer", "text": "Because the smallest trade is one lot, and one lot's stop-loss can already be bigger than the amount you decided to risk. The warning tells you the real risk so you can change the stop, the budget or the trade."}}, {"@type": "Question", "name": "Do lot sizes change?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. NSE revises lot sizes from time to time, and a new lot size applies from a stated contract onwards. Always check the current size before you trade."}}, {"@type": "Question", "name": "Is the margin shown for selling options exact?", "acceptedAnswer": {"@type": "Answer", "text": "No. It is a rough estimate. Real margin depends on strike, volatility and expiry and differs between brokers, so use your broker's margin calculator."}}]}</script>
+</head>
+<body>
+<header class="g-head"><a class="g-brand" href="/"><img src="logo-icon.svg" alt="" width="28" height="28"><span>Trade<b>Math</b></span></a>
+<nav class="g-nav" aria-label="Guides"><a href="position-size-calculator-india.html">Position size</a><a href="risk-reward-ratio-explained.html">Risk-reward</a><a href="nse-fno-lot-sizes.html">Lot sizes</a><a href="trading-journal-india.html">Journal</a><a href="guides.html">All guides</a></nav>
+<a class="g-cta" href="/">Open calculator</a></header>
+<main class="g-doc">
+<p class="g-crumb"><a href="/">TradeMath</a> / <a href="guides.html">Guides</a></p>
+<h1>Position size for options and futures in lots</h1>
+<p class="g-lede">F&amp;O trades come in whole lots, which changes the sum. Here is how to size options and futures from your risk, with worked Nifty examples.</p>
+
+<h2>Lots, not single shares</h2>
+<p>Options and futures trade in fixed lots. Your quantity is <b>lots × lot size</b>, so you can only size in whole lots. At the time of writing the Nifty lot size is 65, but exchanges revise lot sizes, so check the current number on the <a href="nse-fno-lot-sizes.html">lot size page</a> or with your broker.</p>
+
+<h2>Buying an option</h2>
+<p>When you buy an option, the most you can lose is the premium you paid. With a stop-loss on the premium, the loss per lot is:</p>
+<div class="g-formula">Loss per lot = (Entry premium − Stop premium) × Lot size</div>
+<div class="g-formula">Lots = Risk in rupees ÷ Loss per lot  (round down)</div>
+<p>Example: Nifty option, lot size 65, entry premium ₹120, stop premium ₹90. The stop is ₹30 away, so the loss per lot is 30 × 65 = <b>₹1,950</b>. With a risk of ₹6,000 you can take 6,000 ÷ 1,950 = 3.07, so <b>3 lots</b>, which risks ₹5,850. The premium you pay is 120 × 65 × 3 = ₹23,400.</p>
+
+<h2>When one lot risks more than your budget</h2>
+<p>Suppose your risk budget is ₹1,000. In the example, one lot already risks ₹1,950. The sum gives 0.51 lots, but you cannot trade half a lot, and rounding up to 1 lot means risking nearly double your plan. TradeMath shows a warning in this case. Your choices are to raise the budget, use a tighter stop, pick a cheaper contract, or skip the trade.</p>
+
+<h2>Futures</h2>
+<p>For a future, the stop is in index points. The loss per lot is points × lot size. Example: Nifty future, stop 40 points away, lot size 65, so the loss per lot is 40 × 65 = <b>₹2,600</b>. With a ₹5,000 risk, 5,000 ÷ 2,600 = 1.92, so <b>1 lot</b>.</p>
+<p>The margin the broker blocks for a future is a separate number. It depends on the contract, volatility and your broker, so check their margin calculator.</p>
+
+<h2>Selling options is different</h2>
+<p>When you <b>sell</b> an option, the loss is not capped at the premium you receive, and the broker blocks margin (SPAN plus exposure) that is far larger than the premium. That margin moves with strike, volatility and expiry. A stop-loss and a size are still needed, and the margin must fit your capital. TradeMath gives a rough margin estimate for sellers and tells you to confirm it with your broker.</p>
+
+<h2>Common questions</h2><h3>How many lots can I buy with ₹50,000?</h3><p>That depends on your risk, not only on your capital. Work out the loss per lot (premium distance to your stop × lot size), then divide your rupee risk by it. Also check that the premium for those lots fits in your capital.</p><h3>Why does the calculator say one lot risks more than my budget?</h3><p>Because the smallest trade is one lot, and one lot's stop-loss can already be bigger than the amount you decided to risk. The warning tells you the real risk so you can change the stop, the budget or the trade.</p><h3>Do lot sizes change?</h3><p>Yes. NSE revises lot sizes from time to time, and a new lot size applies from a stated contract onwards. Always check the current size before you trade.</p><h3>Is the margin shown for selling options exact?</h3><p>No. It is a rough estimate. Real margin depends on strike, volatility and expiry and differs between brokers, so use your broker's margin calculator.</p>
+<h2>Related guides</h2><ul><li><a href="nse-fno-lot-sizes.html">NSE F&amp;O lot sizes</a></li><li><a href="position-size-calculator-india.html">How to calculate position size</a></li><li><a href="stop-loss-placement-guide.html">How to place a stop-loss</a></li></ul>
+<aside class="g-box"><b>Try it with your own numbers.</b> The free TradeMath calculator does this sum for you, with charges, lot sizes and a trade journal. No sign-up needed.<br><a class="g-btn" href="/">Open the calculator</a></aside>
+<p class="g-fine">Updated 18 November 2026. This guide is for education and is not investment advice. Markets carry risk of loss. Check lot sizes, margins and charges with your broker and the exchange before you trade.</p>
+</main>
+<footer class="g-foot"><a href="/">Calculator</a> · <a href="guides.html">All guides</a> · <a href="position-size-calculator-india.html">Position size</a> · <a href="risk-reward-ratio-explained.html">Risk-reward</a> · <a href="nse-fno-lot-sizes.html">F&amp;O lot sizes</a> · <a href="trading-journal-india.html">Trading journal</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="about.html">About</a> · <a href="contact.html">Contact</a> · <a href="mailto:support@trademath.in">support@trademath.in</a></footer>
+</body>
+</html>

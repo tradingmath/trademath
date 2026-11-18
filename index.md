@@ -14,6 +14,13 @@ TradeMath is a free position size calculator and trade journal. Enter your entry
 - [Risk-reward ratio explained](https://trademath.in/risk-reward-ratio-explained.html)
 - [NSE F&O lot sizes](https://trademath.in/nse-fno-lot-sizes.html)
 - [Trading journal for Indian traders](https://trademath.in/trading-journal-india.html)
+- [How much should you risk per trade? The 1% rule explained](https://trademath.in/how-much-to-risk-per-trade.html)
+- [How to place a stop-loss: percentage, structure and ATR methods](https://trademath.in/stop-loss-placement-guide.html)
+- [Position size for options and futures in lots](https://trademath.in/option-lot-position-size.html)
+- [Drawdown and recovery explained: why a 50% loss needs a 100% gain](https://trademath.in/drawdown-and-recovery-explained.html)
+- [MIS vs CNC (intraday vs delivery): margin, leverage and risk](https://trademath.in/mis-vs-cnc-intraday-delivery.html)
+- [Common trading mistakes and how a journal catches them](https://trademath.in/trading-mistakes-journal.html)
+- [All guides](https://trademath.in/guides.html)
 
 ## About
 - [About](https://trademath.in/about.html), [Contact](https://trademath.in/contact.html): support@trademath.in

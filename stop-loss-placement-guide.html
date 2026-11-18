@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>How to Place a Stop-Loss: Percentage, Structure and ATR Methods | TradeMath</title>
+<meta name="description" content="Three ways to place a stop-loss, with worked rupee examples, how the stop decides your position size, and the mistakes that cost traders money.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#050a1c">
+<link rel="canonical" href="https://trademath.in/stop-loss-placement-guide.html">
+<link rel="icon" href="logo-icon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="TradeMath">
+<meta property="og:title" content="How to place a stop-loss: percentage, structure and ATR methods">
+<meta property="og:description" content="Three ways to place a stop-loss, with worked rupee examples, how the stop decides your position size, and the mistakes that cost traders money.">
+<meta property="og:url" content="https://trademath.in/stop-loss-placement-guide.html">
+<meta property="og:image" content="https://trademath.in/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<script>try{var s=JSON.parse(localStorage.getItem("tm_settings")||"{}");document.documentElement.dataset.theme=s.darkMode===false?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
+<link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts.css?v=140c3a0f">
+<link rel="stylesheet" href="styles.css?v=84a9cb73">
+<link rel="stylesheet" href="guide.css?v=79f41817">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "How to place a stop-loss: percentage, structure and ATR methods", "description": "Three ways to place a stop-loss, with worked rupee examples, how the stop decides your position size, and the mistakes that cost traders money.", "mainEntityOfPage": "https://trademath.in/stop-loss-placement-guide.html", "dateModified": "2026-11-18", "inLanguage": "en-IN", "author": {"@type": "Organization", "name": "TradeMath"}, "publisher": {"@type": "Organization", "name": "TradeMath", "url": "https://trademath.in"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Where should I place my stop-loss?", "acceptedAnswer": {"@type": "Answer", "text": "There is no single correct place. Common choices are a fixed percentage, just beyond a recent swing high or low, or a multiple of the average true range. Pick a rule that matches why you entered, and use it consistently."}}, {"@type": "Question", "name": "What is a stop-loss in trading?", "acceptedAnswer": {"@type": "Answer", "text": "A stop-loss is an order, or a planned price, at which you exit a losing trade to limit the loss. It turns the maximum loss from open-ended into a number you chose in advance."}}, {"@type": "Question", "name": "Should the stop-loss decide my position size?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The distance from entry to stop sets the loss per share, and your risk in rupees divided by that gives the quantity. The stop comes first, the size follows."}}, {"@type": "Question", "name": "Can a stop-loss fail?", "acceptedAnswer": {"@type": "Answer", "text": "It can fill worse than planned. If the price gaps past your stop, for example on overnight news, the exit happens at the next available price, so the loss can exceed what you intended."}}]}</script>
+</head>
+<body>
+<header class="g-head"><a class="g-brand" href="/"><img src="logo-icon.svg" alt="" width="28" height="28"><span>Trade<b>Math</b></span></a>
+<nav class="g-nav" aria-label="Guides"><a href="position-size-calculator-india.html">Position size</a><a href="risk-reward-ratio-explained.html">Risk-reward</a><a href="nse-fno-lot-sizes.html">Lot sizes</a><a href="trading-journal-india.html">Journal</a><a href="guides.html">All guides</a></nav>
+<a class="g-cta" href="/">Open calculator</a></header>
+<main class="g-doc">
+<p class="g-crumb"><a href="/">TradeMath</a> / <a href="guides.html">Guides</a></p>
+<h1>How to place a stop-loss: percentage, structure and ATR methods</h1>
+<p class="g-lede">The stop-loss sets how much a trade can cost you and, through that, how many shares you can take. Here are three common ways to place it, with examples.</p>
+
+<h2>Why the stop-loss comes first</h2>
+<p>Your stop-loss is not an afterthought. It sets how far the trade can move against you, and that distance decides your size: the further the stop, the fewer shares you can take for the same risk.</p>
+<div class="g-formula">Quantity = Risk in rupees ÷ (Entry price − Stop-loss price)</div>
+<p>So the order is: pick the stop from the chart or your rules, then size the trade. Do not pick a size and then squeeze the stop to fit.</p>
+
+<h2>Method 1: a fixed percentage</h2>
+<p>The simplest rule is a set percentage below your entry (above it for a short). With entry ₹500 and a 1% stop, the stop-loss is ₹495. Risking ₹1,000 gives 1,000 ÷ 5 = <b>200 shares</b>.</p>
+<p>It is easy to repeat, but it ignores how much the stock really moves. A 1% stop may be hit by normal noise in a volatile stock, and be far too loose for a quiet one.</p>
+
+<h2>Method 2: below structure</h2>
+<p>Many traders place the stop just beyond a recent swing low (for a buy) or swing high (for a sell), because breaking that level means the idea was wrong. Example: entry ₹500, recent swing low ₹488, stop ₹486 (a little below, to avoid a one-tick wick). Loss per share is ₹14. Risking ₹1,000 gives 1,000 ÷ 14 = 71.4, so <b>71 shares</b>.</p>
+<p>The stop sits where the trade idea fails, not where it is convenient. The trade-off: a farther stop means a smaller position.</p>
+
+<h2>Method 3: a volatility (ATR) stop</h2>
+<p>The <b>average true range (ATR)</b> is the average distance a stock moves in a period, often 14 days. Some traders set the stop at a multiple of it. If ATR is ₹8 and you use 1.5 × ATR, the stop is ₹12 from entry. Entry ₹500 gives a stop of ₹488, and risking ₹1,000 gives 1,000 ÷ 12 = 83.3, so <b>83 shares</b>.</p>
+<p>This adapts to each stock: a jumpy stock gets a wider stop and a smaller position, a calm stock gets a tighter one.</p>
+
+<h2>Common stop-loss mistakes</h2>
+<ul>
+<li><b>Too tight.</b> A stop inside normal price noise gets hit again and again, and the losses plus charges add up.</li>
+<li><b>Too wide to fit a size.</b> Placing the stop far away so the chart "has room" while taking the full size defeats the point. The risk in rupees is what matters.</li>
+<li><b>Moving the stop away.</b> Widening a stop after the trade turns against you turns a planned loss into an open-ended one. Moving a stop to reduce risk, for example to break-even, is a different thing.</li>
+<li><b>Forgetting gaps and slippage.</b> A stock can open past your stop, so the real loss can be larger than planned. Allow some room in your risk budget.</li>
+<li><b>No stop at all.</b> Without one, the size cannot be worked out, and one bad trade can undo many good ones.</li>
+</ul>
+
+<h2>A quick checklist</h2>
+<ol>
+<li>Decide where the idea is proven wrong. That is the stop.</li>
+<li>Work out the loss per share from entry to stop.</li>
+<li>Divide your rupee risk by that loss to get the quantity.</li>
+<li>Check the target gives a reward that is worth the risk (see <a href="risk-reward-ratio-explained.html">risk-reward</a>).</li>
+</ol>
+
+<h2>Common questions</h2><h3>Where should I place my stop-loss?</h3><p>There is no single correct place. Common choices are a fixed percentage, just beyond a recent swing high or low, or a multiple of the average true range. Pick a rule that matches why you entered, and use it consistently.</p><h3>What is a stop-loss in trading?</h3><p>A stop-loss is an order, or a planned price, at which you exit a losing trade to limit the loss. It turns the maximum loss from open-ended into a number you chose in advance.</p><h3>Should the stop-loss decide my position size?</h3><p>Yes. The distance from entry to stop sets the loss per share, and your risk in rupees divided by that gives the quantity. The stop comes first, the size follows.</p><h3>Can a stop-loss fail?</h3><p>It can fill worse than planned. If the price gaps past your stop, for example on overnight news, the exit happens at the next available price, so the loss can exceed what you intended.</p>
+<h2>Related guides</h2><ul><li><a href="position-size-calculator-india.html">How to calculate position size</a></li><li><a href="how-much-to-risk-per-trade.html">How much to risk per trade</a></li><li><a href="risk-reward-ratio-explained.html">Risk-reward ratio explained</a></li></ul>
+<aside class="g-box"><b>Try it with your own numbers.</b> The free TradeMath calculator does this sum for you, with charges, lot sizes and a trade journal. No sign-up needed.<br><a class="g-btn" href="/">Open the calculator</a></aside>
+<p class="g-fine">Updated 18 November 2026. This guide is for education and is not investment advice. Markets carry risk of loss. Check lot sizes, margins and charges with your broker and the exchange before you trade.</p>
+</main>
+<footer class="g-foot"><a href="/">Calculator</a> · <a href="guides.html">All guides</a> · <a href="position-size-calculator-india.html">Position size</a> · <a href="risk-reward-ratio-explained.html">Risk-reward</a> · <a href="nse-fno-lot-sizes.html">F&amp;O lot sizes</a> · <a href="trading-journal-india.html">Trading journal</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="about.html">About</a> · <a href="contact.html">Contact</a> · <a href="mailto:support@trademath.in">support@trademath.in</a></footer>
+</body>
+</html>
