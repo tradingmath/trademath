@@ -254,7 +254,7 @@
        positional trades that overlap within a week so peak margin has something to show. */
     let seed = 20260101; const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
     const pick = a => a[Math.floor(rnd() * a.length)];
-    const STK = [["RELIANCE", 1420], ["TCS", 3560], ["INFY", 1580], ["HDFCBANK", 1655], ["ICICIBANK", 1290], ["SBIN", 812], ["ITC", 468], ["AXISBANK", 1190], ["LT", 3720], ["TATASTEEL", 168], ["KOTAKBANK", 2010], ["BAJFINANCE", 7100]];
+    const STK = [["SAMPLE A", 1420], ["SAMPLE B", 3560], ["SAMPLE C", 1580], ["SAMPLE D", 1655], ["SAMPLE E", 1290], ["SAMPLE F", 812], ["SAMPLE G", 468], ["SAMPLE H", 1190], ["SAMPLE J", 3720], ["SAMPLE K", 168], ["SAMPLE L", 2010], ["SAMPLE M", 7100]];   // invented names and prices on purpose: no real company is shown
     const SETUPS = ["Breakout", "Pullback", "Reversal", "Trend", "Gap play", "Range"];
     const WIN_NOTES = ["Held to target.", "Clean entry, followed the plan.", "Trailed the stop and took profit.", "Waited for confirmation. It paid off."];
     const LOSS_NOTES = ["Stopped out. Entered a little early.", "Setup failed. Respected the stop.", "Choppy market, took the small loss.", "Stopped out and moved on."];
@@ -271,7 +271,7 @@
         const R = win ? 1.1 + rnd() * 0.9 : 1, setup = pick(SETUPS), id = "demo-" + n;
         if (opt) {
           const lots = 1 + Math.floor(rnd() * 2), entry = round2(80 + rnd() * 90), sl = round2(entry * 0.82), tgt = round2(entry * (1 + 0.18 * R)), exit = win ? tgt : sl, ot = rnd() < 0.5 ? "CE" : "PE";
-          out.push({ id, demo: true, date: dstrOf(d), market: "Nifty F&O", symbol: "NIFTY", instrument: "options", optType: ot, dir: "LONG", entry, sl, target: tgt, exit, lots, lotSize: 65, qty: lots * 65, fees: 90 + lots * 12, setup, notes: win ? pick(WIN_NOTES) : pick(LOSS_NOTES), margin: Math.round(entry * lots * 65), mistakes: [], exits: [], confidence: 3, checklistSkipped: false });
+          out.push({ id, demo: true, date: dstrOf(d), market: "Other Index F&O", symbol: "SAMPLE INDEX", instrument: "options", optType: ot, dir: "LONG", entry, sl, target: tgt, exit, lots, lotSize: 65, qty: lots * 65, fees: 90 + lots * 12, setup, notes: win ? pick(WIN_NOTES) : pick(LOSS_NOTES), margin: Math.round(entry * lots * 65), mistakes: [], exits: [], confidence: 3, checklistSkipped: false });
           continue;
         }
         const [sym, base] = pick(STK), entry = round2(base * (0.97 + rnd() * 0.06)), dist = entry * (0.008 + rnd() * 0.006), dir = long ? "LONG" : "SHORT", sg = long ? 1 : -1;
