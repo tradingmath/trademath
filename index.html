@@ -25,7 +25,7 @@
 <link rel="preload" href="fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts.css?v=140c3a0f">
 <link rel="icon" href="logo-icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css?v=5bae0654">
+<link rel="stylesheet" href="styles.css?v=d9d45443">
 <script>
 /* Runs before the page paints: apply the saved theme and level now, and keep the page hidden until the app has
    finished setting itself up, so nothing flashes dark, then light, or jumps between modes. */
@@ -327,7 +327,7 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
       <div class="field-row3">
         <div class="field"><label for="j_qty">Qty / Lots</label><input type="number" id="j_qty" step="any" min="0" autocomplete="off" placeholder="0"></div>
         <div class="field"><label for="j_exit">Exit Price (blank if open)</label><input type="number" id="j_exit" step="any" min="0" autocomplete="off" placeholder="—"></div>
-        <div class="field"><label for="j_fees">Fees (₹)</label><input type="number" id="j_fees" step="any" min="0" autocomplete="off" placeholder="0"></div>
+        <div class="field fee-field"><label for="j_fees">Fees (₹)</label><input type="number" id="j_fees" step="any" min="0" autocomplete="off" placeholder="0"></div>
       </div>
       <div class="field" data-level="trader">
         <label>Setup / Strategy</label>
@@ -743,7 +743,7 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
     </div>
     <div class="field-row">
       <div class="field"><label for="ap_qty" id="ap_qty_lbl">Shares to add</label><input type="number" id="ap_qty" step="any" min="0" autocomplete="off" placeholder="0"></div>
-      <div class="field"><label for="ap_fees">Fees (₹) <span class="proj-hint">optional</span></label><input type="number" id="ap_fees" step="any" min="0" autocomplete="off" placeholder="0"></div>
+      <div class="field fee-field"><label for="ap_fees">Fees (₹) <span class="proj-hint">optional</span></label><input type="number" id="ap_fees" step="any" min="0" autocomplete="off" placeholder="0"></div>
     </div>
     <div class="field-row">
       <div class="field"><label for="ap_sl">New stop-loss <span class="proj-hint">optional</span></label><input type="number" id="ap_sl" step="any" min="0" autocomplete="off"></div>
@@ -780,7 +780,7 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
     </div>
     <div class="field-row">
       <div class="field"><label id="cm_partial_label">Qty / Lots</label><input type="number" id="cm_qty" step="any" autocomplete="off"></div>
-      <div class="field"><label>Fees (₹)</label><input type="number" id="cm_fees" step="any" autocomplete="off" placeholder="0"></div>
+      <div class="field fee-field"><label>Fees (₹)</label><input type="number" id="cm_fees" step="any" autocomplete="off" placeholder="0"></div>
     </div>
     <div class="field" id="cm_margin_wrap" hidden><label for="cm_margin">Actual margin used (₹) <span class="proj-hint">short option. Was an estimate when logged; enter what your broker really blocked.</span></label><input type="number" id="cm_margin" min="0" step="any" autocomplete="off"></div>
     <div class="field" id="cm_funding_wrap" hidden><label for="cm_funding">Funding paid (₹) <span class="proj-hint">crypto, optional. Negative if you received it.</span></label><input type="number" id="cm_funding" step="any" autocomplete="off" placeholder="0"></div>
@@ -895,11 +895,11 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
 </div>
 
 <p class="note" style="text-align:center;margin:24px 0 8px">Guides: <a href="position-size-calculator-india.html" style="color:inherit">Position size</a> · <a href="risk-reward-ratio-explained.html" style="color:inherit">Risk-reward</a> · <a href="nse-fno-lot-sizes.html" style="color:inherit">F&amp;O lot sizes</a> · <a href="trading-journal-india.html" style="color:inherit">Trading journal</a><br><a href="about.html" style="color:inherit">About</a> · <a href="contact.html" style="color:inherit">Contact</a> · <a href="privacy.html" style="color:inherit">Privacy</a> · Not investment advice</p>
-<script src="calc.js?v=7fb24a7e"></script>
-<script src="journal.js?v=2c090656"></script>
+<script src="calc.js?v=9bebbb44"></script>
+<script src="journal.js?v=2b5f631a"></script>
 <script src="projection.js?v=76e2f8eb"></script>
 <script src="alerts.js?v=0a43bf1d"></script>
-<script src="app.js?v=caf020c8"></script>
+<script src="app.js?v=ca4dd0ea"></script>
 <script src="cloud.js?v=459e79da"></script>
 <script src="profile.js?v=ac537b2c"></script>
 

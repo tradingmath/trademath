@@ -628,21 +628,32 @@ function checkDailyLimits() {
   };
 }
 
+/* Today card: net P&L (green when up, red when down), a bar for trades used and a bar for loss used.
+   It can be hidden, except once half of the daily loss limit is used: then it stays and says why. */
+let dailyHidden = false;
 function renderDailyBanner() {
   const el = $("daily_banner");
   if (!el) return;
-  const lim = checkDailyLimits();
-  const msgs = [];
-  if (lim.tradesExceeded) msgs.push(`⛔ Max trades reached (${lim.todayCount}/${lim.maxTrades})`);
-  if (lim.lossExceeded)   msgs.push(`⛔ Daily loss limit hit (${fmtINR(lim.todayLoss)} / −${fmtINR(lim.maxLoss)})`);
-  if (msgs.length) {
-    el.className = "risk-banner danger"; el.innerHTML = msgs.join(" &nbsp;·&nbsp; "); el.hidden = false;
-  } else if (lim.maxTrades > 0 || lim.maxLoss > 0) {
-    const w = [];
-    if (lim.maxTrades > 0) w.push(`${lim.todayCount}/${lim.maxTrades} trades`);
-    if (lim.maxLoss   > 0) w.push(`${fmtINR(Math.abs(lim.todayLoss))} / ${fmtINR(lim.maxLoss)} loss`);
-    el.className = "risk-banner warn"; el.innerHTML = "📊 Today: " + w.join(" &nbsp;·&nbsp; "); el.hidden = false;
-  } else { el.hidden = true; }
+  const lim = checkDailyLimits(), net = lim.todayLoss;
+  if (!(lim.maxTrades > 0 || lim.maxLoss > 0)) { el.hidden = true; return; }
+  const lossUsed = net < 0 ? -net : 0;
+  const lossPct = lim.maxLoss > 0 ? Math.min(100, lossUsed / lim.maxLoss * 100) : 0;
+  const tradePct = lim.maxTrades > 0 ? Math.min(100, lim.todayCount / lim.maxTrades * 100) : 0;
+  const locked = lim.lossExceeded || lim.tradesExceeded || lossPct >= 50;
+  if (locked) dailyHidden = false;
+  const tone = lim.lossExceeded || lim.tradesExceeded ? "danger" : net > 0 ? "pos" : net < 0 ? "neg" : "flat";
+  const sign = net > 0 ? "+" : "";
+  const bar = (label, val, pct, cls) => `<div class="db-row"><div class="db-lbl"><span>${label}</span><span class="db-val">${val}</span></div><div class="db-track"><div class="db-fill ${cls}" style="width:${pct}%"></div></div></div>`;
+  let bars = "";
+  if (lim.maxTrades > 0) bars += bar("Trades", `${lim.todayCount} of ${lim.maxTrades}` + (lim.tradesExceeded ? " · limit reached" : ""), tradePct, lim.tradesExceeded ? "bad" : "ok");
+  if (lim.maxLoss > 0)   bars += bar("Loss limit", `${fmtINR(lossUsed)} of ${fmtINR(lim.maxLoss)}` + (lim.lossExceeded ? " · limit hit" : ""), lossPct, lossPct >= 50 ? "bad" : "ok") ;
+  const lockMsg = locked ? `<div class="db-lock">🔒 ${lim.lossExceeded ? "Daily loss limit hit. Stop trading for today." : lim.tradesExceeded ? "Max trades reached for today." : "You have used " + Math.round(lossPct) + "% of your daily loss limit, so this stays visible."}</div>` : "";
+  el.className = "risk-banner day-card " + tone + (dailyHidden ? " collapsed" : "");
+  el.innerHTML = `<div class="db-head"><span class="db-title">Today</span><span class="db-pnl">${sign}${fmtINR(net)}</span><span class="db-sub">${lim.todayCount} trade${lim.todayCount === 1 ? "" : "s"}</span>` +
+    `<button type="button" class="db-hide" id="db_hide" ${locked ? 'disabled aria-disabled="true" title="Cannot be hidden once half of the daily loss limit is used"' : ""}>${dailyHidden ? "Show" : "Hide"}</button></div>` +
+    (dailyHidden ? "" : `<div class="db-body">${bars}${lockMsg}</div>`);
+  el.hidden = false;
+  const hb = $("db_hide"); if (hb && !locked) hb.onclick = () => { dailyHidden = !dailyHidden; renderDailyBanner(); };
 }
 
 /* ── Fee breakdown section ── */
@@ -651,6 +662,7 @@ function renderFeeBreakdown() {
   if (!fb) return;
   // Check settings toggle
   const showFees = typeof getAppSettings === "function" ? getAppSettings().showFees === true : false;   // fees are OFF until the user turns them on
+  document.documentElement.dataset.fees = showFees ? "on" : "off";   // hides every fee column and field in the journal while fees are off
   const feeSection = $("fee_section");
   if (feeSection) feeSection.hidden = !showFees;
   if (!showFees || !lastCalc) { fb.innerHTML = ""; return; }

@@ -114,6 +114,8 @@ function refreshDirty() {
 function syncFeeUI() {
   const on = $("tog_show_fees").checked;
   $("fee_warn").hidden = !on; $("fee_tools").hidden = !on;
+  $("fees_settings").classList.toggle("fees-off", !on);                              // dim the rate fields while fees are off
+  document.querySelectorAll("#fees_settings .fee-group input").forEach(i => { i.disabled = !on; });
 }
 /* Fill every control from what is saved (page load, and Discard). */
 function populateForm() {
@@ -172,6 +174,7 @@ function commitSettings() {
   }
   if (changed.has("maxDailyLoss") || changed.has("maxDailyTrades")) renderDailyBanner();
   if (["tradeStocks", "tradeFno", "tradeCrypto"].some(k => changed.has(k))) applyMarkets();
+  if (changed.has("showFees")) { refreshJournal(); renderTodayTrades(); }
   calc();
   renderFeeBreakdown();
 

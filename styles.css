@@ -968,3 +968,42 @@ html.tm-boot body { visibility:hidden; }
 .tm-dialog-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:18px; }
 .tm-dialog-actions .btn { min-width:96px; }
 .btn-danger-solid { background:var(--red); color:#fff; border:1px solid var(--red); }
+
+/* Today card (daily limits) */
+.risk-banner.day-card { display:block; padding:12px 14px; }
+.day-card.pos  { background:var(--green-dim); border:1px solid var(--green); color:var(--fg); }
+.day-card.neg  { background:var(--red-dim); border:1px solid rgba(239,68,68,.45); color:var(--fg); }
+.day-card.flat { background:var(--accent-dim); border:1px solid var(--border); color:var(--fg); }
+.day-card.danger { background:var(--red-dim); border:1px solid var(--red); color:var(--fg); }
+.db-head { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.db-title { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:var(--fg2); }
+.db-pnl { font-family:"JetBrains Mono",monospace; font-size:18px; font-weight:700; }
+.day-card.pos .db-pnl { color:var(--green); }
+.day-card.neg .db-pnl, .day-card.danger .db-pnl { color:var(--red); }
+.db-sub { font-size:12px; color:var(--fg3); }
+.db-hide { margin-left:auto; background:transparent; border:1px solid var(--border); color:var(--fg2); border-radius:8px; padding:4px 12px; font-size:12px; cursor:pointer; }
+.db-hide:hover:not(:disabled) { color:var(--fg); border-color:var(--fg3); }
+.db-hide:disabled { opacity:.45; cursor:not-allowed; }
+.db-body { margin-top:12px; display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px 20px; }
+.db-lbl { display:flex; justify-content:space-between; gap:8px; font-size:12px; color:var(--fg2); margin-bottom:5px; }
+.db-val { font-family:"JetBrains Mono",monospace; color:var(--fg); }
+.db-track { height:10px; border-radius:999px; background:rgba(128,128,128,.22); overflow:hidden; }
+.db-fill { height:100%; border-radius:999px; transition:width .4s ease; min-width:0; }
+.db-fill.ok  { background:linear-gradient(90deg,var(--accent-solid),#ffd34d); }
+.db-fill.bad { background:linear-gradient(90deg,#f97316,var(--red)); }
+.db-lock { grid-column:1/-1; font-size:12px; color:var(--red); }
+
+/* Today's trades: green for profit, red for loss */
+.today-sum { display:flex; align-items:center; justify-content:space-between; background:var(--card); border-radius:8px; padding:10px 14px; margin-bottom:10px; border:1px solid var(--border); }
+.today-sum.pos { background:var(--green-dim); border-color:var(--green); }
+.today-sum.neg { background:var(--red-dim); border-color:rgba(239,68,68,.45); }
+.today-trade.is-win  { border-left:3px solid var(--green); background:linear-gradient(90deg,var(--green-dim),transparent 60%); }
+.today-trade.is-loss { border-left:3px solid var(--red); background:linear-gradient(90deg,var(--red-dim),transparent 60%); }
+.today-trade.is-open { border-left:3px solid var(--accent-solid); }
+
+/* fees off: no fee columns or fee inputs in the journal */
+html[data-fees="off"] .fee-col, html[data-fees="off"] .fee-field { display:none !important; }
+
+/* fees off: the rate fields look and act disabled */
+.fees-off .fee-group { opacity:.45; filter:grayscale(.6); pointer-events:none; }
+.fees-off .fee-group input { cursor:not-allowed; }

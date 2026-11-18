@@ -153,16 +153,19 @@ function isClosed(t) {
 }
 
 function fxOf(t) { return t.instrument === "crypto" ? (t.fx || 1) : 1; }   // crypto prices are USDT; P&L is in ₹
+/* Fees are only counted when "Include estimated fees" is on in Settings. Turned off, profit is shown before charges. */
+const feesCounted = () => typeof getAppSettings === "function" && getAppSettings().showFees === true;
 function pnlForTrade(t) {
   const dir = t.dir === "LONG" ? 1 : -1;
+  const F = feesCounted() ? 1 : 0;
   const k = fxOf(t);
-  const funding = t.instrument === "crypto" ? (t.funding || 0) : 0;            // ₹ paid/received on the perpetual, counted once
-  const entryFees = t.entryFees || 0;                                         // charges paid on extra buys (Add to position)
+  const funding = F && t.instrument === "crypto" ? (t.funding || 0) : 0;            // ₹ paid/received on the perpetual, counted once
+  const entryFees = F ? (t.entryFees || 0) : 0;                                         // charges paid on extra buys (Add to position)
   if (t.exits && t.exits.length) {
-    return t.exits.reduce((sum, ex) => sum + dir * (ex.price - t.entry) * ex.qty * k - (ex.fees || 0), 0) - funding - entryFees;
+    return t.exits.reduce((sum, ex) => sum + dir * (ex.price - t.entry) * ex.qty * k - F * (ex.fees || 0), 0) - funding - entryFees;
   }
   if (!t.exit) return null;
-  return dir * (t.exit - t.entry) * t.qty * k - (t.fees || 0) - funding - entryFees;
+  return dir * (t.exit - t.entry) * t.qty * k - F * (t.fees || 0) - funding - entryFees;
 }
 
 function rrActual(t) {
@@ -698,9 +701,9 @@ function renderTodayTrades() {
   const closedTodays = todays.filter(t => isClosed(t));
   const todayPnlVal = closedTodays.reduce((s, t) => s + (pnlForTrade(t) || 0), 0);
   const pnlSummaryHTML = closedTodays.length ? `
-    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--card);border-radius:8px;padding:8px 12px;margin-bottom:10px;border:1px solid var(--border)">
-      <span style="font-size:11px;color:var(--fg2);font-weight:500">Today's Realized P&amp;L</span>
-      <span class="td-mono ${todayPnlVal>=0?'td-pos':'td-neg'}" style="font-weight:700;font-size:14px">${fmtINR(todayPnlVal)}</span>
+    <div class="today-sum ${todayPnlVal > 0 ? "pos" : todayPnlVal < 0 ? "neg" : ""}">
+      <span style="font-size:11px;color:var(--fg2);font-weight:500">Today's Realized P&amp;L · ${closedTodays.length} closed</span>
+      <span class="td-mono ${todayPnlVal>=0?'td-pos':'td-neg'}" style="font-weight:700;font-size:16px">${todayPnlVal > 0 ? "+" : ""}${fmtINR(todayPnlVal)}</span>
     </div>` : "";
 
   list.innerHTML = pnlSummaryHTML + todays.map(t => {
@@ -714,7 +717,7 @@ function renderTodayTrades() {
     const closeBtn = !closed ? `<button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 10px;margin-right:6px" onclick="openAddModal('${t.id}')" title="Bought more? Add to this position and see your new average">＋ Add</button><button class="btn btn-danger btn-sm" style="font-size:11px;padding:3px 10px" onclick="openCloseModal('${t.id}')">Close</button>` : "";
     const delBtn   = `<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px;color:var(--fg3)" onclick="deleteTodayTrade('${t.id}')" title="Delete trade">✕</button>`;
     const setupTag = t.setup ? `<span style="font-size:10px;color:var(--accent);background:var(--accent-dim);border-radius:3px;padding:1px 6px">${esc(t.setup)}</span>` : "";
-    return `<div class="today-trade" data-id="${t.id}">
+    return `<div class="today-trade ${!closed ? "is-open" : pnl > 0 ? "is-win" : "is-loss"}" data-id="${t.id}">
       <div class="today-trade-top">
         ${badge}
         <span style="font-size:12px;font-weight:600">${esc(t.market)}</span>${symChip(t)}
@@ -872,7 +875,7 @@ function repTradeRow(t, dayId, moKey) {
       <td class="num">${cap ? fullINR(cap, true) : "—"}</td>
       <td class="num ${ret !== null ? tone(ret) : "td-muted"}">${ret !== null ? pctTxt(ret) : "—"}</td>
       <td class="c-res">${result}</td>
-      <td class="num">${fees !== null ? fullINR(fees, true) + (t.feesEst ? ' <span class="t-dim" title="Estimated by TradeMath, not from your broker">est.</span>' : "") : "—"}</td>
+      <td class="num fee-col">${fees !== null ? fullINR(fees, true) + (t.feesEst ? ' <span class="t-dim" title="Estimated by TradeMath, not from your broker">est.</span>' : "") : "—"}</td>
       <td class="c-act">
         ${!closed ? `<button type="button" class="rep-act rep-add-btn" data-id="${t.id}" title="Bought more? Add to this position and see your new average">＋ Add</button><button type="button" class="rep-act rep-close-btn" data-id="${t.id}">Close</button>` : ""}
         <button type="button" class="rep-act rep-edit-btn" data-id="${t.id}" title="Edit market, symbol and notes">✎</button>
@@ -948,7 +951,7 @@ function renderReports() {
         <td class="num" title="Peak margin: the most capital in use at one time that day"><span class="t-dim">peak</span> <b>${dayCap ? fullINR(dayCap, true) : "—"}</b></td>
         <td class="num"><b class="${dayRet !== null ? tone(dayRet) : ""}">${dayRet !== null ? pctTxt(dayRet) : "—"}</b></td>
         <td class="c-res t-dim">${wl}</td>
-        <td class="num">${dayClosed.length ? fullINR(dayFees, true) : "—"}</td>
+        <td class="num fee-col">${dayClosed.length ? fullINR(dayFees, true) : "—"}</td>
         <td></td>
       </tr>`;
     }).join("");
@@ -961,7 +964,7 @@ function renderReports() {
         <button class="btn btn-ghost btn-sm" data-level="trader" onclick="openReportCard('${mo}')">📊 Share card</button>
       </div>
       <div class="rep-scroll"><table class="rep-log-tbl">
-        <thead><tr><th class="c-inst">Instrument</th><th class="num">Entry</th><th class="num">Exit</th><th class="num">Lots</th><th class="num">Net P&amp;L</th><th class="num" title="Margin used by each trade. Day and month totals show the PEAK: the most capital in use at one time.">Margin</th><th class="num">Return</th><th class="c-res">Result</th><th class="num">Fees</th><th class="c-act"></th></tr></thead>
+        <thead><tr><th class="c-inst">Instrument</th><th class="num">Entry</th><th class="num">Exit</th><th class="num">Lots</th><th class="num">Net P&amp;L</th><th class="num" title="Margin used by each trade. Day and month totals show the PEAK: the most capital in use at one time.">Margin</th><th class="num">Return</th><th class="c-res">Result</th><th class="num fee-col">Fees</th><th class="c-act"></th></tr></thead>
         <tbody>
           <tr class="mo-row" onclick="toggleMonth(this,'${moId}')">
             <td class="c-inst" colspan="4"><span class="rep-caret open">▶</span><b>${moLabel}</b> <span class="t-dim">· ${allTrades.length} trade${allTrades.length!==1?"s":""} · Monthly total</span></td>
@@ -969,7 +972,7 @@ function renderReports() {
             <td class="num" title="Peak margin: the most capital in use at one time this month. Trades that overlap are added together; trades that do not overlap are not."><span class="t-dim">peak</span> <b>${moCap ? fullINR(moCap, true) : "—"}</b></td>
             <td class="num"><b class="${moRet !== null ? tone(moRet) : ""}">${moRet !== null ? pctTxt(moRet) : "—"}</b></td>
             <td class="c-res t-dim">${moWins.length}W / ${moClosed.length-moWins.length}L</td>
-            <td class="num">${moClosed.length ? fullINR(moFees, true) : "—"}</td>
+            <td class="num fee-col">${moClosed.length ? fullINR(moFees, true) : "—"}</td>
             <td></td>
           </tr>
           ${daysHTML}
