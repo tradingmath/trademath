@@ -553,22 +553,6 @@ $("saveTradeBtn").addEventListener("click", () => {
 /* ── Filters ── */
 ["flt_market","flt_dir","flt_result"].forEach(id => { $(id).addEventListener("change", renderReports); });
 
-/* ── Export CSV ── */
-$("exportBtn").addEventListener("click", () => {
-  const cols = ["date","market","symbol","instrument","ccy","fx","leverage","funding","dir","entry","sl","target","exit","qty","fees","pnl","rr","setup","notes"];
-  // A text cell starting with = + - @ is read as a formula by Excel / Sheets, so it gets a leading apostrophe.
-  const txt = v => { let s = String(v == null ? "" : v); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
-  const rows = trades.map(t => {
-    const pnl = pnlForTrade(t);
-    const rr  = rrActual(t);
-    return [txt(t.date), txt(t.market), txt(t.symbol), txt(t.instrument), txt(t.ccy), t.fx || "", txt(t.leverage), t.funding || "", t.dir, t.entry, t.sl, t.target, t.exit, t.qty, t.fees,
-      pnl !== null ? pnl.toFixed(2) : "", rr !== null ? rr.toFixed(2) : "",
-      txt(t.setup), txt(t.notes)].join(",");
-  });
-  const csv = [cols.join(","), ...rows].join("\n");
-  tmDownload("trademath_journal.csv", "\ufeff" + csv, "text/csv;charset=utf-8");
-});
-
 /* ══════════════ TRADE DETAILS: the one-tap way to tidy a trade you logged in a hurry ══════════════ */
 let detailsId = null;
 function openDetails(id) {

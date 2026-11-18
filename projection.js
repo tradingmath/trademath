@@ -15,11 +15,6 @@
     strong:    { win: 55, rr: 2,   cost: 50, tpd: 3, days: 22, risk: 1000, riskmode: "abs", months: 12, vary: "5", maxw: "3" },
   };
   const FIELDS = { capital: "p_capital", win: "p_win", rr: "p_rr", risk: "p_risk", riskmode: "p_riskmode", tpd: "p_tpd", days: "p_days", months: "p_months", cost: "p_cost", vary: "p_var", maxw: "p_maxw", seed: "p_seed" };
-  // Calibrated from a real 2-year NIFTY SL-strangle backtest: 474 trading days, 291 winning days (61%),
-  // average win ₹1,452, average loss ₹1,694 (payoff 0.857), ~19 trading days a month, longest win streak 12.
-  const REAL = { capital: 100000, win: 61, rr: 0.86, risk: 1694, riskmode: "abs", tpd: 1, days: 20, months: 12, cost: 0, vary: "5", maxw: "inf" };
-
-  const REAL_NOTE = "Loaded numbers from a real 2-year NIFTY SL-strangle backtest: 474 trading days, 61% winning days, average win ₹1,452, average loss ₹1,694. The streak limit is off because that backtest had a 12-win streak. A backtest is not a promise either.";
   let selMonth = 1, clampNotice = false, noteText = "", lastRes = null;
 
   function mulberry32(a) {
@@ -175,7 +170,7 @@
     if (cfg.winClamped || clampNotice) msgs.push(["warn", isFinite(K) ? `With a maximum of ${K} wins in a row, the highest possible win rate is ${cfg.wmax}%. Using ${cfg.wmax}%.` : `The win rate is limited to ${cfg.wmax}%.`]);
     if (expTrade <= 0) msgs.push(["bad", `At ${cfg.win}% wins and 1 : ${cfg.rr} reward, each trade loses ${money(Math.abs(expTrade))} on average. You need a win rate above ${pct1(breakEven)} just to break even, so this strategy loses money over time.`]);
     const edgeR = p * (cfg.rr + 1) - 1;                       // average result of one trade, in units of the amount risked
-    if (edgeR > 0.5) msgs.push(["warn", `Very strong edge: about ${edgeR.toFixed(2)}R per trade (${money(edgeR * risk0)} for every ${money(risk0)} risked). That is why no month turns red here. Few traders keep an edge this big for long, and win rates usually fall when targets get bigger, so ${cfg.win}% wins at 1 : ${cfg.rr} is rare. Try a lower win rate or the typical example to see a more usual mix of green and red.`]);
+    if (edgeR > 0.5) msgs.push(["warn", `Unusually favourable numbers: about ${edgeR.toFixed(2)}R per trade (${money(edgeR * risk0)} for every ${money(risk0)} risked). That is why no month turns red here. Few traders keep results like this for long, and win rates usually fall when targets get bigger, so ${cfg.win}% wins at 1 : ${cfg.rr} is rare. Try the typical example to see a more usual mix of green and red.`]);
     if (res.blown) msgs.push(["bad", `Account wiped out in month ${res.blown.month}, day ${res.blown.day}. The simulation stops there.`]);
     if (cfg.riskmode === "pct" && cfg.risk > 5 || cfg.riskmode === "abs" && cfg.risk > cfg.capital * 0.05) msgs.push(["warn", "Risking more than 5% of your balance per trade makes deep drawdowns and wipe-outs very likely."]);
     $("proj_msgs").innerHTML = msgs.map(m => `<div class="proj-msg ${m[0]}" role="${m[0] === "info" ? "note" : "alert"}">${m[1]}</div>`).join("");
@@ -188,11 +183,11 @@
     const retPct = res.pnl / cfg.capital * 100;
     const eff = res.trades ? res.wins / res.trades * 100 : 0;
     $("proj_tiles").innerHTML =
-      tile("Expected / month", signed(expTrade * tradesPerMonth), `${tradesPerMonth} trades × ${signed(expTrade)} avg${cfg.riskmode === "pct" ? " (month 1)" : ""}`, cls(expTrade), true) +
+      tile("Average / month", signed(expTrade * tradesPerMonth), `from your numbers · ${tradesPerMonth} trades × ${signed(expTrade)}${cfg.riskmode === "pct" ? " (month 1)" : ""}`, cls(expTrade), true) +
       tile("This run: avg / month", signed(avg), `${res.months.length - redMonths} green · ${redMonths} red month${redMonths === 1 ? "" : "s"}`, cls(avg)) +
       tile("Best month", signed(best), `Month ${bestM}`, cls(best)) +
       tile("Worst month", signed(worst), `Month ${worstM}`, cls(worst)) +
-      tile("Ending balance", money(res.endCap), `${signed(res.pnl)} · ${retPct >= 0 ? "+" : "−"}${Math.abs(retPct).toFixed(1)}%`, cls(res.pnl)) +
+      tile("Ending balance", money(res.endCap), `${signed(res.pnl)} · ${Math.abs(retPct) <= 100 ? (retPct >= 0 ? "+" : "−") + Math.abs(retPct).toFixed(1) + "% · " : ""}your inputs only`, cls(res.pnl)) +
       tile("Max drawdown", "−" + money(res.maxDD), `${pct1(res.maxDDp)} from peak`, "neg") +
       tile("Win rate (this run)", pct1(eff), `${res.wins} W · ${res.losses} L`) +
       tile("Longest streaks", `${res.maxW}W · ${res.maxL}L`, isFinite(K) ? `win streak limited to ${K}` : "no win-streak limit");
@@ -327,11 +322,6 @@
     $("p_example").value = ""; selMonth = 1; noteText = ""; clampNotice = false;
     saveInputs(); render();
   });
-  $("p_preset").addEventListener("click", () => {
-    Object.keys(REAL).forEach(k => { const el = $(FIELDS[k]); if (el) el.value = REAL[k]; });
-    selMonth = 1; noteText = REAL_NOTE; clampNotice = false;
-    saveInputs(); render();
-  });
 
   /* Fill the form from the user's own closed journal trades, then open the tab. */
   function fromJournal() {
@@ -384,5 +374,5 @@
 
   loadInputs();
   window.renderProjection = render;
-  window.tmProjection = { run, adjustedP, effectiveRate, maxWinRate, readCfg, REAL };   // exposed for testing
+  window.tmProjection = { run, adjustedP, effectiveRate, maxWinRate, readCfg };   // exposed for testing
 })();
