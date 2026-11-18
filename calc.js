@@ -631,6 +631,14 @@ function checkDailyLimits() {
 /* Today bar: one slim line. The whole bar is tinted green (net profit) or red (net loss) and fills left to right as the
    day's trade count is used up. It shows net P&L only; the loss limit appears beside it when the day is at a loss.
    Hide works until half of the daily loss limit is used. After that it stays visible and says why. */
+/* Target price for the small profit chip: fewer digits as the price grows, and no trailing zeros.
+   under 1,000: nearest 0.05 (510.35); 1,000 to 9,999: one decimal (5100.5); 10,000 and up: whole number. */
+function fmtTargetPx(v) {
+  const a = Math.abs(v), loc = (n, d) => n.toLocaleString("en-IN", { maximumFractionDigits: d });
+  if (a >= 10000) return loc(Math.round(v), 0);
+  if (a >= 1000)  return loc(Math.round(v * 10) / 10, 1);
+  return loc(Math.round(v * 20) / 20, 2);
+}
 let dailyHidden = false;
 function renderDailyBanner() {
   const el = $("daily_banner");
@@ -896,7 +904,7 @@ function calc() {
     // Tile 1: Margin Required
     $("t1val").textContent = (M.sellOpt ? "≈ " : "") + fmtINR(totalMgn);
     if (M.sellOpt) $("t1sub").textContent = `Selling: approx. ${fmtINR(M.mgnLow)}–${fmtINR(M.mgnHigh)} · ${mgnPct.toFixed(0)}% of capital`;
-    else $("t1sub").textContent = `${mgnPct.toFixed(1)}% of capital · ${instrType === "equity" ? leverageMultiplier + "× leverage" : orderType}${instrType === "futures" ? " · approx., brokers vary" : ""}`;
+    else $("t1sub").textContent = `${mgnPct.toFixed(1)}% of capital · ${instrType === "equity" ? leverageMultiplier + "×" : orderType}${instrType === "futures" ? " · approx., brokers vary" : ""}`;
   }
 
   // Tile 2: Max Risk
@@ -908,7 +916,7 @@ function calc() {
   // Tile 3: Profit
   $("t_profit_lbl").textContent = "Profit (1:" + defRR + ")";
   $("t_profit_val").textContent = crypto ? "+" + usd(profitGross) : "+₹" + fmtP(profitGross, 0);
-  $("t_profit_sub").innerHTML = '<span class="tile-target"><i>🎯 Target</i><b>' + cur + (crypto ? fmtUsd(profitTP) : fmtP(profitTP, 2)) + '</b></span>' + (crypto ? '<div class="tile-ref">≈ ₹' + fmtP(profitGross, 0) + '</div>' : "");
+  $("t_profit_sub").innerHTML = '<span class="tile-target" title="Target price"><i>🎯 Target</i><b>' + cur + (crypto ? fmtUsd(profitTP) : fmtTargetPx(profitTP)) + '</b></span>' + (crypto ? '<div class="tile-ref">≈ ₹' + fmtP(profitGross, 0) + '</div>' : "");
 
   const showFees = typeof getAppSettings === "function" ? getAppSettings().showFees === true : false;   // fees are OFF until the user turns them on
   $("tgt_body").innerHTML = targets.map(t => `
