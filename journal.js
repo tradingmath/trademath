@@ -190,7 +190,7 @@ function fxOf(t) { return t.instrument === "crypto" ? (t.fx || 1) : 1; }   // cr
 /* Fees are only counted when "Include estimated fees" is on in Settings. Turned off, profit is shown before charges. */
 const feesCounted = () => typeof getAppSettings === "function" && getAppSettings().showFees === true;
 /* Journal table in dollars: only while the table shows crypto alone and the ₹/$ switch is on. Each trade is converted at its own saved rate. */
-let JUSD = false;
+let JUSD = false, JMIX = false;
 const jFx = t => JUSD ? fxOf(t) : 1;
 const pnlForTrade = t => { const v = pnlRaw(t); return v === null ? v : v / jFx(t); };
 function pnlRaw(t) {
@@ -942,6 +942,10 @@ function daysHeld(t) {
   return Math.max(0, Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 864e5));
 }
 function repTradeRow(t, dayId, moKey) {
+  if (JMIX && t.instrument === "crypto") { JUSD = true; try { return repTradeRowIn(t, dayId, moKey); } finally { JUSD = false; } }
+  return repTradeRowIn(t, dayId, moKey);
+}
+function repTradeRowIn(t, dayId, moKey) {
   const pnl = pnlForTrade(t), rr = rrActual(t), closed = isClosed(t);
   const cap = capitalUsed(t), ret = pnl !== null && cap ? pnl / cap * 100 : null;
   const partial = !t.exit && t.exits && t.exits.length;
@@ -980,8 +984,10 @@ function renderReports() {
   const hasCry = trades.some(t => t.instrument === "crypto"), allCry = trades.length && trades.every(t => t.instrument === "crypto");
   const eligible = fm ? fm === "Crypto" : allCry;
   const sw = $("ccy_sw"); if (sw) { sw.hidden = !hasCry; const on = getAppSettings().jnlUsd === true; sw.querySelectorAll("button").forEach(b => b.classList.toggle("on", (b.dataset.ccy === "usd") === on)); }
-  JUSD = !!(hasCry && eligible && getAppSettings().jnlUsd === true);
-  try { renderReportsInner(); } finally { JUSD = false; }
+  const usdOn = hasCry && getAppSettings().jnlUsd === true;
+  JUSD = !!(usdOn && eligible);          // crypto alone: every figure in dollars
+  JMIX = !!(usdOn && !eligible);         // stocks and crypto together: crypto rows in dollars, stock rows and all totals stay in rupees
+  try { renderReportsInner(); } finally { JUSD = false; JMIX = false; }
 }
 function renderReportsInner() {
   if (!trades.length) { $("rep_body").innerHTML = ""; showJournalEmpty("empty"); return; }
@@ -1326,4 +1332,4 @@ function removeEstimatedFees() {
     showToast("Estimated fees removed", { label: "Undo", fn: () => { trades = JSON.parse(snap); redraw(); showToast("Undone"); } });
   });
 })();
-document.querySelectorAll("#ccy_sw button").forEach(b => b.addEventListener("click", () => { saveSetting("jnlUsd", b.dataset.ccy === "usd"); if (b.dataset.ccy === "usd" && $("flt_market").value !== "Crypto" && trades.some(t => t.instrument !== "crypto")) { $("flt_market").value = "Crypto"; showToast("Showing crypto only, so the totals stay in dollars"); } renderReports(); }));
+document.querySelectorAll("#ccy_sw button").forEach(b => b.addEventListener("click", () => { saveSetting("jnlUsd", b.dataset.ccy === "usd"); renderReports(); }));
