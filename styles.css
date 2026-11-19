@@ -1187,3 +1187,19 @@ h1.logo { margin:0; line-height:inherit; }
 .rr-chips { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
 .rr-add { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12px; color:var(--fg2); }
 .rr-add input { width:84px; padding:6px 8px; }
+
+/* Crypto liquidation price in the margin tile */
+.liq { color:var(--fg); font-weight:600; }
+.liq-bad { color:var(--red); font-weight:700; }
+
+/* Symbol box: favourites */
+.sym-opt { display:flex; align-items:center; gap:10px; }
+.sym-opt .sym-meta { margin-right:auto; }
+.sym-star { background:none; border:none; color:var(--fg3); font-size:17px; line-height:1; cursor:pointer; padding:2px 4px; }
+.sym-star:hover { color:var(--accent); }
+.sym-star.on { color:var(--accent); }
+.sym-head { padding:8px 12px; font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--fg3); }
+
+/* Profit tile too narrow even after shrinking: the target chip moves to its own line inside the tile */
+.tiles .tile:last-child.pt-wrap { grid-template-columns:auto; }
+.tiles .tile:last-child.pt-wrap .tile-sub { grid-row:3; grid-column:1; margin-top:4px; }

@@ -78,6 +78,22 @@ function cryptoFeeCfg() {
            funding: n(s.cryptoFunding, CRYPTO_DEFAULTS.funding), mmr: n(s.cryptoMmr, CRYPTO_DEFAULTS.mmr) };
 }
 function rememberedFx() { const v = parseFloat(typeof getAppSettings === "function" ? getAppSettings().usdInr : 0); return v > 0 ? v : DEFAULT_FX; }
+/* Common coins for the symbol box, each with a usual contract size for one lot. These are only starting values: the
+   "1 lot =" box next to them can be changed, and your change is remembered for that coin. Check your exchange's size. */
+const CRYPTO_COINS = [
+  { name: "BTC", lot: 0.001 }, { name: "ETH", lot: 0.01 }, { name: "SOL", lot: 0.1 }, { name: "XRP", lot: 1 },
+  { name: "BNB", lot: 0.01 }, { name: "DOGE", lot: 10 }, { name: "ADA", lot: 1 }, { name: "AVAX", lot: 0.1 },
+  { name: "LINK", lot: 0.1 }, { name: "LTC", lot: 0.1 }, { name: "DOT", lot: 0.1 }, { name: "SUI", lot: 1 }
+];
+function getCryptoLot() { const v = parseFloat($("i_clot") ? $("i_clot").value : ""); return v > 0 ? v : 0; }   // coins in one lot; 0 or empty = size in coins
+function updateCoinUnit() { const u = $("clot_unit"); if (u) { const b = cryptoBase(); u.textContent = b === "coins" ? "coins" : b; } }
+function applyCoinLot() {                                // a known coin fills in its lot size (your own saved value wins)
+  const b = cryptoBase(), coin = CRYPTO_COINS.find(x => x.name === b);
+  updateCoinUnit();
+  if (!coin || !$("i_clot")) return;
+  const saved = ((typeof getAppSettings === "function" ? getAppSettings().cryptoLots : null) || {})[b];
+  $("i_clot").value = saved > 0 ? saved : coin.lot;
+}
 function getFx()        { const v = parseFloat($("i_fx") ? $("i_fx").value : ""); return v > 0 ? v : DEFAULT_FX; }
 function getCryptoLev() { const v = parseFloat($("i_lev") ? $("i_lev").value : ""); return v >= 1 ? Math.min(125, v) : DEFAULT_CRYPTO_LEV; }
 const fmtUsd = n => {                           // 97,000.00  |  1.2345  |  0.05  (small prices keep their precision, trailing zeros trimmed)
@@ -347,29 +363,50 @@ const SYMBOLS = [
 let symDropdownOpen = false;
 
 function initSymbolAutocomplete() {
-  const inp = $("sym_input");
-  const drop = $("sym_dropdown");
+  const inp = $("sym_input"), drop = $("sym_dropdown");
   if (!inp || !drop) return;
 
-  inp.addEventListener("input", () => {
-    const q = inp.value.toUpperCase().trim();
-    if (!q) { drop.hidden = true; return; }
-    const matches = SYMBOLS.filter(s => s.name.startsWith(q)).slice(0, 10);
-    if (!matches.length) { drop.hidden = true; return; }
-    drop.innerHTML = matches.map(s =>
-      `<div class="sym-opt" data-name="${s.name}">
+  /* Starred symbols are kept for stocks and for coins separately, and are what you see first when you click the box. */
+  const mode = () => (instrType === "crypto" ? "crypto" : "std");
+  const pool = () => (instrType === "crypto" ? CRYPTO_COINS.map(x => ({ name: x.name, sector: "1 lot = " + x.lot, lot: 0 })) : SYMBOLS);
+  const favs = () => { const f = (typeof getAppSettings === "function" ? getAppSettings().favSyms : null) || {}; return Array.isArray(f[mode()]) ? f[mode()] : []; };
+  function toggleFav(name) {
+    const all = Object.assign({}, getAppSettings().favSyms || {}), cur = favs().slice(), i = cur.indexOf(name);
+    if (i >= 0) cur.splice(i, 1); else cur.push(name);
+    all[mode()] = cur; saveSetting("favSyms", all);
+  }
+  function render() {
+    const q = inp.value.toUpperCase().trim(), fav = favs(), all = pool();
+    let list = q ? all.filter(s => s.name.startsWith(q)) : all.filter(s => fav.includes(s.name));
+    list = list.slice().sort((x, y) => (fav.includes(y.name) ? 1 : 0) - (fav.includes(x.name) ? 1 : 0)).slice(0, q ? 10 : 12);
+    if (!list.length) {
+      if (q) { drop.hidden = true; return; }
+      drop.innerHTML = '<div class="sym-head">Type to search. Tap ☆ on a symbol to keep it here.</div>'; drop.hidden = false; return;
+    }
+    drop.innerHTML = (q ? "" : '<div class="sym-head">★ Your favourites</div>') + list.map(s => {
+      const on = fav.includes(s.name);
+      return `<div class="sym-opt" data-name="${s.name}">
         <span class="sym-name">${s.name}</span>
-        <span class="sym-meta">${s.sector}${s.lot ? ' · lot ' + (s.verified ? '' : '~') + s.lot : ''}</span>
-      </div>`
-    ).join("");
+        <span class="sym-meta">${s.sector}${s.lot ? " · lot " + (s.verified ? "" : "~") + s.lot : ""}</span>
+        <button type="button" class="sym-star${on ? " on" : ""}" aria-label="${on ? "Remove from favourites" : "Add to favourites"}" aria-pressed="${on}">${on ? "★" : "☆"}</button>
+      </div>`;
+    }).join("");
     drop.hidden = false;
     drop.querySelectorAll(".sym-opt").forEach(el => {
       el.addEventListener("mousedown", e => {
         e.preventDefault();
+        if (e.target.closest(".sym-star")) { toggleFav(el.dataset.name); render(); return; }   // the star only stars it
         selectSymbol(el.dataset.name);
       });
     });
+  }
+
+  inp.addEventListener("input", () => {
+    if (instrType === "crypto") { applyCoinLot(); calc(); }   // the coin you type sets the contract size and the coin name
+    render();
   });
+  inp.addEventListener("focus", render);
+  inp.addEventListener("click", render);
 
   inp.addEventListener("keydown", e => {
     if (e.key === "Escape") { drop.hidden = true; return; }
@@ -387,6 +424,11 @@ function initSymbolAutocomplete() {
 }
 
 function selectSymbol(name) {
+  if (instrType === "crypto") {                              // a coin from the list
+    $("sym_input").value = name; $("sym_dropdown").hidden = true;
+    applyCoinLot(); calc();
+    return;
+  }
   const sym = SYMBOLS.find(s => s.name === name);
   const inp = $("sym_input");
   const drop = $("sym_dropdown");
@@ -540,6 +582,9 @@ function syncOptionsUI(prev) {
   if (hint) hint.textContent = instrType === "futures" ? "Enter the futures price for Entry and SL." : "Enter option premiums for Entry and SL.";
   const ct = $("cryToggle");
   if (ct) ct.checked = instrType === "crypto";
+  if ($("clot_wrap")) $("clot_wrap").hidden = instrType !== "crypto";
+  if ($("sym_input")) $("sym_input").placeholder = instrType === "crypto" ? "Coin (optional) … e.g. BTC, ETH, SOL" : "Stock / Symbol (optional) … e.g. RELIANCE, TCS, NIFTY";
+  updateCoinUnit();
   const ccy = instrType === "crypto" ? "USDT" : "₹";           // crypto prices are typed in USDT
   if ($("lbl_e")) $("lbl_e").textContent = "Entry Price (" + ccy + ")";
   if ($("lbl_s")) $("lbl_s").textContent = "Stop Loss (" + ccy + ")";
@@ -815,7 +860,10 @@ function sizeStandard(c) {
 function sizeCrypto(c) {
   const { entry, sl, isLong, slDist, riskINR, defRR } = c;
   const fx = getFx(), lev = getCryptoLev(), f = cryptoFeeCfg();
-  const units = Math.floor(riskINR / fx / slDist * 1e4) / 1e4;          // coins, rounded DOWN to 4 decimals
+  const lotCoins = getCryptoLot();                                       // contract size: whole lots, like a futures contract
+  let lots = 0, units;
+  if (lotCoins > 0) { lots = Math.max(1, Math.floor(riskINR / fx / (slDist * lotCoins) + 1e-9)); units = Math.round(lots * lotCoins * 1e8) / 1e8; }
+  else units = Math.floor(riskINR / fx / slDist * 1e4) / 1e4;            // coins, rounded DOWN to 4 decimals
   if (!(units > 0)) return null;
   const tradeVal   = units * entry * fx;                                 // ₹ notional
   const totalMgn   = tradeVal / lev;                                    // isolated-margin estimate
@@ -831,6 +879,7 @@ function sizeCrypto(c) {
   return { units, tradeVal, totalMgn, actualRisk, targets,
            profitTP: isLong ? entry + slDist * defRR : entry - slDist * defRR,
            profitGross: slDist * defRR * units * fx,
+           cryptoLots: lots, lotCoins,
            crypto: { fx, lev, liq, liqBeforeSL: isLong ? liq >= sl : liq <= sl } };
 }
 
@@ -867,14 +916,15 @@ function calc() {
   const symName   = sym ? sym.name : (typed || "Equity");
   const optShown  = instrType === "options" && $("type_row") && $("type_row").offsetParent !== null;
 
+  const cLots = M.cryptoLots || 0;                      // crypto in whole lots
   lastCalc = {
-    entry, sl, isLong, units, lotSize, actualRisk, targets, sym,
+    entry, sl, isLong, units: cLots || units, lotSize: cLots ? M.lotCoins : lotSize, actualRisk, targets, sym,
     symbolName: symName,
     market: deriveMarket(sym, instrType),
     symbol: sym ? sym.name : (typed || null),
     instrument: instrType,
     optType: optShown ? optType : null,
-    isLots: instrType !== "equity" && !crypto && lotSize > 1,
+    isLots: cLots > 0 || (instrType !== "equity" && !crypto && lotSize > 1),
     dec: 2,
     margin: totalMgn, sellOpt: !!M.sellOpt,
     tradeValue: tradeVal,
@@ -906,6 +956,9 @@ function calc() {
     }
   }
   if (M.sellOpt) warns.push(`⚠ You are SELLING an option. The broker blocks margin (this calculator estimates ${fmtINR(M.mgnLow)}–${fmtINR(M.mgnHigh)}, which can be well below the real figure; check your broker's margin calculator), far more than the premium, and a loss is not capped at the premium. Strike, VIX and expiry change it a lot: check your broker's margin calculator.`);
+  if (crypto && cLots === 1 && M.actualRisk > riskINR * 1.001) {
+    warns.push(`⚠ One lot is the smallest you can trade, and it risks ${fm(M.actualRisk)}, more than your ${fm(riskINR)} risk budget. Tighten the stop-loss, raise your risk, or skip this trade.`);
+  }
   if (!crypto && M.units === 1 && M.actualRisk > riskINR * 1.001) {
     warns.push(`⚠ One ${instrType === "equity" ? "share" : "lot"} is the smallest you can trade, and it risks ${fmtINR(M.actualRisk)}, more than your ${fmtINR(riskINR)} risk budget. Tighten the stop-loss, raise your risk, or skip this trade.`);
   }
@@ -933,12 +986,21 @@ function calc() {
     : (units === 1 ? "lot" : "lots");
 
   if (crypto) {
-    const base = cryptoBase();
-    $("t0lbl").textContent = "Position (" + base + ")";
-    $("t0val").textContent = fmtP(units, 4).replace(/\.?0+$/, "") + " " + base;
-    $("t0sub").textContent = `Notional: $${fmtP(tradeVal / M.crypto.fx, 2)}`;
+    const base = cryptoBase(), coinsTxt = fmtP(units, 4).replace(/\.?0+$/, "") + " " + base;
+    if (cLots) {
+      $("t0lbl").textContent = "Position (Lots)";
+      $("t0val").textContent = comma(cLots) + (cLots === 1 ? " lot" : " lots");
+      $("t0sub").textContent = `= ${coinsTxt} · Notional $${fmtP(tradeVal / M.crypto.fx, 2)}`;
+    } else {
+      $("t0lbl").textContent = "Position (" + base + ")";
+      $("t0val").textContent = coinsTxt;
+      $("t0sub").textContent = `Notional: $${fmtP(tradeVal / M.crypto.fx, 2)}`;
+    }
     $("t1val").textContent = "$" + fmtP(totalMgn / M.crypto.fx, 2);
-    $("t1sub").textContent = `${mgnPct.toFixed(1)}% of capital · ${M.crypto.lev}× · Liq $${fmtUsd(M.crypto.liq)}`;
+    /* Liquidation price: where the exchange closes the trade because the margin is used up. It depends on the leverage
+       (higher leverage means it sits closer to the entry) and is shown in red when it falls before the stop-loss. */
+    $("t1sub").innerHTML = `<span class="${M.crypto.liqBeforeSL ? "liq-bad" : "liq"}" title="Estimated liquidation price at ${M.crypto.lev}× leverage. ${mgnPct.toFixed(1)}% of capital as margin.">Liq. price $${fmtUsd(M.crypto.liq)}</span> · ${M.crypto.lev}×`;
+    $("t1sub").style.whiteSpace = "normal";               // wrap, so the liquidation price is never cut off
   } else {
     // Tile 0: Position
     $("t0lbl").textContent = instrType === "equity" ? "Position (Shares)" : "Position (Lots)";
@@ -946,6 +1008,7 @@ function calc() {
     $("t0sub").textContent = `Trade Value: ${fmtINR(tradeVal)}${lotSize > 1 ? ` · ${comma(units * lotSize)} units` : ""}`;
 
     // Tile 1: Margin Required
+    $("t1sub").style.whiteSpace = "";
     $("t1val").textContent = (M.sellOpt ? "≈ " : "") + fmtINR(totalMgn);
     if (M.sellOpt) $("t1sub").textContent = `Selling: rough, often low · check broker · ${mgnPct.toFixed(0)}% of capital`;
     else $("t1sub").textContent = `${mgnPct.toFixed(1)}% of capital · ${instrType === "equity" ? leverageMultiplier + "×" : orderType}${instrType === "futures" ? " · approx., brokers vary" : ""}`;
@@ -975,7 +1038,34 @@ function calc() {
 
   renderFeeBreakdown();
   renderDailyBanner();
+  fitProfitTile();
 }
+
+/* The profit figure and the target chip must both stay inside the tile. Long dollar amounts shrink the text a step at a
+   time until they fit; if even the smallest size is too wide, the chip drops to its own line inside the tile. */
+function fitProfitTile() {
+  const val = $("t_profit_val"); if (!val) return;
+  const tile = val.closest(".tile"), chip = tile.querySelector(".tile-target"), chipB = chip && chip.querySelector("b");
+  tile.classList.remove("pt-wrap"); val.style.fontSize = ""; if (chipB) chipB.style.fontSize = "";
+  const over = () => {
+    const t = tile.getBoundingClientRect(), pad = parseFloat(getComputedStyle(tile).paddingRight) || 0, limit = t.right - pad;
+    const r = (chip || val).getBoundingClientRect();
+    return Math.max(val.getBoundingClientRect().right, chip ? r.right : 0) > limit + 0.5;
+  };
+  const shrink = floor => {
+    let vs = parseFloat(getComputedStyle(val).fontSize), cs = chipB ? parseFloat(getComputedStyle(chipB).fontSize) : 0, guard = 0;
+    while (over() && guard++ < 14 && vs > floor) {
+      vs -= 1; val.style.fontSize = vs + "px";
+      if (chipB && cs > 10) { cs -= 0.6; chipB.style.fontSize = cs + "px"; }
+    }
+  };
+  shrink(13);                                            // first: side by side, a little smaller
+  if (over()) {                                          // still too wide: the chip goes on its own line and the figure grows back
+    tile.classList.add("pt-wrap"); val.style.fontSize = ""; if (chipB) chipB.style.fontSize = "";
+    shrink(10);
+  }
+}
+window.addEventListener("resize", () => { clearTimeout(fitProfitTile._t); fitProfitTile._t = setTimeout(() => { if (typeof lastCalc !== "undefined" && lastCalc) fitProfitTile(); }, 120); });
 
 function showEmpty(msg) {
   const re = $("r_empty");
@@ -991,7 +1081,7 @@ function showEmpty(msg) {
 }
 
 /* ── Input listeners ── */
-["i_entry","i_sl","i_cap","i_rsk","i_flat","i_rr","i_lot","i_lev","i_fx"]
+["i_entry","i_sl","i_cap","i_rsk","i_flat","i_rr","i_lot","i_lev","i_fx","i_clot"]
   .forEach(id => { const el = $(id); if (el) el.addEventListener("input", calc); });
 
 /* ── Options toggle and editable lot size ── */
@@ -1033,6 +1123,14 @@ const cryToggleEl = $("cryToggle");
 if (cryToggleEl) cryToggleEl.addEventListener("change", () => {
   setInstrType(cryToggleEl.checked ? "crypto" : baseInstr());
   rememberInstr();
+});
+const clotEl = $("i_clot");
+if (clotEl) clotEl.addEventListener("input", () => {        // remembered for next time, and for this coin
+  const v = parseFloat(clotEl.value);
+  if (!(v > 0)) return;
+  saveSetting("cryptoLot", v);
+  const b = cryptoBase();
+  if (CRYPTO_COINS.some(x => x.name === b)) { const m = Object.assign({}, getAppSettings().cryptoLots || {}); m[b] = v; saveSetting("cryptoLots", m); }
 });
 const levEl = $("i_lev"), fxEl = $("i_fx");
 if (levEl) levEl.addEventListener("input", () => { const v = parseFloat(levEl.value); if (v >= 1) saveSetting("cryptoLev", Math.min(125, v)); });

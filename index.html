@@ -29,7 +29,7 @@
 <link rel="preload" href="fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts.css?v=140c3a0f">
 <link rel="icon" href="logo-icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css?v=6ed6da61">
+<link rel="stylesheet" href="styles.css?v=32a79e75">
 <script>
 /* Runs before the page paints: apply the saved theme and level now, and keep the page hidden until the app has
    finished setting itself up, so nothing flashes dark, then light, or jumps between modes. */
@@ -220,7 +220,7 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
               <label class="cry-lbl">Leverage ×<input type="number" id="i_lev" value="10" min="1" max="125" step="1" autocomplete="off"></label>
               <label class="cry-lbl">1 USD = ₹<input type="number" id="i_fx" value="88" min="1" step="0.1" autocomplete="off"></label>
             </div>
-            <div class="lot-hint" id="cry_hint" hidden>Enter Entry and SL in USDT. Risk stays in ₹.</div>
+            <div class="lot-hint" id="cry_hint" hidden>Enter Entry and SL in USDT. Capital and risk are in dollars. Set 1 lot to your exchange's contract size, or type a coin above to fill it in.</div>
           </div>
         </div>
 
@@ -230,6 +230,13 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
             <input type="number" id="i_lot" value="65" min="1" step="1" autocomplete="off" aria-label="Units in one lot">
           </div>
           <div class="lot-hint" id="lot_hint">Enter option premiums for Entry and SL.</div>
+        </div>
+        <div class="field lot-wrap" id="clot_wrap" hidden>
+          <div class="lot-row" id="clot_row">
+            <span class="lot-eq">1 lot =</span>
+            <input type="number" id="i_clot" value="0.001" min="0" step="any" autocomplete="off" aria-label="Coins in one lot">
+            <span class="lot-eq" id="clot_unit">coins</span>
+          </div>
         </div>
 
         <!-- Leverage Selector (for Equity) -->
@@ -945,11 +952,11 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
 
 <p class="note" style="max-width:720px;margin:24px auto 0;text-align:center;line-height:1.7">TradeMath is a free position size calculator and trade journal for Indian traders. Enter your entry, stop-loss, capital and risk to get quantity, margin, targets and charges for NSE stocks, F&amp;O lots, MCX and crypto futures. Then log the trade and review your results.</p>
 <p class="note" style="text-align:center;margin:10px 0 8px">Guides: <a href="position-size-calculator-india.html" style="color:inherit">Position size</a> · <a href="risk-reward-ratio-explained.html" style="color:inherit">Risk-reward</a> · <a href="nse-fno-lot-sizes.html" style="color:inherit">F&amp;O lot sizes</a> · <a href="trading-journal-india.html" style="color:inherit">Trading journal</a> · <a href="guides.html" style="color:inherit">All guides</a><br><a href="about.html" style="color:inherit">About</a> · <a href="contact.html" style="color:inherit">Contact</a> · <a href="privacy.html" style="color:inherit">Privacy</a> · <a href="terms.html" style="color:inherit">Terms</a> · Not investment advice</p>
-<script src="calc.js?v=c29381a5"></script>
-<script src="journal.js?v=0183e271"></script>
+<script src="calc.js?v=a66939c3"></script>
+<script src="journal.js?v=1c7de517"></script>
 <script src="projection.js?v=148bf141"></script>
 <script src="alerts.js?v=24467fdf"></script>
-<script src="app.js?v=a87ad392"></script>
+<script src="app.js?v=b025e344"></script>
 <script src="cloud.js?v=459e79da"></script>
 <script src="profile.js?v=4072ad38"></script>
 

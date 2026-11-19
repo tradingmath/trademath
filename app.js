@@ -158,6 +158,7 @@ function loadSettings() {
   if ($("i_lot")) $("i_lot").value = rememberedLot();
   if ($("i_fx"))  $("i_fx").value  = rememberedFx();
   if ($("i_lev")) $("i_lev").value = s.cryptoLev > 0 ? s.cryptoLev : DEFAULT_CRYPTO_LEV;
+  if ($("i_clot") && s.cryptoLot > 0) $("i_clot").value = s.cryptoLot;
   if ($("i_cap") && s.defaultCap)  $("i_cap").value = s.defaultCap;
   if ($("i_rsk") && s.defaultRisk) $("i_rsk").value = s.defaultRisk;
   if ($("i_rr")  && s.defaultRR)   $("i_rr").value  = s.defaultRR;

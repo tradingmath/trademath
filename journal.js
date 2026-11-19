@@ -373,7 +373,7 @@ $("logTradeBtn").addEventListener("click", () => {
 function quickLogTrade() {
   if (!lastCalc) return;
   const lc = lastCalc;
-  const unitWord = lc.instrument === "crypto" ? (lc.unitName || "coins") : lc.isLots ? (lc.units === 1 ? "lot" : "lots") : (lc.units === 1 ? "share" : "shares");
+  const unitWord = lc.instrument === "crypto" && !lc.isLots ? (lc.unitName || "coins") : lc.isLots ? (lc.units === 1 ? "lot" : "lots") : (lc.units === 1 ? "share" : "shares");
   const targetPx = lc.targetPrice || (lc.targets && lc.targets[2] ? lc.targets[2].tp : (lc.isLong ? lc.entry + Math.abs(lc.entry - lc.sl) * 2 : lc.entry - Math.abs(lc.entry - lc.sl) * 2));
   
   const symLabel = lc.symbolName && lc.symbolName !== "Equity" ? lc.symbolName : "";
@@ -395,7 +395,7 @@ function quickLogTrade() {
     entry: lc.entry,
     sl: lc.sl,
     target: parseFloat(targetPx.toFixed(2)),
-    qty: lc.units * (lc.isLots ? lc.lotSize : 1),
+    qty: Math.round(lc.units * (lc.isLots ? lc.lotSize : 1) * 1e8) / 1e8,   // no 1.6600000000000001
     lots: lc.isLots ? lc.units : null,
     lotSize: lc.isLots ? lc.lotSize : null,
     exit: null,
@@ -419,7 +419,7 @@ function quickLogTrade() {
 function openPreLogModal() {
   if (!lastCalc) return;
   const lc = lastCalc;
-  const unitWord = lc.instrument === "crypto" ? (lc.unitName || "coins") : lc.isLots ? (lc.units === 1 ? "lot" : "lots") : (lc.units === 1 ? "share" : "shares");
+  const unitWord = lc.instrument === "crypto" && !lc.isLots ? (lc.unitName || "coins") : lc.isLots ? (lc.units === 1 ? "lot" : "lots") : (lc.units === 1 ? "share" : "shares");
   const symLabel = lc.symbolName && lc.symbolName !== "Equity" ? lc.symbolName + " · " : "";
   $("pl_summary").textContent =
     `${symLabel}${lc.isLong ? "▲ LONG" : "▼ SHORT"} · ${lc.market} · Entry ₹${lc.entry} · SL ₹${lc.sl} · ${lc.units} ${unitWord}`;
@@ -490,7 +490,7 @@ $("pl_confirm").addEventListener("click", () => {
     entry:  lc.entry,
     sl:     lc.sl,
     target: parseFloat(targetPx.toFixed(2)),
-    qty:    lc.units * (lc.isLots ? lc.lotSize : 1),
+    qty:    Math.round(lc.units * (lc.isLots ? lc.lotSize : 1) * 1e8) / 1e8,
     lots:   lc.isLots ? lc.units : null,
     lotSize: lc.isLots ? lc.lotSize : null,
     exit:   null,
@@ -738,7 +738,7 @@ function buysOf(t) {                         // every purchase that makes up the
 function tradeName(t) { return t.symbol ? esc(t.symbol) + (t.optType ? " " + esc(t.optType) : "") : esc(t.market || "Trade"); }
 function shortDate(d) { return d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? new Date(d + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : ""; }
 function qtyLabel(t) {
-  if (t.instrument === "crypto") return `${t.qty}${t.leverage ? " · " + esc(t.leverage) + "× lev" : ""}`;
+  if (t.instrument === "crypto") return (t.lots ? `${t.lots} lot${t.lots === 1 ? "" : "s"} × ${t.lotSize} = ${t.qty}` : `${t.qty}`) + (t.leverage ? " · " + esc(t.leverage) + "× lev" : "");
   const n = t.adds && t.adds.length ? ` · avg of ${t.adds.length + 1} buys` : "";
   return (t.lots ? `${t.lots} lot${t.lots === 1 ? "" : "s"} × ${t.lotSize} = ${t.qty}` : (t.qty || "—")) + n;
 }
