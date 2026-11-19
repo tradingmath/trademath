@@ -1267,3 +1267,7 @@ h1.logo { margin:0; line-height:inherit; }
 .ccy-sw[hidden] { display:none; }
 .ccy-sw button { background:transparent; color:var(--fg2); border:0; padding:7px 14px; font:inherit; font-weight:600; cursor:pointer; }
 .ccy-sw button.on { background:var(--accent); color:var(--on-accent); }
+.cry-only { margin-left:auto; }
+.cry-only[hidden] { display:none; }
+.cry-only.on { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+.cry-only + .ccy-sw { margin-left:0; }

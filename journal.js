@@ -983,6 +983,7 @@ function renderReports() {
   const fm = $("flt_market") ? $("flt_market").value : "";
   const hasCry = trades.some(t => t.instrument === "crypto"), allCry = trades.length && trades.every(t => t.instrument === "crypto");
   const eligible = fm ? fm === "Crypto" : allCry;
+  const co = $("cry_only"); if (co) { co.hidden = !hasCry; co.classList.toggle("on", fm === "Crypto"); co.setAttribute("aria-pressed", String(fm === "Crypto")); }
   const sw = $("ccy_sw"); if (sw) { sw.hidden = !hasCry; const on = getAppSettings().jnlUsd === true; sw.querySelectorAll("button").forEach(b => b.classList.toggle("on", (b.dataset.ccy === "usd") === on)); }
   const usdOn = hasCry && getAppSettings().jnlUsd === true;
   JUSD = !!(usdOn && eligible);          // crypto alone: every figure in dollars
@@ -1334,3 +1335,4 @@ function removeEstimatedFees() {
   });
 })();
 document.querySelectorAll("#ccy_sw button").forEach(b => b.addEventListener("click", () => { saveSetting("jnlUsd", b.dataset.ccy === "usd"); renderReports(); }));
+{ const co = $("cry_only"); if (co) co.addEventListener("click", () => { $("flt_market").value = $("flt_market").value === "Crypto" ? "" : "Crypto"; renderReports(); }); }   // one tap: crypto only, tap again for all markets
