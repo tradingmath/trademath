@@ -979,7 +979,7 @@ function renderReports() {
   const fm = $("flt_market") ? $("flt_market").value : "";
   const hasCry = trades.some(t => t.instrument === "crypto"), allCry = trades.length && trades.every(t => t.instrument === "crypto");
   const eligible = fm ? fm === "Crypto" : allCry;
-  const sw = $("ccy_sw"); if (sw) { sw.hidden = !(hasCry && eligible); const on = getAppSettings().jnlUsd === true; sw.querySelectorAll("button").forEach(b => b.classList.toggle("on", (b.dataset.ccy === "usd") === on)); }
+  const sw = $("ccy_sw"); if (sw) { sw.hidden = !hasCry; const on = getAppSettings().jnlUsd === true; sw.querySelectorAll("button").forEach(b => b.classList.toggle("on", (b.dataset.ccy === "usd") === on)); }
   JUSD = !!(hasCry && eligible && getAppSettings().jnlUsd === true);
   try { renderReportsInner(); } finally { JUSD = false; }
 }
@@ -1326,4 +1326,4 @@ function removeEstimatedFees() {
     showToast("Estimated fees removed", { label: "Undo", fn: () => { trades = JSON.parse(snap); redraw(); showToast("Undone"); } });
   });
 })();
-document.querySelectorAll("#ccy_sw button").forEach(b => b.addEventListener("click", () => { saveSetting("jnlUsd", b.dataset.ccy === "usd"); renderReports(); }));
+document.querySelectorAll("#ccy_sw button").forEach(b => b.addEventListener("click", () => { saveSetting("jnlUsd", b.dataset.ccy === "usd"); if (b.dataset.ccy === "usd" && $("flt_market").value !== "Crypto" && trades.some(t => t.instrument !== "crypto")) { $("flt_market").value = "Crypto"; showToast("Showing crypto only, so the totals stay in dollars"); } renderReports(); }));
