@@ -1271,3 +1271,9 @@ h1.logo { margin:0; line-height:inherit; }
 .cry-only[hidden] { display:none; }
 .cry-only.on { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
 .cry-only + .ccy-sw { margin-left:0; }
+
+/* Support Us button in the header */
+.support-btn { display:inline-flex; align-items:center; gap:6px; text-decoration:none; font-weight:600; white-space:nowrap; }
+.support-btn .sup-heart { font-size:13px; }
+@media (max-width:900px) { .support-btn .sup-txt { display:none; } .support-btn { padding:6px 9px; min-width:36px; justify-content:center; } }
+@media (max-width:600px) { .support-btn { display:none; } }   /* phones: the header is full; the footer link stays */

@@ -29,7 +29,7 @@
 <link rel="preload" href="fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts.css?v=140c3a0f">
 <link rel="icon" href="logo-icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css?v=67630fb6">
+<link rel="stylesheet" href="styles.css?v=b53ab135">
 <script>
 /* Runs before the page paints: apply the saved theme and level now, and keep the page hidden until the app has
    finished setting itself up, so nothing flashes dark, then light, or jumps between modes. */
@@ -49,6 +49,7 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
 <header class="header">
   <h1 class="logo"><img src="logo-icon.svg" alt="" width="24" height="24" style="vertical-align:-6px;margin-right:8px">TradeMath <em>/ Calculator + Journal</em></h1>
   <div class="hdr-right">
+    <a class="theme-btn support-btn" href="https://razorpay.me/@trademath" target="_blank" rel="noopener" title="Support TradeMath with a voluntary donation"><span class="sup-heart" aria-hidden="true">❤️</span> <span class="sup-txt">Support Us</span></a>
     <div class="lvl-wrap" id="lvl_wrap">
       <button class="theme-btn lvl-btn" id="lvl_btn" type="button" aria-haspopup="menu" aria-expanded="false" title="Choose how much of the app you see">
         <span aria-hidden="true" id="lvl_icon">📈</span> <span id="lvl_label">Trader</span> <span class="lvl-caret" aria-hidden="true">▾</span>
