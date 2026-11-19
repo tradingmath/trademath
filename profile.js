@@ -58,9 +58,9 @@
     });
     const pos = (min, max) => s => { const n = parseFloat(s); return n >= min && n <= max ? n : null; };
     const optInt = s => { s = String(s).trim(); if (s === "") return ""; const n = parseFloat(s); return n >= 0 ? n : null; };
-    field(ID.cap,  pos(1, 1e10),  "defaultCap",  v => { $("i_cap").value = v; });
-    field(ID.risk, pos(0.01, 100), "defaultRisk", v => { $("i_rsk").value = v; });
-    field(ID.rr,   pos(0.1, 50),   "defaultRR",   v => { $("i_rr").value = v; });
+    field(ID.cap,  pos(1, 1e10),  "defaultCap",  v => { $("i_cap").value = v; if (window.cmSave) cmSave(); });
+    field(ID.risk, pos(0.01, 100), "defaultRisk", v => { $("i_rsk").value = v; if (window.cmSave) cmSave(); });
+    field(ID.rr,   pos(0.1, 50),   "defaultRR",   v => { $("i_rr").value = v; if (window.cmSave) cmSave(); });
     field(ID.lev,  v => v,         "defaultLev",  v => setLeverage(v));
     field(ID.mkt,  v => v,         "defaultMarket");
     field(ID.ml,   optInt,         "maxDailyLoss");
@@ -98,7 +98,7 @@
     const m = $("onbModal"); if (m) m.remove(); onbOpen = false;
     if (markDone) maybeOfferTour();
   }
-  const LOOKS = { gold: "Gold", blue: "Blue", purple: "Violet", monochrome: "Slate" };
+  const LOOKS = { gold: "Gold", vermilion: "Vermilion", emerald: "Emerald", tangerine: "Tangerine" };   // four to pick from at sign-up; Settings has the full list
   function curLook() { const s = S(); return { dark: s.darkMode !== false, accent: ACCENT_NAMES.includes(s.accentColor) ? s.accentColor : "gold", base: BASE_THEMES.includes(s.baseTheme) ? s.baseTheme : "midnight" }; }
   function applyLook(l) { saveSetting("darkMode", l.dark); saveSetting("accentColor", l.accent); saveSetting("baseTheme", l.base); applyDarkToggle(l.dark); if (window.populateForm) populateForm(); }
   function restoreLook() { if (onb && onb.look0 && JSON.stringify(onb.look) !== JSON.stringify(onb.look0)) { onb.look = onb.look0; applyLook(onb.look0); } }
@@ -123,7 +123,7 @@
         <div class="chips">${chip("dark", "🌙 Dark", l.dark)}${chip("light", "☀ Light", !l.dark)}</div>
         <p class="onb-sub" style="margin-top:14px">Accent colour</p>
         <div class="swatches">${Object.keys(LOOKS).map(k => `<button type="button" class="sw${l.accent === k ? " on" : ""}" data-acc="${k}" aria-pressed="${l.accent === k}"><i style="background:${ACCENT_COLORS[k].dark}"></i>${LOOKS[k]}</button>`).join("")}</div>
-        ${l.dark ? `<p class="onb-sub" style="margin-top:14px">Dark background</p><div class="chips">${chip("midnight", "Midnight navy", l.base === "midnight")}${chip("oled", "OLED black", l.base === "oled")}</div>` : ""}`;
+        ${l.dark && !(ACCENT_COLORS[l.accent] && ACCENT_COLORS[l.accent].skin) ? `<p class="onb-sub" style="margin-top:14px">Dark background</p><div class="chips">${chip("midnight", "Midnight navy", l.base === "midnight")}${chip("oled", "OLED black", l.base === "oled")}</div>` : ""}`;
       b.querySelectorAll(".chip").forEach(c => c.onclick = () => { const k = c.dataset.k; if (k === "dark" || k === "light") l.dark = k === "dark"; else l.base = k; applyLook(l); paintStep(); });
       b.querySelectorAll(".sw").forEach(c => c.onclick = () => { l.accent = c.dataset.acc; applyLook(l); paintStep(); });
       return;
@@ -158,7 +158,7 @@
     saveSetting("maxDailyLoss", o.maxLoss); saveSetting("maxDailyTrades", o.maxTrades);
     const only = (a, b2) => o[a] && !o[b2];
     saveSetting("defaultMarket", o.crypto && !o.stocks && !o.fno ? "Crypto" : o.fno && !o.stocks && !o.crypto ? "Nifty F&O" : "NSE Equity");
-    $("i_cap").value = o.cap; $("i_rsk").value = o.risk; $("i_rr").value = o.rr; setLeverage(o.style === "swing" ? "1" : "5");
+    $("i_cap").value = o.cap; $("i_rsk").value = o.risk; $("i_rr").value = o.rr; setLeverage(o.style === "swing" ? "1" : "5"); if (window.cmSave) cmSave();
     if (o.crypto && !o.stocks && !o.fno) { setInstrType("crypto"); rememberInstr(); }
     else if (o.fno && !o.stocks && !o.crypto) { setInstrType("options"); rememberInstr(); }
     applyMarkets();

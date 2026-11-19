@@ -3,7 +3,7 @@
    The Settings page is STAGED: its controls only edit a draft. Nothing is saved or applied until the user
    presses "Save changes" and confirms. getAppSettings() always returns what is actually saved. */
 
-const ACCENT_NAMES = ["gold", "blue", "purple", "monochrome"];   // the colours that are offered
+const ACCENT_NAMES = ["gold", "blue", "purple", "monochrome", "vermilion", "emerald", "tangerine"];   // the colours that are offered
 const BASE_THEMES  = ["midnight", "oled"];
 function getAppSettings() {
   let s = {};
@@ -35,7 +35,9 @@ function saveChecklistItems(items) {
 const esc = t => String(t).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 /* ── draft state for controls that are not plain inputs ── */
-let draftBase = "midnight", draftAccent = "gold", draftChecklist = [], draftStrategies = [];
+let draftBase = "midnight", draftAccent = "gold", draftChecklist = [], draftStrategies = [], draftRR = [2, 3, 5];
+const RR_PRESETS = [1, 1.5, 2, 3, 5], RR_MAX = 5;
+const rrParse = v => { const a = [...new Set(String(v == null ? "" : v).split(",").map(Number).filter(n => n >= 0.1 && n <= 50))].sort((x, y) => x - y).slice(0, RR_MAX); return a.length ? a : [2, 3, 5]; };
 const BASE_NAMES  = { midnight: "Midnight", oled: "OLED Black" };
 const paletteName = c => { const el = document.querySelector('.palette-card[data-color="' + c + '"] .palette-name'); return el ? el.textContent : c; };
 const onOff       = v => v ? "On" : "Off";
@@ -50,6 +52,7 @@ const SETTINGS_FIELDS = [
   { scope: "settings", key: "accentColor", label: "Accent colour",       fb: "gold",     get: () => draftAccent,                            set: v => { draftAccent = v; },          fmt: paletteName },
   { scope: "settings", key: "quickLog",    label: "One-click quick log", fb: true,       get: () => $("tog_quick_log").checked,            set: v => { $("tog_quick_log").checked = v; }, fmt: onOff },
   { scope: "settings", key: "strategies", label: "My strategies", fb: "",             get: () => draftStrategies.join("|"),            set: v => { draftStrategies = v ? String(v).split("|").filter(Boolean) : []; renderStrategySettings(); }, fmt: v => (v ? v.split("|").length : 0) + " strateg" + ((v ? v.split("|").length : 0) === 1 ? "y" : "ies") },
+  { scope: "settings", key: "rrRows",     label: "Risk-reward rows",    fb: "2,3,5",    get: () => draftRR.join(","),                     set: v => { draftRR = rrParse(v); renderRRSettings(); }, fmt: v => String(v).split(",").map(x => "1:" + x).join(", ") },
   { scope: "settings", key: "showFees",    label: "Include estimated fees", fb: false,     get: () => $("tog_show_fees").checked,            set: v => { $("tog_show_fees").checked = v; }, fmt: onOff },
   { scope: "settings", key: "tradeStocks", label: "Trade stocks",        fb: true,       get: () => $("tog_stocks").checked,               set: v => { $("tog_stocks").checked = v; },   fmt: onOff },
   { scope: "settings", key: "tradeFno",    label: "Trade F&O",           fb: true,       get: () => $("tog_fno").checked,                  set: v => { $("tog_fno").checked = v; },      fmt: onOff },
@@ -96,6 +99,20 @@ function renderChecklistSettings() {
       <span class="chk-label">${esc(item)}</span>
       <button class="chk-del" onclick="deleteChecklistItem(${i})" title="Remove">✕</button>
     </div>`).join("");
+}
+function renderRRSettings() {
+  const el = $("rr_chips"); if (!el) return;
+  const customs = draftRR.filter(v => !RR_PRESETS.includes(v));
+  el.innerHTML = RR_PRESETS.map(v => `<button type="button" class="chip${draftRR.includes(v) ? " on" : ""}" data-rr="${v}" aria-pressed="${draftRR.includes(v)}">1 : ${v}</button>`).join("") +
+    customs.map(v => `<button type="button" class="chip on" data-rr="${v}" aria-pressed="true" title="Remove this row">1 : ${v} ✕</button>`).join("");
+  $("rr_count").textContent = draftRR.length + " of " + RR_MAX + " rows";
+}
+function rrToggle(v) {
+  const has = draftRR.includes(v);
+  if (has && draftRR.length === 1) { showToast("Keep at least one row."); return; }
+  if (!has && draftRR.length >= RR_MAX) { showToast("Up to " + RR_MAX + " rows. Turn one off first."); return; }
+  draftRR = (has ? draftRR.filter(x => x !== v) : draftRR.concat(v)).sort((a, b) => a - b);
+  renderRRSettings(); refreshDirty();
 }
 function renderStrategySettings() {
   const el = $("settings_strategies");
@@ -216,6 +233,15 @@ $("add_checklist_btn").addEventListener("click", () => {
   renderChecklistSettings();
   refreshDirty();
 });
+$("rr_chips").addEventListener("click", e => { const b = e.target.closest("[data-rr]"); if (b) rrToggle(Number(b.dataset.rr)); });
+$("rr_add_btn").addEventListener("click", () => {
+  const inp = $("rr_custom"), v = Math.round(parseFloat(inp.value) * 100) / 100;
+  if (!(v >= 0.1 && v <= 50)) { showToast("Enter a number from 0.1 to 50, for example 4."); return; }
+  if (draftRR.includes(v)) { showToast("1 : " + v + " is already in the list."); return; }
+  if (draftRR.length >= RR_MAX) { showToast("Up to " + RR_MAX + " rows. Turn one off first."); return; }
+  inp.value = ""; rrToggle(v);
+});
+$("rr_custom").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); $("rr_add_btn").click(); } });
 $("add_strategy_btn").addEventListener("click", () => {
   const input = $("new_strategy"), text = input.value.replace(/\|/g, " ").trim();
   if (!text) return;
@@ -319,6 +345,7 @@ function setLevel(level, init) {
     const d = getAppSettings();
     if (!$("flatRiskToggle").checked) { $("flatRiskToggle").checked = true; $("flatRiskToggle").dispatchEvent(new Event("change")); }
     if (!parseFloat($("i_flat").value)) $("i_flat").value = Math.round((d.defaultCap || 100000) * (d.defaultRisk || 1) / 100);
+    if (typeof cmSave === "function") cmSave();
     setLeverage(d.defaultLev || "5");
     if ($("sym_input").value) { $("sym_input").value = ""; updateLotLabel(); }
     ["flt_market", "flt_dir", "flt_result", "flt_range", "flt_from", "flt_to"].forEach(id => { $(id).value = ""; });
@@ -342,7 +369,11 @@ const ACCENT_COLORS = {
   gold:       { dark:"#ffb400", light:"#a86e00", dim:"rgba(255,180,0,.14)", solid:"#ffb400" },
   blue:       { dark:"#3b82f6", light:"#2563eb", dim:"rgba(59,130,246,.15)", solid:"#2563eb" },
   purple:     { dark:"#8b5cf6", light:"#7c3aed", dim:"rgba(139,92,246,.15)", solid:"#7c3aed" },
-  monochrome: { dark:"#94a3b8", light:"#475569", dim:"rgba(148,163,184,.15)" }
+  monochrome: { dark:"#94a3b8", light:"#475569", dim:"rgba(148,163,184,.15)" },
+  /* Colour themes: they also set the surfaces (see styles.css, data-skin). Named by colour only. */
+  vermilion:  { dark:"#ff5a2c", light:"#d4410f", dim:"rgba(255,90,44,.15)",  solid:"#ff5a2c", skin:"vermilion" },
+  emerald:    { dark:"#00d09c", light:"#00875f", dim:"rgba(0,208,156,.15)",  solid:"#00b386", skin:"emerald" },
+  tangerine:  { dark:"#ff7a1a", light:"#c2570a", dim:"rgba(255,122,26,.15)", solid:"#ff6b00", skin:"tangerine" }
 };
 
 // Black or white text, whichever has the higher contrast on the given hex fill.
@@ -358,7 +389,10 @@ function applyAccent(name) {
   const isDark = document.documentElement.dataset.theme !== "light";
   const val = isDark ? c.dark : c.light;
   const solid = c.solid || val;
-  const root = document.documentElement.style;
+  const html = document.documentElement;
+  if (c.skin) html.dataset.skin = c.skin; else delete html.dataset.skin;
+  const bw = document.getElementById("base_theme_wrap"); if (bw) bw.dataset.skin = c.skin ? "1" : "";
+  const root = html.style;
   root.setProperty("--accent",       val);
   root.setProperty("--accent-dim",   c.dim);
   root.setProperty("--accent-solid", solid);
@@ -434,6 +468,7 @@ loadSettings();
 calc();
 renderTodayTrades();
 setLevel(getLevel(), true);                              // apply the saved level (and reset anything it hides)
+restoreCalcInputs();                                  // the last numbers you typed come back after a reload
 { const st = getAppSettings(); if (st.cryptoOn) setInstrType("crypto"); else if (st.optionsOn) setInstrType("options"); else if (st.futuresOn && getLevel() === "pro") setInstrType("futures"); }   // reopen in the mode you left
 applyMarkets();                                      // hide markets the user turned off
 { const r = parseRoute(); showRoute(r.tab, r.sub); }   // open the page named in the link

@@ -476,6 +476,31 @@ if (customLevInp) {
 }
 
 /* ── Instrument type tabs ── */
+/* ── The last numbers typed are kept in this browser. Crypto keeps its own set, because it is in dollars. ── */
+const CM_KEY = "tm_calc", CM_IDS = ["i_entry", "i_sl", "i_cap", "i_rsk", "i_flat", "i_rr"];
+const CM_CRYPTO_DEFAULT = { i_entry: "", i_sl: "", i_cap: "1000", i_rsk: "1", i_flat: "", i_rr: "2", flat: false };
+let cmTimer = null;
+const cmMode = () => (instrType === "crypto" ? "crypto" : "std");
+function cmCapture() { const o = { flat: $("flatRiskToggle").checked }; CM_IDS.forEach(id => { o[id] = $(id).value; }); return o; }
+function cmApply(o) {
+  CM_IDS.forEach(id => { if (o && o[id] !== undefined) $(id).value = o[id]; });
+  if (o && typeof o.flat === "boolean") $("flatRiskToggle").checked = o.flat;
+  syncFlatUI();
+}
+function cmSave() { const m = tmGet(CM_KEY, null) || {}; m[cmMode()] = cmCapture(); m.mode = cmMode(); tmSet(CM_KEY, m); }
+function cmQueue() { clearTimeout(cmTimer); cmTimer = setTimeout(cmSave, 250); }
+function cmSwap(from, to) {                                // switching between crypto and the rest: keep each set of numbers apart
+  const m = tmGet(CM_KEY, null) || {};
+  m[from] = cmCapture();
+  cmApply(m[to] || (to === "crypto" ? CM_CRYPTO_DEFAULT : null));
+  m.mode = to; tmSet(CM_KEY, m);
+}
+function restoreCalcInputs() {                             // on page load
+  const m = tmGet(CM_KEY, null);
+  if (m && m.std) cmApply(m.std); else syncFlatUI();
+}
+["i_entry", "i_sl", "i_cap", "i_rsk", "i_flat", "i_rr"].forEach(id => { const el = $(id); if (el) el.addEventListener("input", cmQueue); });
+
 function setInstrType(type) {
   const prev = instrType;
   instrType = type;
@@ -488,6 +513,8 @@ function setInstrType(type) {
   if (levField) levField.style.display = instrType === "equity" ? "" : "none";
 
   syncOptionsUI(prev);
+  if ((prev === "crypto") !== (instrType === "crypto")) cmSwap(prev === "crypto" ? "crypto" : "std", instrType === "crypto" ? "crypto" : "std");
+  syncFlatUI();
   updateLotLabel();
   updateTypeOptions();
   applyOrderType();
@@ -683,15 +710,15 @@ function renderFeeBreakdown() {
   const tp2    = isLong ? entry + slDist * 2 : entry - slDist * 2;
 
   if (lastCalc.instrument === "crypto") {
-    const f = cryptoFeeCfg(), fx = lastCalc.fx;
-    const entryFee = units * entry * f.taker / 100 * fx, exitFee = units * tp2 * f.taker / 100 * fx;
+    const f = cryptoFeeCfg(), d2 = v => "$" + fmtP(v, 2);
+    const entryFee = units * entry * f.taker / 100, exitFee = units * tp2 * f.taker / 100;
     const gst = (entryFee + exitFee) * f.gst / 100;
     fb.innerHTML = `
-      <div class="fee-row"><span class="fee-lbl">Entry fee (taker ${f.taker}%)</span><span class="fee-val">${fmtINR(entryFee)}</span></div>
-      <div class="fee-row"><span class="fee-lbl">Exit fee (taker ${f.taker}%)</span><span class="fee-val">${fmtINR(exitFee)}</span></div>
-      <div class="fee-row"><span class="fee-lbl">GST (${f.gst}%)</span><span class="fee-val">${fmtINR(gst)}</span></div>
-      <div class="fee-row total"><span class="fee-lbl">Total fees (1:2 trade)</span><span class="fee-val">${fmtINR(entryFee + exitFee + gst)}</span></div>
-      <div class="fee-row"><span class="fee-lbl">Funding per 8h held (${f.funding}%, not included)</span><span class="fee-val">${fmtINR(units * entry * f.funding / 100 * fx)}</span></div>
+      <div class="fee-row"><span class="fee-lbl">Entry fee (taker ${f.taker}%)</span><span class="fee-val">${d2(entryFee)}</span></div>
+      <div class="fee-row"><span class="fee-lbl">Exit fee (taker ${f.taker}%)</span><span class="fee-val">${d2(exitFee)}</span></div>
+      <div class="fee-row"><span class="fee-lbl">GST (${f.gst}%)</span><span class="fee-val">${d2(gst)}</span></div>
+      <div class="fee-row total"><span class="fee-lbl">Total fees (1:2 trade)</span><span class="fee-val">${d2(entryFee + exitFee + gst)}</span></div>
+      <div class="fee-row"><span class="fee-lbl">Funding per 8h held (${f.funding}%, not included)</span><span class="fee-val">${d2(units * entry * f.funding / 100)}</span></div>
       <div class="fee-row"><span class="fee-lbl">Estimated liquidation price</span><span class="fee-val">$${fmtUsd(lastCalc.liq)}</span></div>
       <div class="fee-disc">Rough estimate. Your real charges can differ.</div>`;
     return;
@@ -730,17 +757,26 @@ function getInputs() {
   };
 }
 
-$("flatRiskToggle").addEventListener("change", () => {
-  const on = $("flatRiskToggle").checked;
+const curSym = () => (instrType === "crypto" ? "$" : "₹");
+function syncFlatUI() {                                  // labels follow the market: rupees, or dollars for crypto
+  const on = $("flatRiskToggle").checked, c = curSym();
   $("i_rsk").style.display  = on ? "none" : "";
   $("i_flat").style.display = on ? ""     : "none";
-  $("rsk_label").textContent = on ? "Risk (₹)" : "Risk %";
-  calc();
-});
+  $("rsk_label").textContent = on ? "Risk (" + c + ")" : "Risk %";
+  if ($("flat_lbl")) $("flat_lbl").textContent = "Flat " + c;
+  if ($("lbl_cap"))  $("lbl_cap").textContent  = "Capital (" + c + ")";
+  $("i_flat").placeholder = "e.g. " + c + (instrType === "crypto" ? "10" : "1000");
+}
+$("flatRiskToggle").addEventListener("change", () => { syncFlatUI(); cmQueue(); calc(); });
 
 /* Position sizing. Standard = equity / options / futures (whole shares or lots, ₹ prices).
    Crypto = fractional coins, USDT prices, risk and results in ₹ at the USD/INR rate. */
-const RRS = [1, 1.5, 2, 3];
+/* The rows of the Risk : Reward table. Chosen in Settings (up to 5); the default is 1:2, 1:3 and 1:5. */
+function getRRS() {
+  const raw = (typeof getAppSettings === "function" ? getAppSettings().rrRows : "") || "2,3,5";
+  const a = [...new Set(String(raw).split(",").map(Number).filter(v => v >= 0.1 && v <= 50))].sort((x, y) => x - y).slice(0, 5);
+  return a.length ? a : [2, 3, 5];
+}
 const feesOn = () => (typeof getAppSettings === "function" ? getAppSettings().showFees === true : false);   // OFF by default
 
 function sizeStandard(c) {
@@ -765,7 +801,7 @@ function sizeStandard(c) {
                  : instrType === "equity"  ? tradeVal / (leverageMultiplier || 1)
                  : marginPerUnit * units;
   const actualRisk = units * slPerUnit;
-  const targets = RRS.map(rr => {
+  const targets = getRRS().map(rr => {
     const tp    = isLong ? entry + slDist * rr : entry - slDist * rr;
     const gross = slDist * rr * lotSize * units;
     const fees  = feesOn() ? calcFees(entry, tp, units, lotSize, isLong).total : 0;
@@ -785,7 +821,7 @@ function sizeCrypto(c) {
   const totalMgn   = tradeVal / lev;                                    // isolated-margin estimate
   const actualRisk = units * slDist * fx;
   const feeINR = tp => units * (entry + tp) * (f.taker / 100) * (1 + f.gst / 100) * fx;   // entry + exit, taker both sides, plus GST
-  const targets = RRS.map(rr => {
+  const targets = getRRS().map(rr => {
     const tp    = isLong ? entry + slDist * rr : entry - slDist * rr;
     const gross = slDist * rr * units * fx;
     return { rr, tp, gross, net: gross - (feesOn() ? feeINR(tp) : 0) };
@@ -800,7 +836,8 @@ function sizeCrypto(c) {
 
 /* ── Main calc ── */
 function calc() {
-  const { entry, sl, cap, rsk, rr: defRR, riskINR, flatOn } = getInputs();
+  let { entry, sl, cap, rsk, rr: defRR, riskINR, flatOn } = getInputs();
+  if (instrType === "crypto") { const f0 = getFx(); cap *= f0; riskINR *= f0; }   // typed in dollars: converted once for the maths
   if (!entry || !sl || entry === sl || entry <= 0 || sl <= 0) { showEmpty(); return; }
   /* A typed zero (or negative) is not the same as an empty box: say so, instead of quietly using a default. */
   const capRaw = $("i_cap").value.trim(), rskRaw = $("i_rsk").value.trim();
@@ -858,13 +895,14 @@ function calc() {
     db.textContent = isLong ? "▲ LONG" : "▼ SHORT";
   }
 
+  const fm = v => crypto ? "$" + fmtP(v / M.crypto.fx, 2) : fmtINR(v);
   const warns = [];
   if (totalMgn > cap) {
     if (instrType === "equity") {
       const maxAffordable = Math.floor((cap * (leverageMultiplier || 1)) / entry);
-      warns.push(`⚠ Margin required (${fmtINR(totalMgn)}) exceeds capital (${fmtINR(cap)}). Max affordable with ${leverageMultiplier}× leverage: <strong>${comma(maxAffordable)} shares</strong>.${typeof getLevel === "function" && getLevel() === "quick" ? " Change your capital in <a href='#profile'>Profile → Default capital</a>." : ""}`);
+      warns.push(`⚠ Margin required (${fm(totalMgn)}) exceeds capital (${fm(cap)}). Max affordable with ${leverageMultiplier}× leverage: <strong>${comma(maxAffordable)} shares</strong>.${typeof getLevel === "function" && getLevel() === "quick" ? " Change your capital in <a href='#profile'>Profile → Default capital</a>." : ""}`);
     } else {
-      warns.push(`⚠ Margin required (${fmtINR(totalMgn)}) exceeds your capital (${fmtINR(cap)}).${typeof getLevel === "function" && getLevel() === "quick" ? " Change your capital in <a href='#profile'>Profile → Default capital</a>." : ""}`);
+      warns.push(`⚠ Margin required (${fm(totalMgn)}) exceeds your capital (${fm(cap)}).${typeof getLevel === "function" && getLevel() === "quick" ? " Change your capital in <a href='#profile'>Profile → Default capital</a>." : ""}`);
     }
   }
   if (M.sellOpt) warns.push(`⚠ You are SELLING an option. The broker blocks margin (this calculator estimates ${fmtINR(M.mgnLow)}–${fmtINR(M.mgnHigh)}, which can be well below the real figure; check your broker's margin calculator), far more than the premium, and a loss is not capped at the premium. Strike, VIX and expiry change it a lot: check your broker's margin calculator.`);
@@ -917,12 +955,12 @@ function calc() {
   // Crypto is shown in dollars; rupees stay as a small reference on risk and profit only.
   const usd = inr => (inr < 0 ? "−" : "") + "$" + fmtP(Math.abs(inr) / M.crypto.fx, 2);
   $("t2val").textContent = crypto ? usd(actualRisk) : fmtINR(actualRisk);
-  $("t2sub").textContent = `${crypto ? "≈ " + fmtINR(actualRisk) + " · " : ""}${actualRiskPct.toFixed(2)}% of capital${flatOn ? " · flat risk" : ""}`;
+  $("t2sub").textContent = `${actualRiskPct.toFixed(2)}% of capital${flatOn ? " · flat risk" : ""}`;
 
   // Tile 3: Profit
   $("t_profit_lbl").textContent = "Profit (1:" + defRR + ")";
   $("t_profit_val").textContent = crypto ? "+" + usd(profitGross) : "+₹" + fmtP(profitGross, 0);
-  $("t_profit_sub").innerHTML = '<span class="tile-target" title="Target price"><i>🎯 Target</i><b>' + cur + (crypto ? fmtUsd(profitTP) : fmtTargetPx(profitTP)) + '</b></span>' + (crypto ? '<div class="tile-ref">≈ ₹' + fmtP(profitGross, 0) + '</div>' : "");
+  $("t_profit_sub").innerHTML = '<span class="tile-target" title="Target price"><i>🎯 Target</i><b>' + cur + (crypto ? fmtUsd(profitTP) : fmtTargetPx(profitTP)) + '</b></span>';
 
   const showFees = typeof getAppSettings === "function" ? getAppSettings().showFees === true : false;   // fees are OFF until the user turns them on
   $("tgt_body").innerHTML = targets.map(t => `

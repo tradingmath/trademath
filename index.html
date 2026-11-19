@@ -29,7 +29,7 @@
 <link rel="preload" href="fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts.css?v=140c3a0f">
 <link rel="icon" href="logo-icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css?v=84a9cb73">
+<link rel="stylesheet" href="styles.css?v=6ed6da61">
 <script>
 /* Runs before the page paints: apply the saved theme and level now, and keep the page hidden until the app has
    finished setting itself up, so nothing flashes dark, then light, or jumps between modes. */
@@ -38,6 +38,7 @@ try{s=JSON.parse(localStorage.getItem("tm_settings")||"{}")||{}}catch(e){}
 d.dataset.ui=["quick","trader","pro"].indexOf(s.uiLevel)>=0?s.uiLevel:"trader";
 d.dataset.theme=s.darkMode===false?"light":"dark";
 if(s.baseTheme==="oled")d.dataset.baseTheme="oled";
+if({vermilion:1,emerald:1,tangerine:1}[s.accentColor])d.dataset.skin=s.accentColor;
 d.classList.add("tm-boot");
 setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
 </script>
@@ -173,14 +174,14 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
         </div>
         <div class="field-row3">
           <div class="field" data-level="trader">
-            <label for="i_cap">Capital (₹)</label>
+            <label for="i_cap" id="lbl_cap">Capital (₹)</label>
             <input type="number" id="i_cap" value="100000" step="1000" min="1" autocomplete="off">
           </div>
           <div class="field">
             <label style="display:flex;align-items:center;justify-content:space-between">
               <span id="rsk_label">Risk %</span>
               <span style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:400;color:var(--fg3)" data-level="trader">
-                Flat ₹
+                <span id="flat_lbl">Flat ₹</span>
                 <label class="toggle-switch" style="width:32px;height:17px;flex-shrink:0">
                   <input type="checkbox" id="flatRiskToggle">
                   <span class="toggle-track"></span>
@@ -496,6 +497,18 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
           <span class="palette-dot" style="background:#94a3b8"></span>
           <span class="palette-name">Slate</span>
         </div>
+        <div class="palette-card" data-color="vermilion">
+          <span class="palette-dot" style="background:#ff5a2c"></span>
+          <span class="palette-name">Vermilion</span>
+        </div>
+        <div class="palette-card" data-color="emerald">
+          <span class="palette-dot" style="background:#00d09c"></span>
+          <span class="palette-name">Emerald</span>
+        </div>
+        <div class="palette-card" data-color="tangerine">
+          <span class="palette-dot" style="background:#ff7a1a"></span>
+          <span class="palette-name">Tangerine</span>
+        </div>
       </div>
     </div>
   </div>
@@ -524,6 +537,14 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
       </div>
       <label class="toggle-switch"><input type="checkbox" id="tog_quick_log" checked><span class="toggle-track"></span></label>
     </div>
+  </div>
+
+  <!-- Risk-reward rows shown in the targets table -->
+  <div class="settings-section" id="rr_settings" data-level="trader">
+    <div class="p-title">Risk-reward rows</div>
+    <div style="font-size:12px;color:var(--fg2);margin-bottom:4px">Pick the targets shown in the Risk : Reward table on the calculator. Up to 5 rows. The default is 1:2, 1:3 and 1:5.</div>
+    <div id="rr_chips" class="rr-chips"></div>
+    <div class="rr-add">Add your own 1 : <input type="number" id="rr_custom" min="0.1" max="50" step="any" placeholder="e.g. 4" autocomplete="off"> <button type="button" class="btn btn-ghost btn-sm" id="rr_add_btn">Add</button> <span id="rr_count" class="proj-hint"></span></div>
   </div>
 
   <!-- Fees and charges: stocks, F&O and crypto together -->
@@ -924,13 +945,13 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
 
 <p class="note" style="max-width:720px;margin:24px auto 0;text-align:center;line-height:1.7">TradeMath is a free position size calculator and trade journal for Indian traders. Enter your entry, stop-loss, capital and risk to get quantity, margin, targets and charges for NSE stocks, F&amp;O lots, MCX and crypto futures. Then log the trade and review your results.</p>
 <p class="note" style="text-align:center;margin:10px 0 8px">Guides: <a href="position-size-calculator-india.html" style="color:inherit">Position size</a> · <a href="risk-reward-ratio-explained.html" style="color:inherit">Risk-reward</a> · <a href="nse-fno-lot-sizes.html" style="color:inherit">F&amp;O lot sizes</a> · <a href="trading-journal-india.html" style="color:inherit">Trading journal</a> · <a href="guides.html" style="color:inherit">All guides</a><br><a href="about.html" style="color:inherit">About</a> · <a href="contact.html" style="color:inherit">Contact</a> · <a href="privacy.html" style="color:inherit">Privacy</a> · <a href="terms.html" style="color:inherit">Terms</a> · Not investment advice</p>
-<script src="calc.js?v=edd9b7dc"></script>
+<script src="calc.js?v=c29381a5"></script>
 <script src="journal.js?v=0183e271"></script>
 <script src="projection.js?v=148bf141"></script>
 <script src="alerts.js?v=24467fdf"></script>
-<script src="app.js?v=40828908"></script>
+<script src="app.js?v=a87ad392"></script>
 <script src="cloud.js?v=459e79da"></script>
-<script src="profile.js?v=e5c74a52"></script>
+<script src="profile.js?v=4072ad38"></script>
 
 </body>
 </html>
