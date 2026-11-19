@@ -29,7 +29,7 @@
 <link rel="preload" href="fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts.css?v=140c3a0f">
 <link rel="icon" href="logo-icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css?v=32a79e75">
+<link rel="stylesheet" href="styles.css?v=d44071d3">
 <script>
 /* Runs before the page paints: apply the saved theme and level now, and keep the page hidden until the app has
    finished setting itself up, so nothing flashes dark, then light, or jumps between modes. */
@@ -189,7 +189,7 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
               </span>
             </label>
             <input type="number" id="i_rsk" value="1" step="0.1" min="0.01" max="100" autocomplete="off">
-            <input type="number" id="i_flat" value="" step="100" min="1" autocomplete="off" placeholder="e.g. ₹1000" style="display:none;margin-top:6px">
+            <input type="number" id="i_flat" value="" step="100" min="1" autocomplete="off" placeholder="e.g. ₹1000" style="display:none">
           </div>
           <div class="field">
             <label for="i_rr">Target (R:R) <span class="proj-hint">1 : x</span></label>
@@ -216,12 +216,19 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
               <span class="opt-title">Crypto <span class="proj-hint">perpetual</span></span>
               <label class="toggle-switch" style="width:32px;height:17px;flex-shrink:0"><input type="checkbox" id="cryToggle" aria-label="Trade crypto perpetuals"><span class="toggle-track"></span></label>
             </div>
-            <div class="cry-row" id="cry_row" hidden>
-              <label class="cry-lbl">Leverage ×<input type="number" id="i_lev" value="10" min="1" max="125" step="1" autocomplete="off"></label>
-              <label class="cry-lbl">1 USD = ₹<input type="number" id="i_fx" value="88" min="1" step="0.1" autocomplete="off"></label>
-            </div>
-            <div class="lot-hint" id="cry_hint" hidden>Enter Entry and SL in USDT. Capital and risk are in dollars. Set 1 lot to your exchange's contract size, or type a coin above to fill it in.</div>
           </div>
+        </div>
+
+        <!-- Crypto settings: one tidy block, full width, shown only when Crypto is on -->
+        <div class="cry-panel" id="cry_panel" hidden>
+          <div class="cry-panel-title">Crypto settings</div>
+          <div class="cry-grid">
+            <label class="cry-lbl"><span class="cry-t">Leverage ×</span><input type="number" id="i_lev" value="10" min="1" max="125" step="1" autocomplete="off"></label>
+            <label class="cry-lbl"><span class="cry-t">1 lot = <span id="clot_unit">coins</span></span><input type="number" id="i_clot" value="0.001" min="0" step="any" autocomplete="off" title="Contract size of one lot. Change it to match your exchange. Empty or 0 sizes in coins."></label>
+            <label class="cry-lbl"><span class="cry-t">Liq. price <span class="cry-lock" aria-hidden="true">🔒</span></span><input type="text" id="i_liq" class="locked" value="—" readonly tabindex="-1" aria-label="Estimated liquidation price (cannot be edited)"></label>
+            <label class="cry-lbl"><span class="cry-t">1 USD = ₹</span><input type="number" id="i_fx" value="88" min="1" step="0.1" autocomplete="off" title="Only used to show crypto trades in rupees in your journal"></label>
+          </div>
+          <div class="cry-note">Entry and SL in USDT. Capital and risk in dollars. The liquidation price is an estimate from your leverage, and it is locked: it cannot be edited.</div>
         </div>
 
         <div class="field lot-wrap" id="lot_wrap" hidden>
@@ -230,13 +237,6 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
             <input type="number" id="i_lot" value="65" min="1" step="1" autocomplete="off" aria-label="Units in one lot">
           </div>
           <div class="lot-hint" id="lot_hint">Enter option premiums for Entry and SL.</div>
-        </div>
-        <div class="field lot-wrap" id="clot_wrap" hidden>
-          <div class="lot-row" id="clot_row">
-            <span class="lot-eq">1 lot =</span>
-            <input type="number" id="i_clot" value="0.001" min="0" step="any" autocomplete="off" aria-label="Coins in one lot">
-            <span class="lot-eq" id="clot_unit">coins</span>
-          </div>
         </div>
 
         <!-- Leverage Selector (for Equity) -->
@@ -952,7 +952,7 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
 
 <p class="note" style="max-width:720px;margin:24px auto 0;text-align:center;line-height:1.7">TradeMath is a free position size calculator and trade journal for Indian traders. Enter your entry, stop-loss, capital and risk to get quantity, margin, targets and charges for NSE stocks, F&amp;O lots, MCX and crypto futures. Then log the trade and review your results.</p>
 <p class="note" style="text-align:center;margin:10px 0 8px">Guides: <a href="position-size-calculator-india.html" style="color:inherit">Position size</a> · <a href="risk-reward-ratio-explained.html" style="color:inherit">Risk-reward</a> · <a href="nse-fno-lot-sizes.html" style="color:inherit">F&amp;O lot sizes</a> · <a href="trading-journal-india.html" style="color:inherit">Trading journal</a> · <a href="guides.html" style="color:inherit">All guides</a><br><a href="about.html" style="color:inherit">About</a> · <a href="contact.html" style="color:inherit">Contact</a> · <a href="privacy.html" style="color:inherit">Privacy</a> · <a href="terms.html" style="color:inherit">Terms</a> · Not investment advice</p>
-<script src="calc.js?v=a66939c3"></script>
+<script src="calc.js?v=cc4e85e6"></script>
 <script src="journal.js?v=1c7de517"></script>
 <script src="projection.js?v=148bf141"></script>
 <script src="alerts.js?v=24467fdf"></script>

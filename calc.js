@@ -582,14 +582,12 @@ function syncOptionsUI(prev) {
   if (hint) hint.textContent = instrType === "futures" ? "Enter the futures price for Entry and SL." : "Enter option premiums for Entry and SL.";
   const ct = $("cryToggle");
   if (ct) ct.checked = instrType === "crypto";
-  if ($("clot_wrap")) $("clot_wrap").hidden = instrType !== "crypto";
   if ($("sym_input")) $("sym_input").placeholder = instrType === "crypto" ? "Coin (optional) … e.g. BTC, ETH, SOL" : "Stock / Symbol (optional) … e.g. RELIANCE, TCS, NIFTY";
   updateCoinUnit();
   const ccy = instrType === "crypto" ? "USDT" : "₹";           // crypto prices are typed in USDT
   if ($("lbl_e")) $("lbl_e").textContent = "Entry Price (" + ccy + ")";
   if ($("lbl_s")) $("lbl_s").textContent = "Stop Loss (" + ccy + ")";
-  if ($("cry_row"))  $("cry_row").hidden  = instrType !== "crypto";
-  if ($("cry_hint")) $("cry_hint").hidden = instrType !== "crypto";
+  if ($("cry_panel")) $("cry_panel").hidden = instrType !== "crypto";
   if ((prev === "equity" || prev === "crypto") && (instrType === "options" || instrType === "futures")) autoLot(getSelectedSymbol());   // switching on picks the lot size
 }
 
@@ -1001,6 +999,8 @@ function calc() {
        (higher leverage means it sits closer to the entry) and is shown in red when it falls before the stop-loss. */
     $("t1sub").innerHTML = `<span class="${M.crypto.liqBeforeSL ? "liq-bad" : "liq"}" title="Estimated liquidation price at ${M.crypto.lev}× leverage. ${mgnPct.toFixed(1)}% of capital as margin.">Liq. price $${fmtUsd(M.crypto.liq)}</span> · ${M.crypto.lev}×`;
     $("t1sub").style.whiteSpace = "normal";               // wrap, so the liquidation price is never cut off
+    const lq = $("i_liq");                                // the same price in the locked box in Crypto settings
+    if (lq) { lq.value = "$" + fmtUsd(M.crypto.liq); lq.classList.toggle("liq-bad", !!M.crypto.liqBeforeSL); }
   } else {
     // Tile 0: Position
     $("t0lbl").textContent = instrType === "equity" ? "Position (Shares)" : "Position (Lots)";
@@ -1068,6 +1068,7 @@ function fitProfitTile() {
 window.addEventListener("resize", () => { clearTimeout(fitProfitTile._t); fitProfitTile._t = setTimeout(() => { if (typeof lastCalc !== "undefined" && lastCalc) fitProfitTile(); }, 120); });
 
 function showEmpty(msg) {
+  if ($("i_liq")) { $("i_liq").value = "—"; $("i_liq").classList.remove("liq-bad"); }
   const re = $("r_empty");
   if (!re.dataset.def) re.dataset.def = re.innerHTML;
   re.innerHTML = msg ? "<strong>" + msg + "</strong>" : re.dataset.def;

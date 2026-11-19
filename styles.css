@@ -1203,3 +1203,28 @@ h1.logo { margin:0; line-height:inherit; }
 /* Profit tile too narrow even after shrinking: the target chip moves to its own line inside the tile */
 .tiles .tile:last-child.pt-wrap { grid-template-columns:auto; }
 .tiles .tile:last-child.pt-wrap .tile-sub { grid-row:3; grid-column:1; margin-top:4px; }
+
+/* Crypto settings block: leverage, lot size, locked liquidation price, rupee rate */
+.cry-panel { border:1px solid var(--border); border-radius:10px; padding:10px 12px 12px; margin:0 0 14px; background:var(--card); }
+.cry-panel[hidden] { display:none; }
+.cry-panel-title { font-size:10px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--fg3); margin-bottom:8px; }
+.cry-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; }
+@media (min-width:640px) { .cry-grid { grid-template-columns:repeat(4, minmax(0,1fr)); } }
+.cry-lbl { gap:4px; }
+.cry-lbl input { padding:7px 10px; height:36px; }
+.cry-lbl input.locked { background:transparent; border-style:dashed; color:var(--fg); font-weight:600; cursor:not-allowed; user-select:all; }
+.cry-lbl input.locked.liq-bad { color:var(--red); border-color:rgba(239,68,68,.55); }
+.cry-lock { font-size:10px; opacity:.8; }
+.cry-note { margin-top:8px; font-size:11px; line-height:1.55; color:var(--fg3); }
+
+/* the small switches: the knob now fits the track, in both positions */
+.toggle-switch[style*="width:32px"] .toggle-track::after { width:13px; height:13px; top:2px; left:2px; }
+.toggle-switch[style*="width:32px"] input:checked + .toggle-track::after { transform:translateX(15px); }
+.cry-lbl { display:flex; flex-direction:column; gap:4px; font-size:11px; color:var(--fg2); font-weight:500; }
+.cry-t { white-space:nowrap; line-height:1.3; }
+.cry-lbl input { width:100%; min-width:0; height:36px; padding:7px 10px; background:var(--surface); border:1px solid var(--border); border-radius:8px; color:var(--fg); font-family:var(--mono); font-size:14px; outline:none; }
+.cry-lbl input:focus { border-color:var(--accent); }
+.cry-lbl input.locked { background:transparent; }
+
+/* Capital, Risk and Target boxes line up even though the Risk label carries a switch */
+.field-row3 > .field > label { min-height:22px; align-items:center; }
