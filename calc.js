@@ -746,6 +746,8 @@ function renderFeeBreakdown() {
   document.documentElement.dataset.fees = showFees ? "on" : "off";   // hides every fee column and field in the journal while fees are off
   const feeSection = $("fee_section");
   if (feeSection) feeSection.hidden = !showFees;
+  document.querySelectorAll(".cry-fee").forEach(el => { el.hidden = !showFees; });          // fee boxes in Crypto settings, only while fees are on
+  const cfe = $("i_cfee"); if (cfe && document.activeElement !== cfe) cfe.value = cryptoFeeCfg().taker;
   if (!showFees || !lastCalc) { fb.innerHTML = ""; return; }
 
   const { entry, sl, isLong, units, lotSize } = lastCalc;
@@ -865,7 +867,7 @@ function sizeCrypto(c) {
   if (!(units > 0)) return null;
   const tradeVal   = units * entry * fx;                                 // ₹ notional
   const totalMgn   = tradeVal / lev;                                    // isolated-margin estimate
-  const actualRisk = units * slDist * fx;
+  const actualRisk = units * slDist * fx;                                // the risk is the price move to the stop; fees are shown separately
   const feeINR = tp => units * (entry + tp) * (f.taker / 100) * (1 + f.gst / 100) * fx;   // entry + exit, taker both sides, plus GST
   const targets = getRRS().map(rr => {
     const tp    = isLong ? entry + slDist * rr : entry - slDist * rr;
@@ -999,6 +1001,8 @@ function calc() {
        (higher leverage means it sits closer to the entry) and is shown in red when it falls before the stop-loss. */
     $("t1sub").innerHTML = `<span class="${M.crypto.liqBeforeSL ? "liq-bad" : "liq"}" title="Estimated liquidation price at ${M.crypto.lev}× leverage. ${mgnPct.toFixed(1)}% of capital as margin.">Liq. price $${fmtUsd(M.crypto.liq)}</span> · ${M.crypto.lev}×`;
     $("t1sub").style.whiteSpace = "normal";               // wrap, so the liquidation price is never cut off
+    const cf = cryptoFeeCfg(), feeUsd = units * (entry + profitTP) * (cf.taker / 100) * (1 + cf.gst / 100);
+    if ($("i_cfeeamt")) $("i_cfeeamt").value = "$" + fmtP(feeUsd, 2);                  // entry fee + exit fee at the target
     const lq = $("i_liq");                                // the same price in the locked box in Crypto settings
     if (lq) { lq.value = "$" + fmtUsd(M.crypto.liq); lq.classList.toggle("liq-bad", !!M.crypto.liqBeforeSL); }
   } else {
@@ -1069,6 +1073,7 @@ window.addEventListener("resize", () => { clearTimeout(fitProfitTile._t); fitPro
 
 function showEmpty(msg) {
   if ($("i_liq")) { $("i_liq").value = "—"; $("i_liq").classList.remove("liq-bad"); }
+  if ($("i_cfeeamt")) $("i_cfeeamt").value = "—";
   const re = $("r_empty");
   if (!re.dataset.def) re.dataset.def = re.innerHTML;
   re.innerHTML = msg ? "<strong>" + msg + "</strong>" : re.dataset.def;
@@ -1124,6 +1129,14 @@ const cryToggleEl = $("cryToggle");
 if (cryToggleEl) cryToggleEl.addEventListener("change", () => {
   setInstrType(cryToggleEl.checked ? "crypto" : baseInstr());
   rememberInstr();
+});
+const cfeeEl = $("i_cfee");
+if (cfeeEl) cfeeEl.addEventListener("input", () => {        // the fee % typed here is the Taker fee in Settings
+  const v = parseFloat(cfeeEl.value);
+  if (!(v >= 0 && v <= 5)) return;
+  saveSetting("cryptoTaker", v);
+  const se = $("s_cry_taker"); if (se) se.value = v;
+  calc();
 });
 const clotEl = $("i_clot");
 if (clotEl) clotEl.addEventListener("input", () => {        // remembered for next time, and for this coin

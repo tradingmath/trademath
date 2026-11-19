@@ -1228,3 +1228,5 @@ h1.logo { margin:0; line-height:inherit; }
 
 /* Capital, Risk and Target boxes line up even though the Risk label carries a switch */
 .field-row3 > .field > label { min-height:22px; align-items:center; }
+.cry-lbl[hidden] { display:none; }
+@media (min-width:640px) { .cry-grid { grid-template-columns:repeat(auto-fit, minmax(128px, 1fr)); } }
