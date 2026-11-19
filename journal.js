@@ -189,7 +189,11 @@ function isClosed(t) {
 function fxOf(t) { return t.instrument === "crypto" ? (t.fx || 1) : 1; }   // crypto prices are USDT; P&L is in ₹
 /* Fees are only counted when "Include estimated fees" is on in Settings. Turned off, profit is shown before charges. */
 const feesCounted = () => typeof getAppSettings === "function" && getAppSettings().showFees === true;
-function pnlForTrade(t) {
+/* Journal table in dollars: only while the table shows crypto alone and the ₹/$ switch is on. Each trade is converted at its own saved rate. */
+let JUSD = false;
+const jFx = t => JUSD ? fxOf(t) : 1;
+const pnlForTrade = t => { const v = pnlRaw(t); return v === null ? v : v / jFx(t); };
+function pnlRaw(t) {
   const dir = t.dir === "LONG" ? 1 : -1;
   const F = feesCounted() ? 1 : 0;
   const k = fxOf(t);
@@ -885,22 +889,22 @@ function toggleDay(btn, dayId) {
 
 /* ══════════════ REPORTS ══════════════ */
 function grossPnl(t) {
-  const dir = t.dir === "LONG" ? 1 : -1, k = fxOf(t);
+  const dir = t.dir === "LONG" ? 1 : -1, k = fxOf(t) / jFx(t);
   if (t.exits && t.exits.length) return t.exits.reduce((s, ex) => s + dir * (ex.price - t.entry) * ex.qty * k, 0);
   return t.exit ? dir * (t.exit - t.entry) * t.qty * k : null;
 }
 /* Full Indian grouping (₹3,42,819), like a broker statement. */
 function fullINR(v, plain) {
   const a = Math.abs(v), s = a >= 100 ? Math.round(a).toLocaleString("en-IN") : a.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  return (v < 0 ? "−" : plain || v === 0 ? "" : "+") + "₹" + s;
+  return (v < 0 ? "−" : plain || v === 0 ? "" : "+") + (JUSD ? "$" : "₹") + s;
 }
 const signed = v => fullINR(v);
 const pctTxt = v => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(Math.abs(v) >= 10 ? 1 : 2) + "%";
 const tone = v => v > 0 ? "td-pos" : v < 0 ? "td-neg" : "td-muted";
 /* Margin a trade ties up: the estimate saved when it was logged from the calculator, otherwise its full value. */
 function capitalUsed(t) {
-  if (t.margin > 0) return t.margin;
-  const v = (t.entry || 0) * (t.qty || 0) * fxOf(t);
+  if (t.margin > 0) return t.margin / jFx(t);
+  const v = (t.entry || 0) * (t.qty || 0) * fxOf(t) / jFx(t);
   return v > 0 ? v : null;
 }
 /* Peak margin: the most capital in use at any one time.
@@ -972,6 +976,14 @@ function showJournalEmpty(mode) {          // mode: "empty" (no trades at all) |
   if (mode) el.dataset.mode = mode;
 }
 function renderReports() {
+  const fm = $("flt_market") ? $("flt_market").value : "";
+  const hasCry = trades.some(t => t.instrument === "crypto"), allCry = trades.length && trades.every(t => t.instrument === "crypto");
+  const eligible = fm ? fm === "Crypto" : allCry;
+  const sw = $("ccy_sw"); if (sw) { sw.hidden = !(hasCry && eligible); const on = getAppSettings().jnlUsd === true; sw.querySelectorAll("button").forEach(b => b.classList.toggle("on", (b.dataset.ccy === "usd") === on)); }
+  JUSD = !!(hasCry && eligible && getAppSettings().jnlUsd === true);
+  try { renderReportsInner(); } finally { JUSD = false; }
+}
+function renderReportsInner() {
   if (!trades.length) { $("rep_body").innerHTML = ""; showJournalEmpty("empty"); return; }
 
   const fMkt = $("flt_market").value;
@@ -1314,3 +1326,4 @@ function removeEstimatedFees() {
     showToast("Estimated fees removed", { label: "Undo", fn: () => { trades = JSON.parse(snap); redraw(); showToast("Undone"); } });
   });
 })();
+document.querySelectorAll("#ccy_sw button").forEach(b => b.addEventListener("click", () => { saveSetting("jnlUsd", b.dataset.ccy === "usd"); renderReports(); }));

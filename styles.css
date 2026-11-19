@@ -1261,3 +1261,9 @@ h1.logo { margin:0; line-height:inherit; }
   .field-row3 .opt-field .proj-hint { display:none; }
   .field-row3 .opt-head { flex-wrap:nowrap; }
 }
+
+/* ₹ / $ switch for a crypto-only journal */
+.ccy-sw { display:inline-flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; margin-left:auto; }
+.ccy-sw[hidden] { display:none; }
+.ccy-sw button { background:transparent; color:var(--fg2); border:0; padding:7px 14px; font:inherit; font-weight:600; cursor:pointer; }
+.ccy-sw button.on { background:var(--accent); color:var(--on-accent); }
