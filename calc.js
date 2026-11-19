@@ -1031,7 +1031,7 @@ function calc() {
   const usd = inr => (inr < 0 ? "−" : "") + "$" + fmtP(Math.abs(inr) / M.crypto.fx, 2);
   $("t2val").textContent = crypto ? usd(actualRisk) : fmtINR(actualRisk);
   /* "Include fees in SL" is on: show where the risk comes from, in small text, like 49.96 (35+14): price move + fees. */
-  const brk = v => { const x = Math.abs(v); return x >= 10 ? String(Math.round(x)) : x.toFixed(2); };
+  const brk = v => { const x = Math.abs(v); return x >= 1 ? String(Math.round(x)) : x.toFixed(2); };
   if (crypto && M.riskParts && M.riskParts.inSL) {
     const fx0 = M.crypto.fx;
     $("t2val").innerHTML = usd(actualRisk) + ' <small class="brk" title="Price move to your stop + entry and exit fees">(' + brk(M.riskParts.price / fx0) + "+" + brk(M.riskParts.fees / fx0) + ")</small>";
