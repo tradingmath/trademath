@@ -748,6 +748,8 @@ function renderFeeBreakdown() {
   if (feeSection) feeSection.hidden = !showFees;
   document.querySelectorAll(".cry-fee").forEach(el => { el.hidden = !showFees; });          // fee boxes in Crypto settings, only while fees are on
   const cfe = $("i_cfee"); if (cfe && document.activeElement !== cfe) cfe.value = cryptoFeeCfg().taker;
+  const csl = $("cfee_sl");                                                                 // the "Include fees in SL" button
+  if (csl) { const on = getAppSettings().cryptoFeeInSL === true; csl.classList.toggle("on", on); csl.setAttribute("aria-pressed", String(on)); }
   if (!showFees || !lastCalc) { fb.innerHTML = ""; return; }
 
   const { entry, sl, isLong, units, lotSize } = lastCalc;
@@ -861,13 +863,18 @@ function sizeCrypto(c) {
   const { entry, sl, isLong, slDist, riskINR, defRR } = c;
   const fx = getFx(), lev = getCryptoLev(), f = cryptoFeeCfg();
   const lotCoins = getCryptoLot();                                       // contract size: whole lots, like a futures contract
+  /* "Include fees in SL" (a button in Crypto settings, only while fees are on): the risk is then the price move to the stop PLUS
+     the entry fee and the exit fee at the stop, so the lots come out smaller. Off (the default): the price move alone is the risk. */
+  const inSL = feesOn() && (typeof getAppSettings === "function" ? getAppSettings().cryptoFeeInSL === true : false);
+  const feePerCoin = inSL ? (entry + sl) * (f.taker / 100) * (1 + f.gst / 100) : 0;   // USD per coin, entry side + exit side
+  const lossPerCoin = slDist + feePerCoin;                               // USD per coin if the stop is hit
   let lots = 0, units;
-  if (lotCoins > 0) { lots = Math.max(1, Math.floor(riskINR / fx / (slDist * lotCoins) + 1e-9)); units = Math.round(lots * lotCoins * 1e8) / 1e8; }
-  else units = Math.floor(riskINR / fx / slDist * 1e4) / 1e4;            // coins, rounded DOWN to 4 decimals
+  if (lotCoins > 0) { lots = Math.max(1, Math.floor(riskINR / fx / (lossPerCoin * lotCoins) + 1e-9)); units = Math.round(lots * lotCoins * 1e8) / 1e8; }
+  else units = Math.floor(riskINR / fx / lossPerCoin * 1e4) / 1e4;       // coins, rounded DOWN to 4 decimals
   if (!(units > 0)) return null;
   const tradeVal   = units * entry * fx;                                 // ₹ notional
   const totalMgn   = tradeVal / lev;                                    // isolated-margin estimate
-  const actualRisk = units * slDist * fx;                                // the risk is the price move to the stop; fees are shown separately
+  const actualRisk = units * lossPerCoin * fx;
   const feeINR = tp => units * (entry + tp) * (f.taker / 100) * (1 + f.gst / 100) * fx;   // entry + exit, taker both sides, plus GST
   const targets = getRRS().map(rr => {
     const tp    = isLong ? entry + slDist * rr : entry - slDist * rr;
@@ -1129,6 +1136,11 @@ const cryToggleEl = $("cryToggle");
 if (cryToggleEl) cryToggleEl.addEventListener("change", () => {
   setInstrType(cryToggleEl.checked ? "crypto" : baseInstr());
   rememberInstr();
+});
+const cfeeSl = $("cfee_sl");
+if (cfeeSl) cfeeSl.addEventListener("click", () => {          // switch between "stop alone" and "stop plus fees" as the risk
+  saveSetting("cryptoFeeInSL", !(getAppSettings().cryptoFeeInSL === true));
+  calc();
 });
 const cfeeEl = $("i_cfee");
 if (cfeeEl) cfeeEl.addEventListener("input", () => {        // the fee % typed here is the Taker fee in Settings

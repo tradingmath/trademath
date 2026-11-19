@@ -29,7 +29,7 @@
 <link rel="preload" href="fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts.css?v=140c3a0f">
 <link rel="icon" href="logo-icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css?v=490721f6">
+<link rel="stylesheet" href="styles.css?v=dbbe0170">
 <script>
 /* Runs before the page paints: apply the saved theme and level now, and keep the page hidden until the app has
    finished setting itself up, so nothing flashes dark, then light, or jumps between modes. */
@@ -221,16 +221,19 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
 
         <!-- Crypto settings: one tidy block, full width, shown only when Crypto is on -->
         <div class="cry-panel" id="cry_panel" hidden>
-          <div class="cry-panel-title">Crypto settings</div>
+          <div class="cry-panel-head">
+            <div class="cry-panel-title">Crypto settings</div>
+            <button type="button" class="chip cry-fee" id="cfee_sl" aria-pressed="false" hidden title="Size the position so the price move to your stop PLUS the entry and exit fees add up to your risk. Off: the stop alone is your risk.">Include fees in SL</button>
+          </div>
           <div class="cry-grid">
             <label class="cry-lbl"><span class="cry-t">Leverage ×</span><input type="number" id="i_lev" value="10" min="1" max="125" step="1" autocomplete="off"></label>
             <label class="cry-lbl"><span class="cry-t">1 lot = <span id="clot_unit">coins</span></span><input type="number" id="i_clot" value="0.001" min="0" step="any" autocomplete="off" title="Contract size of one lot. Change it to match your exchange. Empty or 0 sizes in coins."></label>
             <label class="cry-lbl"><span class="cry-t">Liq. price <span class="cry-lock" aria-hidden="true">🔒</span></span><input type="text" id="i_liq" class="locked" value="—" readonly tabindex="-1" aria-label="Estimated liquidation price (cannot be edited)"></label>
             <label class="cry-lbl"><span class="cry-t">1 USD = ₹</span><input type="number" id="i_fx" value="88" min="1" step="0.1" autocomplete="off" title="Only used to show crypto trades in rupees in your journal"></label>
-            <label class="cry-lbl cry-fee" hidden><span class="cry-t">Fee % <span class="proj-hint">per side</span></span><input type="number" id="i_cfee" value="0.05" min="0" max="5" step="any" autocomplete="off" title="Your exchange's fee on each side of a trade, in percent. This is the same number as the Taker fee in Settings."></label>
+            <label class="cry-lbl cry-fee" hidden><span class="cry-t" title="Fee on each side of a trade">Fee %</span><input type="number" id="i_cfee" value="0.05" min="0" max="5" step="any" autocomplete="off" title="Your exchange's fee on each side of a trade, in percent. This is the same number as the Taker fee in Settings."></label>
             <label class="cry-lbl cry-fee" hidden><span class="cry-t">Est. fees <span class="cry-lock" aria-hidden="true">🔒</span></span><input type="text" id="i_cfeeamt" class="locked" value="—" readonly tabindex="-1" aria-label="Estimated fees for entry and exit at your target (cannot be edited)" title="Entry fee plus exit fee at your target, including GST"></label>
           </div>
-          <div class="cry-note">Entry and SL in USDT. Capital and risk in dollars. The liquidation price is an estimate from your leverage, and it is locked: it cannot be edited.</div>
+          <div class="cry-note">Entry and SL in USDT. Capital and risk in dollars. The liquidation price is an estimate from your leverage and is locked.</div>
         </div>
 
         <div class="field lot-wrap" id="lot_wrap" hidden>
@@ -954,11 +957,11 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
 
 <p class="note" style="max-width:720px;margin:24px auto 0;text-align:center;line-height:1.7">TradeMath is a free position size calculator and trade journal for Indian traders. Enter your entry, stop-loss, capital and risk to get quantity, margin, targets and charges for NSE stocks, F&amp;O lots, MCX and crypto futures. Then log the trade and review your results.</p>
 <p class="note" style="text-align:center;margin:10px 0 8px">Guides: <a href="position-size-calculator-india.html" style="color:inherit">Position size</a> · <a href="risk-reward-ratio-explained.html" style="color:inherit">Risk-reward</a> · <a href="nse-fno-lot-sizes.html" style="color:inherit">F&amp;O lot sizes</a> · <a href="trading-journal-india.html" style="color:inherit">Trading journal</a> · <a href="guides.html" style="color:inherit">All guides</a><br><a href="about.html" style="color:inherit">About</a> · <a href="contact.html" style="color:inherit">Contact</a> · <a href="privacy.html" style="color:inherit">Privacy</a> · <a href="terms.html" style="color:inherit">Terms</a> · Not investment advice</p>
-<script src="calc.js?v=7e803021"></script>
+<script src="calc.js?v=76823b0f"></script>
 <script src="journal.js?v=1c7de517"></script>
 <script src="projection.js?v=148bf141"></script>
 <script src="alerts.js?v=24467fdf"></script>
-<script src="app.js?v=b025e344"></script>
+<script src="app.js?v=5d549c87"></script>
 <script src="cloud.js?v=459e79da"></script>
 <script src="profile.js?v=4072ad38"></script>
 

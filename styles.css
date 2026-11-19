@@ -1230,3 +1230,20 @@ h1.logo { margin:0; line-height:inherit; }
 .field-row3 > .field > label { min-height:22px; align-items:center; }
 .cry-lbl[hidden] { display:none; }
 @media (min-width:640px) { .cry-grid { grid-template-columns:repeat(auto-fit, minmax(128px, 1fr)); } }
+
+/* Crypto settings: every box on one line, sized to what it holds */
+.cry-panel-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+.cry-panel-head .cry-panel-title { margin-bottom:0; }
+.cry-panel-head .chip { padding:4px 10px; font-size:11px; }
+.cry-fee[hidden] { display:none; }
+.cry-panel .cry-grid { display:flex; flex-wrap:wrap; gap:8px; }
+.cry-panel .cry-lbl { flex:1 1 0; min-width:76px; }
+.cry-panel .cry-grid > .cry-lbl:nth-child(1) { flex-grow:.8; }
+.cry-panel .cry-grid > .cry-lbl:nth-child(2) { flex-grow:1.1; }
+.cry-panel .cry-grid > .cry-lbl:nth-child(3) { flex-grow:1.5; }
+.cry-panel .cry-grid > .cry-lbl:nth-child(4) { flex-grow:.8; }
+.cry-panel .cry-grid > .cry-lbl:nth-child(5) { flex-grow:.8; }
+.cry-panel .cry-grid > .cry-lbl:nth-child(6) { flex-grow:1.2; }
+.cry-panel .cry-lbl input { height:34px; padding:6px 8px; font-size:13px; }
+.cry-t { overflow:hidden; text-overflow:ellipsis; }
+@media (max-width:639px) { .cry-panel .cry-lbl { flex:1 1 calc(50% - 8px); } }

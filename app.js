@@ -209,7 +209,15 @@ function commitSettings() {
   populateForm();
   showToast("✓ Settings saved");
 }
-function discardSettings() { populateForm(); showToast("Changes discarded"); }
+function discardSettings() { populateForm(); applyDarkToggle(getAppSettings().darkMode !== false); showToast("Changes discarded"); }   // the look goes back to what is saved
+
+/* Live preview: pick a colour, dark or light, or a dark background and you see it at once. Nothing is saved until you press
+   Save changes, so a reload (or Discard) brings back the saved look. */
+function previewLook() {
+  applyDarkToggle($("tog_dark").checked);               // applies the saved base and colour first...
+  applyBaseTheme(draftBase);                            // ...then the choices you have just made
+  applyAccent(draftAccent);
+}
 
 /* ── wiring: every control only updates the draft ── */
 ["tog_dark", "tog_quick_log",
@@ -219,8 +227,9 @@ function discardSettings() { populateForm(); showToast("Changes discarded"); }
   ["input", "change"].forEach(ev => el.addEventListener(ev, refreshDirty));
 });
 $("tog_show_fees").addEventListener("change", syncFeeUI);
-document.querySelectorAll(".palette-card").forEach(card => card.addEventListener("click", () => { draftAccent = card.dataset.color; paintChoices(); refreshDirty(); }));
-document.querySelectorAll(".theme-preset-btn").forEach(btn => btn.addEventListener("click", () => { draftBase = btn.dataset.base || "midnight"; paintChoices(); refreshDirty(); }));
+document.querySelectorAll(".palette-card").forEach(card => card.addEventListener("click", () => { draftAccent = card.dataset.color; paintChoices(); refreshDirty(); previewLook(); }));
+document.querySelectorAll(".theme-preset-btn").forEach(btn => btn.addEventListener("click", () => { draftBase = btn.dataset.base || "midnight"; paintChoices(); refreshDirty(); previewLook(); }));
+$("tog_dark").addEventListener("change", previewLook);
 const stagedBeep = () => ({ sound: $("alert_sound").value, vol: +$("alert_vol").value });
 $("alert_sound").addEventListener("change", () => { refreshDirty(); tmAlert.preview(stagedBeep()); });     // hear it before saving
 document.querySelectorAll("#beep_settings .alert-test").forEach(b => b.addEventListener("click", () => tmAlert.preview(stagedBeep())));
