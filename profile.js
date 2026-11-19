@@ -363,7 +363,7 @@
     const ov = document.createElement("div"); ov.className = "modal-overlay"; ov.style.zIndex = 390;
     ov.innerHTML = '<div class="modal support-modal" role="dialog" aria-modal="true" aria-labelledby="sup_t">' +
       '<div class="modal-title" id="sup_t"><span aria-hidden="true">❤️</span> Enjoying TradeMath?</div>' +
-      '<p class="sup-text">TradeMath is free and has no ads. If it has helped your trading, a small donation helps keep it running and improving. It is entirely optional, and nothing changes if you skip it.</p>' +
+      '<p class="sup-text">TradeMath is free and has no ads. If it has helped your trading, a small donation helps keep it running and improving.</p>' +
       '<div class="tm-dialog-actions"><button type="button" class="btn btn-ghost" id="sup_later">Maybe later</button>' +
       '<a class="btn btn-primary" id="sup_go" href="' + URL + '" target="_blank" rel="noopener">Support TradeMath</a></div></div>';
     document.body.appendChild(ov);
