@@ -316,11 +316,13 @@
    Shown the first time someone opens TradeMath, again after every sign-in, and then once a week after they press
    "I understand". The date they pressed it is kept on this device only. */
 (function () {
-  const KEY = "tm_risk_ack", WEEK = 7 * 864e5, AFTER_LOGIN = 10 * 6e4;
+  const KEY = "tm_risk_ack", WEEK = 7 * 864e5, AFTER_LOGIN = 10 * 6e4, DELAY = 5 * 6e4;   // shown after five minutes of use, not the moment the page opens
   const last = () => { const v = Number(tmGet(KEY, 0)); return v > 0 ? v : 0; };
   let open = false;
   function show() {
-    if (open) return; open = true;
+    if (open) return;
+    if (document.querySelector(".modal-overlay:not([hidden])")) return setTimeout(show, 30000);   // never on top of another dialog
+    open = true;
     const ov = document.createElement("div"); ov.className = "modal-overlay"; ov.style.zIndex = 400;
     ov.innerHTML = '<div class="modal risk-modal" role="alertdialog" aria-modal="true" aria-labelledby="risk_t">' +
       '<div class="modal-title" id="risk_t"><span aria-hidden="true">⚠️</span> Risk disclosure on derivatives</div>' +
@@ -339,8 +341,8 @@
     ok.onclick = () => { tmSet(KEY, Date.now()); ov.remove(); open = false; };
   }
   const due = afterLogin => { const l = last(); return !l || Date.now() - l > (afterLogin ? AFTER_LOGIN : WEEK); };
-  setTimeout(() => { if (due(false)) show(); }, 700);
-  document.addEventListener("tm:signedin", () => { if (due(true)) show(); });
+  setTimeout(() => { if (due(false)) show(); }, DELAY);
+  document.addEventListener("tm:signedin", () => { if (due(true)) setTimeout(() => { if (due(true)) show(); }, DELAY); });
 })();
 
 /* ══════════════ SUPPORT REQUEST ══════════════
