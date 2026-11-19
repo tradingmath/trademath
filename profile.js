@@ -342,3 +342,36 @@
   setTimeout(() => { if (due(false)) show(); }, 700);
   document.addEventListener("tm:signedin", () => { if (due(true)) show(); });
 })();
+
+/* ══════════════ SUPPORT REQUEST ══════════════
+   A gentle ask, only for people who really use TradeMath: it appears once they have been using it for a week (on at least three
+   different days), and then at most once every 15 days. Kept on this device only. Never shown in the pop-out window,
+   and never on top of another dialog. */
+(function () {
+  const KEY = "tm_support", DAY = 864e5, URL = "https://razorpay.me/@trademath";
+  if (new URLSearchParams(location.search).get("popout") === "1") return;
+  const st = (() => { const v = tmGet(KEY, null); return v && typeof v === "object" ? v : {}; })();
+  const today = new Date().toISOString().slice(0, 10), now = Date.now();
+  if (!st.first) st.first = now;
+  st.days = Array.isArray(st.days) ? st.days : [];
+  if (!st.days.includes(today)) st.days.push(today);
+  st.days = st.days.slice(-60);
+  tmSet(KEY, st);
+  const due = () => now - st.first >= 7 * DAY && st.days.length >= 3 && (!st.last || now - st.last >= 15 * DAY);
+  function show() {
+    if (document.querySelector(".modal-overlay:not([hidden])")) return setTimeout(show, 30000);   // wait while another dialog is open
+    const ov = document.createElement("div"); ov.className = "modal-overlay"; ov.style.zIndex = 390;
+    ov.innerHTML = '<div class="modal support-modal" role="dialog" aria-modal="true" aria-labelledby="sup_t">' +
+      '<div class="modal-title" id="sup_t"><span aria-hidden="true">❤️</span> Enjoying TradeMath?</div>' +
+      '<p class="sup-text">TradeMath is free and has no ads. If it has helped your trading, a small donation helps keep it running and improving. It is entirely optional, and nothing changes if you skip it.</p>' +
+      '<div class="tm-dialog-actions"><button type="button" class="btn btn-ghost" id="sup_later">Maybe later</button>' +
+      '<a class="btn btn-primary" id="sup_go" href="' + URL + '" target="_blank" rel="noopener">Support TradeMath</a></div></div>';
+    document.body.appendChild(ov);
+    const done = () => { st.last = Date.now(); tmSet(KEY, st); ov.remove(); };
+    ov.querySelector("#sup_later").onclick = done;
+    ov.querySelector("#sup_go").addEventListener("click", () => setTimeout(done, 50));
+    ov.addEventListener("click", e => { if (e.target === ov) done(); });
+    document.addEventListener("keydown", function esc(e) { if (e.key === "Escape" && ov.isConnected) { done(); document.removeEventListener("keydown", esc); } });
+  }
+  if (due()) setTimeout(show, 20000);                       // after twenty seconds of use, not the moment the page opens
+})();

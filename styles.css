@@ -1277,3 +1277,8 @@ h1.logo { margin:0; line-height:inherit; }
 .support-btn .sup-heart { font-size:13px; }
 @media (max-width:900px) { .support-btn .sup-txt { display:none; } .support-btn { padding:6px 9px; min-width:36px; justify-content:center; } }
 @media (max-width:600px) { .support-btn { display:none; } }   /* phones: the header is full; the footer link stays */
+
+.support-modal { max-width:420px; }
+.support-modal .sup-text { color:var(--fg2); line-height:1.55; margin:6px 0 16px; font-size:14px; }
+.support-modal .tm-dialog-actions { display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; }
+.support-modal a.btn { text-decoration:none; display:inline-flex; align-items:center; color:var(--on-accent); }
