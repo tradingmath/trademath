@@ -190,7 +190,7 @@ function fxOf(t) { return t.instrument === "crypto" ? (t.fx || 1) : 1; }   // cr
 /* Fees are only counted when "Include estimated fees" is on in Settings. Turned off, profit is shown before charges. */
 const feesCounted = () => typeof getAppSettings === "function" && getAppSettings().showFees === true;
 /* Journal table in dollars: only while the table shows crypto alone and the ₹/$ switch is on. Each trade is converted at its own saved rate. */
-let JUSD = false, JMIX = false;
+let JUSD = false, JMIX = false, JMODE = "";   // JMODE outlives a render: trade rows are built later, when a day is opened
 const jFx = t => JUSD ? fxOf(t) : 1;
 const pnlForTrade = t => { const v = pnlRaw(t); return v === null ? v : v / jFx(t); };
 function pnlRaw(t) {
@@ -880,7 +880,7 @@ function toggleDay(btn, dayId) {
   const opening = !caret.classList.contains('open');
   if (opening && !btn.dataset.loaded) {          // trade rows are only built the first time a day is opened
     const d = repDays.get(dayId);
-    if (d) btn.insertAdjacentHTML("afterend", d.trades.map(t => repTradeRow(t, dayId, d.mo)).join(""));
+    if (d) btn.insertAdjacentHTML("afterend", (JMODE === "all" ? (JUSD = true) : (JMIX = JMODE === "mix"), d.trades.map(t => repTradeRow(t, dayId, d.mo)).join("")) + (JUSD = false, JMIX = false, ""));
     btn.dataset.loaded = "1";
   }
   document.querySelectorAll('tr.tr-row[data-grp="'+dayId+'"]').forEach(r => { r.style.display = opening ? '' : 'none'; });
@@ -987,6 +987,7 @@ function renderReports() {
   const usdOn = hasCry && getAppSettings().jnlUsd === true;
   JUSD = !!(usdOn && eligible);          // crypto alone: every figure in dollars
   JMIX = !!(usdOn && !eligible);         // stocks and crypto together: crypto rows in dollars, stock rows and all totals stay in rupees
+  JMODE = JUSD ? "all" : JMIX ? "mix" : "";
   try { renderReportsInner(); } finally { JUSD = false; JMIX = false; }
 }
 function renderReportsInner() {
