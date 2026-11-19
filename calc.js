@@ -887,6 +887,7 @@ function sizeCrypto(c) {
            profitTP: isLong ? entry + slDist * defRR : entry - slDist * defRR,
            profitGross: slDist * defRR * units * fx,
            cryptoLots: lots, lotCoins,
+           riskParts: { price: units * slDist * fx, fees: units * feePerCoin * fx, inSL },   // the risk split into price move + fees
            crypto: { fx, lev, liq, liqBeforeSL: isLong ? liq >= sl : liq <= sl } };
 }
 
@@ -1029,11 +1030,21 @@ function calc() {
   // Crypto is shown in dollars; rupees stay as a small reference on risk and profit only.
   const usd = inr => (inr < 0 ? "−" : "") + "$" + fmtP(Math.abs(inr) / M.crypto.fx, 2);
   $("t2val").textContent = crypto ? usd(actualRisk) : fmtINR(actualRisk);
+  /* "Include fees in SL" is on: show where the risk comes from, in small text, like 49.96 (35+14): price move + fees. */
+  const brk = v => { const x = Math.abs(v); return x >= 10 ? String(Math.round(x)) : x.toFixed(2); };
+  if (crypto && M.riskParts && M.riskParts.inSL) {
+    const fx0 = M.crypto.fx;
+    $("t2val").innerHTML = usd(actualRisk) + ' <small class="brk" title="Price move to your stop + entry and exit fees">(' + brk(M.riskParts.price / fx0) + "+" + brk(M.riskParts.fees / fx0) + ")</small>";
+  }
   $("t2sub").textContent = `${actualRiskPct.toFixed(2)}% of capital${flatOn ? " · flat risk" : ""}`;
 
   // Tile 3: Profit
   $("t_profit_lbl").textContent = "Profit (1:" + defRR + ")";
   $("t_profit_val").textContent = crypto ? "+" + usd(profitGross) : "+₹" + fmtP(profitGross, 0);
+  if (crypto && M.riskParts && M.riskParts.inSL) {               // same idea for the profit: what is left after fees, with the sum shown small
+    const cfx = cryptoFeeCfg(), grossUsd = profitGross / M.crypto.fx, feeT = units * (entry + profitTP) * (cfx.taker / 100) * (1 + cfx.gst / 100);
+    $("t_profit_val").innerHTML = "+$" + fmtP(grossUsd - feeT, 2) + ' <small class="brk" title="Profit at your target minus entry and exit fees">(' + brk(grossUsd) + "−" + brk(feeT) + ")</small>";
+  }
   $("t_profit_sub").innerHTML = '<span class="tile-target" title="Target price"><i>🎯 Target</i><b>' + cur + (crypto ? fmtUsd(profitTP) : fmtTargetPx(profitTP)) + '</b></span>';
 
   const showFees = typeof getAppSettings === "function" ? getAppSettings().showFees === true : false;   // fees are OFF until the user turns them on

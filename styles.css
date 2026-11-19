@@ -1247,3 +1247,6 @@ h1.logo { margin:0; line-height:inherit; }
 .cry-panel .cry-lbl input { height:34px; padding:6px 8px; font-size:13px; }
 .cry-t { overflow:hidden; text-overflow:ellipsis; }
 @media (max-width:639px) { .cry-panel .cry-lbl { flex:1 1 calc(50% - 8px); } }
+
+/* the small "(35+14)" breakdown next to a figure: 30% smaller than the figure */
+.brk { font-size:.7em; font-weight:500; color:var(--fg3); white-space:nowrap; letter-spacing:0; }
