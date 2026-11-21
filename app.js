@@ -449,7 +449,7 @@ $("themeBtn").addEventListener("click", () => {
 
 /* ══════════════ POP OUT ══════════════ */
 $("popBtn").addEventListener("click", () => {
-  const w = 420, h = 620;
+  const w = 380, h = 500;
   const left = Math.max(0, screen.width - w - 20);
   const top  = Math.max(0, Math.round((screen.height - h) / 2));
   const win  = window.open(location.origin + location.pathname + "?popout=1#calc", "trademath_popout",
@@ -460,12 +460,42 @@ $("popBtn").addEventListener("click", () => {
 if (new URLSearchParams(location.search).get("popout") === "1") {
   const style = document.createElement("style");
   style.textContent = `
-    #popBtn,#themeBtn{display:none!important}
-    .tabs,#tab-journal,#tab-settings,#rep_body,.calc-right,.note{display:none!important}
-    body{padding-bottom:16px}
-    .header{padding:10px 0}
-    .logo em{display:none}
+    #popBtn,#themeBtn,.support-btn{display:none!important}
+    .tabs,#tab-journal,#tab-settings,#rep_body,.calc-right,.note,#daily_banner,#r_empty,.fee-section,.cry-note,.lot-hint,.kbd-hint,.p-title,#tab-calc hr,.proj-hint,.tile-sub,#lev_info_badge,#tgt_empty{display:none!important}
+    /* a really compact calculator: small type, tight gaps, results and inputs close together */
+    body{padding:0 8px 8px;font-size:12px}
+    .header{padding:6px 0;gap:4px;margin-bottom:6px}
+    .logo{font-size:14px}.logo em{display:none}.logo img{width:18px;height:18px;margin-right:5px!important}
+    .hdr-right{gap:4px}.hdr-right .theme-btn{padding:4px 7px;font-size:12px}
+    #lvl_label,.lvl-caret{display:none}
+    .calc-layout{display:block}
+    .sym-wrap{margin-bottom:6px}
+    .sym-input-wrap input{padding:6px 10px;font-size:12px}
+    .tiles{grid-template-columns:1fr 1fr;gap:5px;margin:0 0 6px}
+    .tile{padding:6px 8px;border-radius:8px}
+    .tile-lbl{font-size:8px;margin-bottom:1px}
+    .tile-val{font-size:14px}
+    .tile-target{margin-top:2px;padding:1px 6px 2px}.tile-target i{display:none}.tile-target b{font-size:11px}
+    .brk{font-size:.62em}
+    .warn-box{padding:5px 8px;font-size:10.5px;margin-bottom:6px;line-height:1.35}
+    .panel{padding:8px;border-radius:8px;margin-top:6px!important}
+    .field{gap:2px;margin-bottom:6px}
+    .field label{font-size:10.5px;gap:4px}
+    .field input,.field select{padding:3px 8px;font-size:12.5px;border-radius:6px;height:28px;min-height:0}
+    #sl_dist_badge{display:none}
+    #logTradeBtn{height:auto}
+    .field-row,.field-row3{gap:6px;margin-bottom:6px}
+    .opt-field{padding:4px 6px}.opt-title{font-size:10.5px}
+    .lev-pills{gap:4px}.lev-pill{padding:4px 6px;font-size:10px}
+    .cry-panel{padding:6px;margin-top:4px}.cry-panel-title{font-size:9px}
+    .cry-grid{gap:4px}.cry-panel .cry-lbl{min-width:60px}
+    .cry-panel .cry-lbl input{height:26px;padding:3px 6px;font-size:11.5px}
+    .cry-t{font-size:9.5px}
+    .cry-panel-head .chip{padding:2px 7px;font-size:9.5px}
+    #tgt_wrap .tgt-head{display:none}
+    #logTradeBtn{padding:7px 10px!important;font-size:12.5px!important}
   `;
+  document.documentElement.classList.add("is-popout");
   document.head.appendChild(style);
 }
 
