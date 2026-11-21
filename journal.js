@@ -190,6 +190,7 @@ function fxOf(t) { return t.instrument === "crypto" ? (t.fx || 1) : 1; }   // cr
 /* Fees are only counted when "Include estimated fees" is on in Settings. Turned off, profit is shown before charges. */
 const feesCounted = () => typeof getAppSettings === "function" && getAppSettings().showFees === true;
 /* Journal table in dollars: only while the table shows crypto alone and the ₹/$ switch is on. Each trade is converted at its own saved rate. */
+let repFiltered = null;                                   // the trades the table is showing now (for Export)
 let JUSD = false, JMIX = false, JMODE = "";   // JMODE outlives a render: trade rows are built later, when a day is opened
 const jFx = t => JUSD ? fxOf(t) : 1;
 const pnlForTrade = t => { const v = pnlRaw(t); return v === null ? v : v / jFx(t); };
@@ -1010,6 +1011,7 @@ function renderReportsInner() {
   if (!filtered.length) { $("rep_body").innerHTML = ""; if ($("rng_note")) { $("rng_note").hidden = !rangeActive(); if (rangeActive()) $("rng_note").textContent = "No trades in this date range."; } showJournalEmpty("filtered"); return; }
   showJournalEmpty(null);
 
+  repFiltered = filtered;
   const fset = new Set(filtered);
   repDays.clear();
   const byMonth = {};
@@ -1336,3 +1338,32 @@ function removeEstimatedFees() {
 })();
 document.querySelectorAll("#ccy_sw button").forEach(b => b.addEventListener("click", () => { saveSetting("jnlUsd", b.dataset.ccy === "usd"); renderReports(); }));
 { const co = $("cry_only"); if (co) co.addEventListener("click", () => { $("flt_market").value = $("flt_market").value === "Crypto" ? "" : "Crypto"; renderReports(); }); }   // one tap: crypto only, tap again for all markets
+
+/* ══════════════ EXPORT (CSV) ══════════════
+   Downloads the trades the table is showing (filters included), or every trade if none is showing. Opens in Excel and Google Sheets.
+   Money is in rupees; crypto trades also get a dollar column. Cells that start with = + - @ are prefixed so a spreadsheet never runs them as formulas. */
+function exportTradesCSV() {
+  const list = (repFiltered && repFiltered.length ? repFiltered : trades).slice().sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+  if (!list.length) { showToast("No trades to export yet"); return; }
+  const cell = v => {
+    let t = v == null ? "" : String(v);
+    if (/^[=+\-@\t\r]/.test(t) && !/^-?\d+(\.\d+)?$/.test(t)) t = "'" + t;
+    return /[",\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+  };
+  const head = ["Date", "Exit date", "Market", "Symbol", "Direction", "Entry", "Exit", "Quantity", "Lots", "Stop-loss", "Target", "Status", "Net P&L (INR)", "Net P&L (USD, crypto)", "Fees (INR)", "Setup", "Mistakes", "Notes"];
+  const rnd = v => v === "" || v === null ? "" : Math.round(v * 100) / 100;
+  const rows = list.map(t => {
+    const pnl = pnlForTrade(t), gross = grossPnl(t), fees = pnl !== null && gross !== null ? gross - pnl : "";
+    const usd = t.instrument === "crypto" && pnl !== null && t.fx ? pnl / t.fx : "";
+    return [t.date, exitDateOf(t) || "", t.market, (t.symbol || "") + (t.optType ? " " + t.optType : ""), t.dir, t.entry, t.exit || "", t.qty, t.lots || "", t.sl || "", t.target || "",
+      isClosed(t) ? "Closed" : (hasRealized(t) ? "Partly closed" : "Open"), rnd(pnl), rnd(usd), rnd(fees), t.setup || "", (t.mistakes || []).join("; "), t.notes || ""];
+  });
+  const csv = "﻿" + [head].concat(rows).map(r => r.map(cell).join(",")).join("\r\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  a.download = "trademath-trades-" + todayStr() + ".csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  showToast("Exported " + list.length + " trade" + (list.length === 1 ? "" : "s"));
+}
+$("exportBtn").addEventListener("click", exportTradesCSV);
