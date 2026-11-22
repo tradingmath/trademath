@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stop-Loss Calculator: Price, Quantity and Targets | TradeMath</title>
+<meta name="description" content="Enter your entry and either a percentage or a rupee stop, and get the stop-loss price, the quantity that fits your risk, and targets at 1:1, 1:2 and 1:3.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#050a1c">
+<link rel="canonical" href="https://trademath.in/stop-loss-calculator.html">
+<link rel="icon" href="logo-icon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="en_IN">
+<meta property="og:site_name" content="TradeMath">
+<meta property="og:title" content="Stop-loss calculator">
+<meta property="og:description" content="Enter your entry and either a percentage or a rupee stop, and get the stop-loss price, the quantity that fits your risk, and targets at 1:1, 1:2 and 1:3.">
+<meta property="og:url" content="https://trademath.in/stop-loss-calculator.html">
+<meta property="og:image" content="https://trademath.in/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<script>try{var s=JSON.parse(localStorage.getItem("tm_settings")||"{}");document.documentElement.dataset.theme=s.darkMode===false?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
+<link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts.css?v=140c3a0f">
+<link rel="stylesheet" href="styles.css?v=c2cff879">
+<link rel="stylesheet" href="guide.css?v=4f89a7cb">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Stop-loss calculator", "description": "Enter your entry and either a percentage or a rupee stop, and get the stop-loss price, the quantity that fits your risk, and targets at 1:1, 1:2 and 1:3.", "mainEntityOfPage": "https://trademath.in/stop-loss-calculator.html", "inLanguage": "en-IN", "datePublished": "2026-11-22", "dateModified": "2026-11-22", "author": {"@type": "Organization", "name": "TradeMath", "url": "https://trademath.in/"}, "publisher": {"@type": "Organization", "name": "TradeMath", "logo": {"@type": "ImageObject", "url": "https://trademath.in/logo-512.png"}}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "TradeMath", "item": "https://trademath.in/"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://trademath.in/guides.html"}, {"@type": "ListItem", "position": 3, "name": "Stop-loss calculator", "item": "https://trademath.in/stop-loss-calculator.html"}]}</script>
+</head>
+<body>
+<header class="g-head"><a class="g-brand" href="/"><img src="logo-icon.svg" alt="" width="28" height="28"><span>Trade<b>Math</b></span></a>
+<nav class="g-nav" aria-label="Guides"><a href="position-size-calculator-india.html">Position size</a><a href="risk-reward-ratio-explained.html">Risk-reward</a><a href="nse-fno-lot-sizes.html">Lot sizes</a><a href="trading-journal-india.html">Journal</a><a href="guides.html">All guides</a></nav>
+<a class="g-cta" href="/">Open calculator</a></header>
+<main class="g-doc">
+<p class="g-crumb"><a href="/">TradeMath</a> / <a href="guides.html">Guides</a></p>
+<h1>Stop-loss calculator</h1>
+<p class="g-lede">Give it your entry and how far away you want the stop, and it works out the stop-loss price, the quantity that keeps the loss within your limit, and the targets that match.</p>
+<div class="g-tool" id="sl-tool">
+<h3>Stop-loss and quantity</h3>
+<div class="gt-grid">
+<label>Direction<select id="sl_d"><option value="L">Buy (long)</option><option value="S">Sell (short)</option></select></label>
+<label>Entry price (&#8377;)<input id="sl_e" type="number" min="0.01" step="0.05" value="500"></label>
+<label>Stop is set by<select id="sl_m"><option value="P">Percentage</option><option value="R">Rupees per share</option></select></label>
+<label id="sl_vl">Stop distance (%)<input id="sl_v" type="number" min="0.01" step="0.1" value="1"></label>
+<label>Capital (&#8377;)<input id="sl_c" type="number" min="1" step="1000" value="100000"></label>
+<label>Risk per trade (%)<input id="sl_r" type="number" min="0.01" step="0.1" value="1"></label>
+</div>
+<div class="gt-out">
+<div class="gt-res"><small>Stop-loss price</small><b id="sl_p">-</b></div>
+<div class="gt-res"><small>Loss per share</small><b id="sl_ps">-</b></div>
+<div class="gt-res"><small>Quantity</small><b id="sl_q">-</b></div>
+<div class="gt-res"><small>Position value</small><b id="sl_pv">-</b></div>
+<div class="gt-res"><small>Actual risk</small><b id="sl_ar" class="neg">-</b></div>
+<div class="gt-res"><small>Target 1:1</small><b id="sl_t1">-</b></div>
+<div class="gt-res"><small>Target 1:2</small><b id="sl_t2">-</b></div>
+<div class="gt-res"><small>Target 1:3</small><b id="sl_t3">-</b></div>
+</div>
+<p class="g-fine" id="sl_note" style="margin-top:10px"></p>
+</div>
+
+<h2>How the stop price is worked out</h2>
+<p>For a buy, the stop sits below your entry. For a sell, it sits above.</p>
+<div class="g-formula">Buy stop = Entry − (Entry × stop %) ÷ 100<br>Sell stop = Entry + (Entry × stop %) ÷ 100</div>
+<p>On a ₹500 entry with a 1% stop, the distance is ₹5. A buy stop goes at ₹495. A sell stop goes at ₹505. The quantity then comes from your risk: ₹1,00,000 capital at 1% risk is ₹1,000, and ₹1,000 ÷ ₹5 is 200 shares. The target at 1:2 is ₹10 away, so ₹510 for a buy.</p>
+
+<h2>Choosing the stop distance</h2>
+<p>The calculator does not pick the stop for you, and no formula can. A few honest rules of thumb:</p>
+<ul>
+<li><b>Fixed percentage stops are simple, but blind.</b> A 1% stop is generous on a quiet large-cap and far too tight on a volatile mid-cap. The same percentage means very different things on different shares.</li>
+<li><b>Chart-based stops are usually better.</b> Put the stop just beyond a level that, if broken, tells you the idea was wrong: below a recent swing low for a buy, for example. Then let the position size adjust to fit, as the calculator does.</li>
+<li><b>Volatility-based stops adapt.</b> Many traders use a multiple of the average true range, such as twice the ATR. Our <a href="stop-loss-placement-guide.html">stop-loss placement guide</a> goes through the three methods with examples.</li>
+<li><b>Never move the stop further away after you are in.</b> The risk you calculated is gone the moment you do.</li>
+</ul>
+
+<h2>What the stop does not guarantee</h2>
+<p>A stop-loss order turns into a market order once the stop price trades, so your fill can be worse, especially at the open, after news, or in a thin share. If the price gaps past your stop, you lose more than you planned. A stop-loss limit order avoids a bad fill but may not execute at all. Whichever you use, keep the risk small enough that one gap does not hurt badly.</p>
+<p>Charges are also not in the numbers above. On a tight stop they can be a noticeable part of the loss. The TradeMath calculator can show an estimate when you turn fees on in Settings.</p>
+
+<h2>Common questions</h2>
+<h3>How do I calculate a stop-loss price?</h3>
+<p>For a buy, subtract your stop distance from the entry. For a sell, add it. The distance can be a percentage of the price or a fixed rupee amount per share.</p>
+<h3>What percentage stop is normal?</h3>
+<p>Intraday traders often use between 0.5% and 2%, and swing traders use wider stops. It depends on the share's volatility more than on any rule, so look at how far the price normally moves in a day.</p>
+<h3>How many shares should I buy for a given stop?</h3>
+<p>Divide the rupees you are willing to lose by the loss per share at your stop. The calculator above does that for you.</p>
+<h2>Related guides</h2><ul class="g-related"><li><a href="stop-loss-placement-guide.html">Where to place a stop-loss</a>: percentage, structure and ATR methods</li><li><a href="position-size-calculator-india.html">How to calculate position size</a>: the formula behind the quantity</li><li><a href="break-even-win-rate-calculator.html">Break-even win rate calculator</a>: what win rate your targets need</li><li><a href="mis-vs-cnc-intraday-delivery.html">MIS vs CNC</a>: margin and leverage on the same trade</li></ul>
+<aside class="g-box"><b>Try it with your own numbers.</b> The free TradeMath calculator does this sum for you, with charges, lot sizes and a trade journal. No sign-up needed.<br><a class="g-btn" href="/">Open the calculator</a></aside>
+<p class="g-fine">Updated 22 November 2026. This page is for education and is not investment advice. Markets carry risk of loss. Examples are hypothetical and use round numbers. Check lot sizes, margins and charges with your broker and the exchange before you trade.</p>
+</main>
+<footer class="g-foot"><a href="/">Calculator</a> · <a href="guides.html">All guides</a> · <a href="position-size-calculator-india.html">Position size</a> · <a href="risk-reward-ratio-explained.html">Risk-reward</a> · <a href="nse-fno-lot-sizes.html">F&amp;O lot sizes</a> · <a href="trading-journal-india.html">Trading journal</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="https://razorpay.me/@trademath" target="_blank" rel="noopener">Support TradeMath</a> · <a href="about.html">About</a> · <a href="contact.html">Contact</a> · <a href="mailto:support@trademath.in">support@trademath.in</a><br>Free tools: <a href="break-even-win-rate-calculator.html">Break-even win rate</a> · <a href="stop-loss-calculator.html">Stop-loss calculator</a> · <a href="stock-average-calculator.html">Stock average calculator</a> · <a href="losing-streak-probability.html">Losing streak odds</a> · <a href="trading-journal-excel-template.html">Journal template</a></footer>
+<script>(function(){
+var $=function(i){return document.getElementById(i)};
+function inr(n,d){return "\u20b9"+Math.abs(n).toLocaleString("en-IN",{minimumFractionDigits:d,maximumFractionDigits:d})}
+function run(){
+ var long=$("sl_d").value==="L",e=parseFloat($("sl_e").value),m=$("sl_m").value,v=parseFloat($("sl_v").value),c=parseFloat($("sl_c").value),r=parseFloat($("sl_r").value);
+ $("sl_vl").firstChild.nodeValue=m==="P"?"Stop distance (%)":"Stop distance (\u20b9 per share)";
+ var out=["sl_p","sl_ps","sl_q","sl_pv","sl_ar","sl_t1","sl_t2","sl_t3"];
+ if(!(e>0&&v>0&&c>0&&r>0)){out.forEach(function(k){$(k).textContent="-"});return}
+ var dist=m==="P"?e*v/100:v,sl=long?e-dist:e+dist,n=$("sl_note");
+ if(long&&sl<=0){out.forEach(function(k){$(k).textContent="-"});n.textContent="A stop that far below the entry would be at or below zero.";return}
+ var riskAmt=c*r/100,q=Math.floor(riskAmt/dist+1e-9);
+ $("sl_p").textContent=inr(sl,2);$("sl_ps").textContent=inr(dist,2);
+ $("sl_q").textContent=q.toLocaleString("en-IN");$("sl_pv").textContent=inr(q*e,0);$("sl_ar").textContent=inr(q*dist,0);
+ [1,2,3].forEach(function(k){var t=long?e+dist*k:e-dist*k;$("sl_t"+k).textContent=t>0?inr(t,2):"-"});
+ n.textContent=q<1?"Your risk budget of "+inr(riskAmt,0)+" is smaller than the loss on a single share. Reduce the stop distance or raise the risk, or skip the trade.":
+  (q*e>c?"Heads up: the position value is above your capital, so you would need leverage (margin) to hold it.":(q*dist<riskAmt-0.005?"Quantity is rounded down, so the actual risk is a little under your limit.":"The quantity fits your risk limit exactly."));
+}
+["sl_d","sl_e","sl_m","sl_v","sl_c","sl_r"].forEach(function(i){$(i).addEventListener("input",run)});run();
+})();</script>
+</body>
+</html>

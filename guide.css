@@ -34,6 +34,22 @@ body { background: var(--bg); color: var(--fg); font-family: var(--sans); line-h
 .g-list { list-style:none; padding:0; display:grid; gap:12px; margin:18px 0; }
 .g-list li { border:1px solid var(--border); border-radius:10px; padding:14px 16px; background:var(--surface); }
 .g-list li span { color:var(--fg2); font-size:14px; }
+.g-sub { color:var(--fg3); font-size:12px; }
+.g-related { margin:6px 0 18px; padding-left:20px; }
+.g-related li { margin:6px 0; }
+.g-tool { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 18px; margin:20px 0; }
+.g-tool h3 { margin:0 0 12px; font-size:16px; color:var(--fg); }
+.g-tool p { margin:8px 0; }
+.gt-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+.g-tool label { display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--fg2); font-weight:500; }
+.g-tool input, .g-tool select { background:var(--surface); color:var(--fg); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font:inherit; font-size:14px; min-width:0; }
+.g-tool input:focus, .g-tool select:focus { outline:none; border-color:var(--accent); }
+.gt-out { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:14px; }
+.gt-res { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
+.gt-res small { display:block; font-size:11px; color:var(--fg3); text-transform:uppercase; letter-spacing:.05em; margin-bottom:3px; }
+.gt-res b { font:600 18px var(--mono); color:var(--fg); }
+.gt-res b.pos, .g-doc .pos { color:var(--green); } .gt-res b.neg, .g-doc .neg { color:var(--red); }
+.g-doc code { font-family:var(--mono); font-size:.92em; background:var(--card); border:1px solid var(--border); border-radius:6px; padding:1px 6px; }
 .g-foot { max-width:920px; margin:0 auto; padding:18px 0 40px; border-top:1px solid var(--border); font-size:12px; color:var(--fg3); }
 .g-foot a { color:var(--fg2); }
 @media (max-width:560px) { .g-doc h1 { font-size:25px; } .g-nav { margin-left:0; } }

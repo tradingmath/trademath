@@ -1,0 +1,4 @@
+﻿Date,Time,Market,Symbol,Direction,Setup,Entry,Stop-loss,Target,Exit,Quantity,Planned risk (INR),Charges (INR),Net P&L (INR),R multiple,Mistake tag,Notes
+2026-01-12,09:42,NSE Equity,SAMPLE A,Buy,Breakout,500,495,510,509,200,1000,42,1758,1.76,none,Waited for the retest before entering
+2026-01-12,11:05,NSE Equity,SAMPLE B,Sell,Reversal,820,826,808,826,100,600,38,-638,-1.06,moved stop,Widened the stop after entry. Do not do this
+2026-01-13,10:20,Nifty options,SAMPLE C,Buy,Trend pullback,100,80,140,140,65,1300,60,2540,1.95,none,Took the full target

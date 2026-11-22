@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stock Average Calculator: Find Your Average Buy Price | TradeMath</title>
+<meta name="description" content="Enter each buy and get your average price, total cost and break-even in seconds. Also finds how many shares you need to buy to bring your average down to a target.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#050a1c">
+<link rel="canonical" href="https://trademath.in/stock-average-calculator.html">
+<link rel="icon" href="logo-icon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="en_IN">
+<meta property="og:site_name" content="TradeMath">
+<meta property="og:title" content="Stock average calculator">
+<meta property="og:description" content="Enter each buy and get your average price, total cost and break-even in seconds. Also finds how many shares you need to buy to bring your average down to a target.">
+<meta property="og:url" content="https://trademath.in/stock-average-calculator.html">
+<meta property="og:image" content="https://trademath.in/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<script>try{var s=JSON.parse(localStorage.getItem("tm_settings")||"{}");document.documentElement.dataset.theme=s.darkMode===false?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
+<link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts.css?v=140c3a0f">
+<link rel="stylesheet" href="styles.css?v=c2cff879">
+<link rel="stylesheet" href="guide.css?v=4f89a7cb">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Stock average calculator", "description": "Enter each buy and get your average price, total cost and break-even in seconds. Also finds how many shares you need to buy to bring your average down to a target.", "mainEntityOfPage": "https://trademath.in/stock-average-calculator.html", "inLanguage": "en-IN", "datePublished": "2026-11-22", "dateModified": "2026-11-22", "author": {"@type": "Organization", "name": "TradeMath", "url": "https://trademath.in/"}, "publisher": {"@type": "Organization", "name": "TradeMath", "logo": {"@type": "ImageObject", "url": "https://trademath.in/logo-512.png"}}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "TradeMath", "item": "https://trademath.in/"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://trademath.in/guides.html"}, {"@type": "ListItem", "position": 3, "name": "Stock average calculator", "item": "https://trademath.in/stock-average-calculator.html"}]}</script>
+</head>
+<body>
+<header class="g-head"><a class="g-brand" href="/"><img src="logo-icon.svg" alt="" width="28" height="28"><span>Trade<b>Math</b></span></a>
+<nav class="g-nav" aria-label="Guides"><a href="position-size-calculator-india.html">Position size</a><a href="risk-reward-ratio-explained.html">Risk-reward</a><a href="nse-fno-lot-sizes.html">Lot sizes</a><a href="trading-journal-india.html">Journal</a><a href="guides.html">All guides</a></nav>
+<a class="g-cta" href="/">Open calculator</a></header>
+<main class="g-doc">
+<p class="g-crumb"><a href="/">TradeMath</a> / <a href="guides.html">Guides</a></p>
+<h1>Stock average calculator</h1>
+<p class="g-lede">When you buy the same share more than once, your average price is not the middle of the prices. It depends on how much you bought at each one. Enter your buys below and see the real average.</p>
+<div class="g-tool" id="avg-tool">
+<h3>Average price calculator</h3>
+<div class="gt-grid" id="av_rows"></div>
+<div class="gt-grid" style="margin-top:12px">
+<label>Current market price (&#8377;, optional)<input id="av_cmp" type="number" min="0" step="0.05" placeholder="e.g. 430"></label>
+</div>
+<div class="gt-out">
+<div class="gt-res"><small>Average price</small><b id="av_avg">-</b></div>
+<div class="gt-res"><small>Total shares</small><b id="av_qty">-</b></div>
+<div class="gt-res"><small>Total invested</small><b id="av_cost">-</b></div>
+<div class="gt-res"><small>Profit or loss at current price</small><b id="av_pl">-</b></div>
+<div class="gt-res"><small>Rise needed to break even</small><b id="av_be">-</b></div>
+</div>
+</div>
+
+<div class="g-tool" id="avg-target">
+<h3>How many more shares to reach a target average?</h3>
+<div class="gt-grid">
+<label>Shares you hold<input id="ta_q" type="number" min="1" step="1" value="100"></label>
+<label>Your average now (&#8377;)<input id="ta_a" type="number" min="0.01" step="0.05" value="500"></label>
+<label>Price you would buy at (&#8377;)<input id="ta_p" type="number" min="0.01" step="0.05" value="400"></label>
+<label>Average you want (&#8377;)<input id="ta_t" type="number" min="0.01" step="0.05" value="450"></label>
+</div>
+<div class="gt-out">
+<div class="gt-res"><small>Shares to buy</small><b id="ta_n">-</b></div>
+<div class="gt-res"><small>Extra money needed</small><b id="ta_c">-</b></div>
+<div class="gt-res"><small>Total shares afterwards</small><b id="ta_tq">-</b></div>
+</div>
+<p class="g-fine" id="ta_note" style="margin-top:10px"></p>
+</div>
+
+<h2>The formula</h2>
+<div class="g-formula">Average price = Total money spent ÷ Total shares bought</div>
+<p>It is a weighted average. Buy 100 shares at ₹500, then 100 more at ₹400. You spent ₹50,000 + ₹40,000 = ₹90,000 on 200 shares, so the average is ₹450. Equal amounts, so it sits exactly in the middle.</p>
+<p>Now buy 100 at ₹500 and 300 at ₹400. The spend is ₹50,000 + ₹1,20,000 = ₹1,70,000 for 400 shares, an average of ₹425. The average moves toward the price where you bought more.</p>
+
+<h2>To bring your average down, you need to buy more than you think</h2>
+<p>This catches people out. Say you hold 100 shares at ₹500 and the price falls to ₹400. To get your average to ₹450, you have to buy another 100. To get to ₹425, you need 300. And the closer the target gets to the new price, the more shares it takes, because every extra share you buy at ₹400 pulls the average only a little.</p>
+<p>The second calculator above does this for you. Notice the money: getting from ₹500 to ₹450 here means another ₹40,000 into a share that is already losing.</p>
+
+<h2>Averaging down is a decision to take more risk</h2>
+<p>We would be doing you a disservice if we only gave you the sum. Buying more of a falling share lowers your average, and that feels like progress. Your loss per share against the current price has not changed, though, and you now hold more shares, so the same fall costs you more.</p>
+<p>A fair test is to ask: would I buy this share today, at this size, if I did not own it? If not, adding to it is probably not a plan. It is a hope. If you do average, decide the total size in advance using the same risk limit you would use for any new trade, and know where you would stop. Our guide on <a href="position-size-calculator-india.html">position size</a> shows how to set that limit.</p>
+
+<h2>Things the calculator does not include</h2>
+<ul>
+<li><b>Brokerage, taxes and other charges.</b> They add to your cost per share. For a ₹400 share the effect is small, but it is not zero, and it grows if you trade often.</li>
+<li><b>How your tax statement counts the cost.</b> Brokers and tax software may use a method such as first-in-first-out when you sell part of a holding, which can differ from the blended average above. Treat this number as a planning figure and ask a tax professional how your gains are computed.</li>
+<li><b>Corporate actions.</b> Splits, bonuses and rights issues change both quantity and price. Adjust your figures before you enter them.</li>
+</ul>
+<p>If you trade with a stop-loss, the TradeMath journal has an <b>Add to position</b> option. It recalculates your average and your risk on the open trade when you buy more, so the whole position stays one trade in your records.</p>
+
+<h2>Common questions</h2>
+<h3>How do I calculate the average price of a stock?</h3>
+<p>Add up the money spent on every purchase and divide it by the total number of shares. Do not average the prices themselves unless you bought exactly the same quantity each time.</p>
+<h3>Will my broker show the same average?</h3>
+<p>Usually, yes, as long as you enter the same buys. It can differ if charges are included in the cost, or if an adjustment such as a bonus issue applies.</p>
+<h3>Is averaging down a good idea?</h3>
+<p>It depends on why the price fell and whether your original reason still holds. As a mechanical habit it is risky, because it increases your position in the share that is working against you.</p>
+<h2>Related guides</h2><ul class="g-related"><li><a href="position-size-calculator-india.html">How to calculate position size</a>: decide how much to buy before you buy</li><li><a href="how-much-to-risk-per-trade.html">How much to risk per trade</a>: what averaging does to your risk</li><li><a href="stop-loss-placement-guide.html">Where to place a stop-loss</a>: so an average down does not run away</li><li><a href="trading-journal-india.html">Trading journal for Indian traders</a>: record each add as part of one trade</li></ul>
+<aside class="g-box"><b>Try it with your own numbers.</b> The free TradeMath calculator does this sum for you, with charges, lot sizes and a trade journal. No sign-up needed.<br><a class="g-btn" href="/">Open the calculator</a></aside>
+<p class="g-fine">Updated 22 November 2026. This page is for education and is not investment advice. Markets carry risk of loss. Examples are hypothetical and use round numbers. Check lot sizes, margins and charges with your broker and the exchange before you trade.</p>
+</main>
+<footer class="g-foot"><a href="/">Calculator</a> · <a href="guides.html">All guides</a> · <a href="position-size-calculator-india.html">Position size</a> · <a href="risk-reward-ratio-explained.html">Risk-reward</a> · <a href="nse-fno-lot-sizes.html">F&amp;O lot sizes</a> · <a href="trading-journal-india.html">Trading journal</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="https://razorpay.me/@trademath" target="_blank" rel="noopener">Support TradeMath</a> · <a href="about.html">About</a> · <a href="contact.html">Contact</a> · <a href="mailto:support@trademath.in">support@trademath.in</a><br>Free tools: <a href="break-even-win-rate-calculator.html">Break-even win rate</a> · <a href="stop-loss-calculator.html">Stop-loss calculator</a> · <a href="stock-average-calculator.html">Stock average calculator</a> · <a href="losing-streak-probability.html">Losing streak odds</a> · <a href="trading-journal-excel-template.html">Journal template</a></footer>
+<script>(function(){
+var $=function(i){return document.getElementById(i)};
+function inr(n,d){var s=n<0?"-":"";return s+"\u20b9"+Math.abs(n).toLocaleString("en-IN",{minimumFractionDigits:d||0,maximumFractionDigits:d||0})}
+var box=$("av_rows"),html="";
+for(var i=1;i<=5;i++){html+='<label>Buy '+i+' quantity<input class="av_q" type="number" min="0" step="1" placeholder="shares"></label><label>Buy '+i+' price (\u20b9)<input class="av_p" type="number" min="0" step="0.05" placeholder="price"></label>';}
+box.innerHTML=html;
+var qs=box.querySelectorAll(".av_q"),ps=box.querySelectorAll(".av_p");
+qs[0].value=100;ps[0].value=500;qs[1].value=100;ps[1].value=400;
+function run(){
+ var tq=0,tc=0;
+ for(var i=0;i<qs.length;i++){var q=parseFloat(qs[i].value),p=parseFloat(ps[i].value);if(q>0&&p>0){tq+=q;tc+=q*p}}
+ if(!(tq>0)){["av_avg","av_qty","av_cost","av_pl","av_be"].forEach(function(k){$(k).textContent="-"});return}
+ var avg=tc/tq;$("av_avg").textContent=inr(avg,2);$("av_qty").textContent=tq.toLocaleString("en-IN");$("av_cost").textContent=inr(tc,0);
+ var cmp=parseFloat($("av_cmp").value);
+ if(cmp>0){var pl=(cmp-avg)*tq;$("av_pl").textContent=inr(pl,0);$("av_pl").className=pl>=0?"pos":"neg";var rise=(avg/cmp-1)*100;$("av_be").textContent=rise>0?"+"+rise.toFixed(1)+"%":"Already above";}
+ else{$("av_pl").textContent="-";$("av_pl").className="";$("av_be").textContent="-";}
+}
+box.addEventListener("input",run);$("av_cmp").addEventListener("input",run);run();
+function tgt(){
+ var q=parseFloat($("ta_q").value),a=parseFloat($("ta_a").value),p=parseFloat($("ta_p").value),t=parseFloat($("ta_t").value),n=$("ta_note");
+ if(!(q>0&&a>0&&p>0&&t>0)){return}
+ var out=["ta_n","ta_c","ta_tq"];
+ if(!((p<t&&t<a)||(a<t&&t<p))){out.forEach(function(k){$(k).textContent="-"});n.textContent="The target average must sit between your current average and the price you would buy at.";return}
+ var x=q*(a-t)/(t-p),x2=Math.ceil(x-1e-9);
+ $("ta_n").textContent=x2.toLocaleString("en-IN");$("ta_c").textContent=inr(x2*p,0);$("ta_tq").textContent=(q+x2).toLocaleString("en-IN");
+ var newAvg=(q*a+x2*p)/(q+x2);
+ n.textContent="Buying "+x2.toLocaleString("en-IN")+" shares at "+inr(p,2)+" gives an average of "+inr(newAvg,2)+". You would hold "+(q+x2).toLocaleString("en-IN")+" shares, so the same fall costs you more.";
+}
+["ta_q","ta_a","ta_p","ta_t"].forEach(function(i){$(i).addEventListener("input",tgt)});tgt();
+})();</script>
+</body>
+</html>

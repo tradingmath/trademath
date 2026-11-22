@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Risk Reward Ratio and Break-Even Win Rate Calculator | TradeMath</title>
+<meta name="description" content="Enter your reward-to-risk ratio and find the win rate you need just to break even, with costs included. Free calculator, a 1:1 to 1:5 table and worked examples in rupees.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#050a1c">
+<link rel="canonical" href="https://trademath.in/break-even-win-rate-calculator.html">
+<link rel="icon" href="logo-icon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="en_IN">
+<meta property="og:site_name" content="TradeMath">
+<meta property="og:title" content="Risk reward ratio and break-even win rate calculator">
+<meta property="og:description" content="Enter your reward-to-risk ratio and find the win rate you need just to break even, with costs included. Free calculator, a 1:1 to 1:5 table and worked examples in rupees.">
+<meta property="og:url" content="https://trademath.in/break-even-win-rate-calculator.html">
+<meta property="og:image" content="https://trademath.in/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<script>try{var s=JSON.parse(localStorage.getItem("tm_settings")||"{}");document.documentElement.dataset.theme=s.darkMode===false?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
+<link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts.css?v=140c3a0f">
+<link rel="stylesheet" href="styles.css?v=c2cff879">
+<link rel="stylesheet" href="guide.css?v=4f89a7cb">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Risk reward ratio and break-even win rate calculator", "description": "Enter your reward-to-risk ratio and find the win rate you need just to break even, with costs included. Free calculator, a 1:1 to 1:5 table and worked examples in rupees.", "mainEntityOfPage": "https://trademath.in/break-even-win-rate-calculator.html", "inLanguage": "en-IN", "datePublished": "2026-11-22", "dateModified": "2026-11-22", "author": {"@type": "Organization", "name": "TradeMath", "url": "https://trademath.in/"}, "publisher": {"@type": "Organization", "name": "TradeMath", "logo": {"@type": "ImageObject", "url": "https://trademath.in/logo-512.png"}}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "TradeMath", "item": "https://trademath.in/"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://trademath.in/guides.html"}, {"@type": "ListItem", "position": 3, "name": "Risk reward ratio and break-even win rate calculator", "item": "https://trademath.in/break-even-win-rate-calculator.html"}]}</script>
+</head>
+<body>
+<header class="g-head"><a class="g-brand" href="/"><img src="logo-icon.svg" alt="" width="28" height="28"><span>Trade<b>Math</b></span></a>
+<nav class="g-nav" aria-label="Guides"><a href="position-size-calculator-india.html">Position size</a><a href="risk-reward-ratio-explained.html">Risk-reward</a><a href="nse-fno-lot-sizes.html">Lot sizes</a><a href="trading-journal-india.html">Journal</a><a href="guides.html">All guides</a></nav>
+<a class="g-cta" href="/">Open calculator</a></header>
+<main class="g-doc">
+<p class="g-crumb"><a href="/">TradeMath</a> / <a href="guides.html">Guides</a></p>
+<h1>Risk reward ratio and break-even win rate calculator</h1>
+<p class="g-lede">Your reward-to-risk ratio decides how often you have to win before the strategy makes any money at all. Put your numbers in below and see where you stand, costs included.</p>
+<div class="g-tool" id="be-tool">
+<h3>Break-even calculator</h3>
+<div class="gt-grid">
+<label>Reward for every 1 of risk<input id="be_r" type="number" min="0.1" step="0.1" value="2"></label>
+<label>Your win rate (%)<input id="be_w" type="number" min="1" max="99" step="0.5" value="38"></label>
+<label>Risk per trade (&#8377;)<input id="be_risk" type="number" min="1" step="50" value="1000"></label>
+<label>Cost per trade (&#8377;)<input id="be_c" type="number" min="0" step="5" value="50"></label>
+</div>
+<div class="gt-out">
+<div class="gt-res"><small>Break-even win rate, no costs</small><b id="be_b0">-</b></div>
+<div class="gt-res"><small>Break-even win rate, with costs</small><b id="be_b1">-</b></div>
+<div class="gt-res"><small>Profit per trade, on average</small><b id="be_e">-</b></div>
+<div class="gt-res"><small>Over 100 trades</small><b id="be_e100">-</b></div>
+<div class="gt-res"><small>In R (multiples of your risk)</small><b id="be_er">-</b></div>
+</div>
+<p class="g-fine" id="be_note" style="margin-top:10px"></p>
+</div>
+
+<h2>The formula</h2>
+<div class="g-formula">Break-even win rate = 1 ÷ (1 + reward ratio)</div>
+<p>If you risk ₹1,000 to make ₹2,000, the ratio is 1:2 and the break-even win rate is 1 ÷ 3, about 33.3%. Win more often than that and, before costs, you are making money. Win less often and you are losing it, however good each winning trade feels.</p>
+<p>With costs, the number rises. Brokerage, taxes, slippage and the spread are paid on every trade, winners and losers alike:</p>
+<div class="g-formula">Break-even win rate = (risk + cost) ÷ (risk + reward)</div>
+<p>Take ₹1,000 risk, ₹2,000 reward and ₹50 of costs per trade. That gives (1,000 + 50) ÷ 3,000 = 35.0%. A strategy that wins 38% of the time then earns 0.38 × 2,000 − 0.62 × 1,000 − 50 = <b>₹90 per trade</b>. Small, but positive. Drop to 34% and the same strategy loses about ₹30 a trade.</p>
+
+<h2>Break-even win rate by ratio</h2>
+<div class="g-tablewrap"><table class="g-table">
+<thead><tr><th>Reward : risk</th><th>Win rate needed</th><th>With ₹50 cost on ₹1,000 risk</th></tr></thead>
+<tbody>
+<tr><td>1 : 1</td><td>50.0%</td><td>52.5%</td></tr>
+<tr><td>1 : 1.5</td><td>40.0%</td><td>42.0%</td></tr>
+<tr><td>1 : 2</td><td>33.3%</td><td>35.0%</td></tr>
+<tr><td>1 : 3</td><td>25.0%</td><td>26.3%</td></tr>
+<tr><td>1 : 4</td><td>20.0%</td><td>21.0%</td></tr>
+<tr><td>1 : 5</td><td>16.7%</td><td>17.5%</td></tr>
+</tbody></table></div>
+<p>The cost column matters most at low ratios. At 1:1 a ₹50 cost adds 2.5 points to the win rate you need. That is a lot when the edge you are chasing is only a few points wide.</p>
+
+<h2>Why a bigger ratio is not automatically better</h2>
+<p>The table makes 1:5 look easy: you only need to win one trade in six. The catch is that the target is five times as far away as the stop, so price reaches it less often. Win rate and ratio are not independent dials. Push the target out and your win rate usually falls, sometimes by more than the table can forgive.</p>
+<p>The calculator cannot tell you your real win rate. Only your own trade history can. Log your trades for a few months and use your actual numbers, not the ones you hope for. If you do not have a record yet, our <a href="trading-journal-excel-template.html">free journal template</a> is a place to start.</p>
+
+<h2>A few things people get wrong</h2>
+<ul>
+<li><b>Using the planned ratio, not the realised one.</b> If you plan 1:2 but cut winners early and let losers run a bit, your real ratio is nearer 1:1.2. Work it out from your closed trades.</li>
+<li><b>Ignoring costs on small targets.</b> On a ₹5 stop, a few rupees of charges per share is a big slice of the risk.</li>
+<li><b>Treating break-even as the goal.</b> Break-even only means no profit and no loss. You want a margin above it, because the estimate of your win rate carries error, especially in the first hundred trades.</li>
+<li><b>Looking at one number.</b> Ratio, win rate and costs work together. A 70% win rate at 1:0.3 loses money. A 30% win rate at 1:3 can make it.</li>
+</ul>
+
+<h2>Common questions</h2>
+<h3>What is a good risk-reward ratio?</h3>
+<p>There is no universal answer. It depends on how often you win. Many traders aim for at least 1:2 so they can be wrong more often than they are right, but a scalper with a 70% win rate can do well at lower ratios.</p>
+<h3>Is a 1:2 ratio enough to be profitable?</h3>
+<p>It is enough if you win more than about 33% of the time after costs. Below that it is not, whatever the ratio.</p>
+<h3>How do I find my actual ratio?</h3>
+<p>Divide your average winning trade by your average losing trade, from your closed trades. If your average win is ₹1,400 and your average loss is ₹1,000, your ratio is 1:1.4.</p>
+<h2>Related guides</h2><ul class="g-related"><li><a href="risk-reward-ratio-explained.html">Risk-reward ratio explained</a>: setting targets and reading expectancy</li><li><a href="losing-streak-probability.html">Losing streak odds</a>: how long a bad run can last</li><li><a href="stop-loss-calculator.html">Stop-loss calculator</a>: find the stop and the targets for a trade</li><li><a href="how-much-to-risk-per-trade.html">How much to risk per trade</a>: sizing the loss, not just the target</li></ul>
+<aside class="g-box"><b>Try it with your own numbers.</b> The free TradeMath calculator does this sum for you, with charges, lot sizes and a trade journal. No sign-up needed.<br><a class="g-btn" href="/">Open the calculator</a></aside>
+<p class="g-fine">Updated 22 November 2026. This page is for education and is not investment advice. Markets carry risk of loss. Examples are hypothetical and use round numbers. Check lot sizes, margins and charges with your broker and the exchange before you trade.</p>
+</main>
+<footer class="g-foot"><a href="/">Calculator</a> · <a href="guides.html">All guides</a> · <a href="position-size-calculator-india.html">Position size</a> · <a href="risk-reward-ratio-explained.html">Risk-reward</a> · <a href="nse-fno-lot-sizes.html">F&amp;O lot sizes</a> · <a href="trading-journal-india.html">Trading journal</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="https://razorpay.me/@trademath" target="_blank" rel="noopener">Support TradeMath</a> · <a href="about.html">About</a> · <a href="contact.html">Contact</a> · <a href="mailto:support@trademath.in">support@trademath.in</a><br>Free tools: <a href="break-even-win-rate-calculator.html">Break-even win rate</a> · <a href="stop-loss-calculator.html">Stop-loss calculator</a> · <a href="stock-average-calculator.html">Stock average calculator</a> · <a href="losing-streak-probability.html">Losing streak odds</a> · <a href="trading-journal-excel-template.html">Journal template</a></footer>
+<script>(function(){
+var $=function(i){return document.getElementById(i)};
+function inr(n){var s=n<0?"-":"";return s+"\u20b9"+Math.abs(Math.round(n)).toLocaleString("en-IN")}
+function run(){
+ var R=parseFloat($("be_r").value),w=parseFloat($("be_w").value)/100,risk=parseFloat($("be_risk").value),c=parseFloat($("be_c").value)||0;
+ if(!(R>0&&w>0&&w<1&&risk>0))return;
+ var reward=R*risk,b0=1/(1+R),b1=(risk+c)/(risk+reward);
+ var e=w*reward-(1-w)*risk-c;
+ $("be_b0").textContent=(b0*100).toFixed(1)+"%";$("be_b1").textContent=(b1*100).toFixed(1)+"%";
+ $("be_e").textContent=inr(e);$("be_e").className=e>=0?"pos":"neg";
+ $("be_e100").textContent=inr(e*100);$("be_e100").className=e>=0?"pos":"neg";
+ $("be_er").textContent=(e/risk).toFixed(2)+"R";
+ $("be_note").textContent=e>=0?"At "+(w*100).toFixed(1)+"% wins you are "+((w-b1)*100).toFixed(1)+" points above break-even after costs.":"At "+(w*100).toFixed(1)+"% wins you are "+((b1-w)*100).toFixed(1)+" points below break-even after costs. The strategy loses money on average.";
+}
+["be_r","be_w","be_risk","be_c"].forEach(function(i){$(i).addEventListener("input",run)});run();
+})();</script>
+</body>
+</html>

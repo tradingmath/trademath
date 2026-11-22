@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Position Sizing Methods Compared: Fixed Risk, ATR and Kelly | TradeMath</title>
+<meta name="description" content="Four ways to decide how much to buy, with the same trade worked through each: fixed quantity, fixed percentage risk, ATR and the Kelly criterion. Which one suits you.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#050a1c">
+<link rel="canonical" href="https://trademath.in/position-sizing-methods-explained.html">
+<link rel="icon" href="logo-icon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="en_IN">
+<meta property="og:site_name" content="TradeMath">
+<meta property="og:title" content="Position sizing methods compared">
+<meta property="og:description" content="Four ways to decide how much to buy, with the same trade worked through each: fixed quantity, fixed percentage risk, ATR and the Kelly criterion. Which one suits you.">
+<meta property="og:url" content="https://trademath.in/position-sizing-methods-explained.html">
+<meta property="og:image" content="https://trademath.in/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<script>try{var s=JSON.parse(localStorage.getItem("tm_settings")||"{}");document.documentElement.dataset.theme=s.darkMode===false?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
+<link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts.css?v=140c3a0f">
+<link rel="stylesheet" href="styles.css?v=c2cff879">
+<link rel="stylesheet" href="guide.css?v=4f89a7cb">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Position sizing methods compared", "description": "Four ways to decide how much to buy, with the same trade worked through each: fixed quantity, fixed percentage risk, ATR and the Kelly criterion. Which one suits you.", "mainEntityOfPage": "https://trademath.in/position-sizing-methods-explained.html", "inLanguage": "en-IN", "datePublished": "2026-11-22", "dateModified": "2026-11-22", "author": {"@type": "Organization", "name": "TradeMath", "url": "https://trademath.in/"}, "publisher": {"@type": "Organization", "name": "TradeMath", "logo": {"@type": "ImageObject", "url": "https://trademath.in/logo-512.png"}}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "TradeMath", "item": "https://trademath.in/"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://trademath.in/guides.html"}, {"@type": "ListItem", "position": 3, "name": "Position sizing methods compared", "item": "https://trademath.in/position-sizing-methods-explained.html"}]}</script>
+</head>
+<body>
+<header class="g-head"><a class="g-brand" href="/"><img src="logo-icon.svg" alt="" width="28" height="28"><span>Trade<b>Math</b></span></a>
+<nav class="g-nav" aria-label="Guides"><a href="position-size-calculator-india.html">Position size</a><a href="risk-reward-ratio-explained.html">Risk-reward</a><a href="nse-fno-lot-sizes.html">Lot sizes</a><a href="trading-journal-india.html">Journal</a><a href="guides.html">All guides</a></nav>
+<a class="g-cta" href="/">Open calculator</a></header>
+<main class="g-doc">
+<p class="g-crumb"><a href="/">TradeMath</a> / <a href="guides.html">Guides</a></p>
+<h1>Position sizing methods compared</h1>
+<p class="g-lede">There is more than one way to decide how much to buy. Here are the four you will meet most often, worked through with the same trade so you can see how different the answers are.</p>
+<h2>The trade we will use</h2>
+<p>Capital of ₹2,00,000. You want to buy a share at ₹800 with a stop at ₹784, a loss of ₹16 per share. Every method below answers the same question: how many shares?</p>
+
+<h2>1. Fixed quantity</h2>
+<p>You buy the same number of shares every time, say 100. Simple, and it is how most people start.</p>
+<p>The problem shows up straight away. At 100 shares the loss on this trade is 100 × ₹16 = ₹1,600, but on a trade with a ₹40 stop the same 100 shares loses ₹4,000. The risk swings by two and a half times, and you did not choose that. It follows from where the stop happens to be.</p>
+<p><b>Good for:</b> nothing in particular, apart from getting started. <b>Bad for:</b> consistent risk.</p>
+
+<h2>2. Fixed percentage risk</h2>
+<p>Decide the percentage of capital you will lose if the stop is hit, then let the stop distance set the quantity. With 1% risk, your risk is ₹2,000, and ₹2,000 ÷ ₹16 = <b>125 shares</b>. On a ₹40 stop the same rule gives 50 shares. The share count changes, and the rupee risk does not.</p>
+<div class="g-formula">Quantity = (Capital × Risk %) ÷ (Entry − Stop)</div>
+<p>The percentage scales with the account. After a loss you risk a little less in rupees, and after a gain a little more, which slows the damage in a bad run and lets a good run compound. Many risk-focused traders and trading books settle here, and it is what the TradeMath calculator does.</p>
+<p><b>Good for:</b> almost everyone. <b>Watch out for:</b> picking a percentage that is too large. See <a href="how-much-to-risk-per-trade.html">how much to risk per trade</a>.</p>
+
+<h2>3. Fixed rupee risk</h2>
+<p>The same idea, but with a flat amount: ₹2,000 on every trade, whatever the account size. That gives 125 shares here too.</p>
+<p>Some traders prefer it because the number never moves and is easy to remember. The cost is that it does not shrink when the account does. If you are down 30%, ₹2,000 is now a larger slice of what is left. Revisit the figure every month or so. In the TradeMath calculator, the "Flat ₹" switch next to Risk does this.</p>
+<p><b>Good for:</b> small accounts that want a simple rule. <b>Watch out for:</b> forgetting to update it.</p>
+
+<h2>4. Volatility (ATR) sizing</h2>
+<p>Here the stop itself comes from how much the share normally moves. A common version places the stop at twice the 14-day average true range (ATR). Suppose this share's ATR is ₹12. The stop is then ₹24 away, at ₹776 rather than ₹784, and with a ₹2,000 risk the quantity is ₹2,000 ÷ ₹24 = <b>83 shares</b>.</p>
+<p>A calm share gets a tight stop and a bigger position. A jumpy one gets a wide stop and a smaller position. In both cases a normal day's noise is unlikely to knock you out, and the rupee risk stays the same. You are not forced to use ATR to set the stop, and you can still apply fixed percentage risk afterwards. This method is a way of choosing the distance, not a separate risk rule.</p>
+<p><b>Good for:</b> swing traders and anyone trading shares with very different volatility. <b>Watch out for:</b> stops that end up wider than you expected, which means smaller positions.</p>
+
+<h2>The Kelly criterion, and why we do not use it</h2>
+<p>You will also hear about Kelly, a formula for the "optimal" bet size given your win rate and ratio:</p>
+<div class="g-formula">Kelly % = Win rate − (Loss rate ÷ Reward ratio)</div>
+<p>With a 40% win rate and a 1:2 ratio, that is 0.40 − 0.60 ÷ 2 = 0.10, or 10% of your capital at risk on every trade. Looking at the <a href="losing-streak-probability.html">losing streak table</a>, a 40% strategy over 250 trades will probably hand you nine or more losses in a row. At 10% risk, nine losses leave you with about 39% of your account.</p>
+<p>The trouble is that Kelly assumes you know your true win rate and ratio. You do not. You have an estimate from a limited number of trades, and if the estimate is a bit too good, Kelly tells you to bet far too much. In Kelly's own maths, betting too much hurts more than betting too little by the same amount, so the people who do use it tend to bet a quarter to a half of the figure. Even then it is aggressive for a retail account.</p>
+<p>We would treat Kelly as an upper bound to be aware of, not a target. For most people, 0.5% to 2% fixed risk keeps drawdowns survivable.</p>
+
+<h2>Side by side</h2>
+<div class="g-tablewrap"><table class="g-table">
+<thead><tr><th>Method</th><th>Shares on our trade</th><th>Rupee risk</th><th>Consistent risk?</th></tr></thead>
+<tbody>
+<tr><td>Fixed quantity (100)</td><td>100</td><td>₹1,600</td><td>No, changes with the stop</td></tr>
+<tr><td>Fixed 1% risk</td><td>125</td><td>₹2,000</td><td>Yes</td></tr>
+<tr><td>Fixed ₹2,000 risk</td><td>125</td><td>₹2,000</td><td>Yes</td></tr>
+<tr><td>ATR stop (2 × ATR, ₹2,000 risk)</td><td>83</td><td>₹1,992</td><td>Yes, with a wider stop</td></tr>
+<tr><td>Kelly (10%)</td><td>1,250 (a ₹10 lakh position)</td><td>₹20,000</td><td>Yes, but far too large for this account</td></tr>
+</tbody></table></div>
+
+<h2>How to choose</h2>
+<ul>
+<li>New to this: fixed percentage risk, around 1%. Stay there for your first few hundred trades.</li>
+<li>Small account with a hard rupee budget: fixed rupee risk, reviewed monthly.</li>
+<li>Trading many different shares or swinging for days: fixed percentage risk, with the stop set from ATR or from the chart.</li>
+<li>Whatever you pick, write it down before you trade and do not change it in the middle of a losing streak.</li>
+</ul>
+
+<h2>Common questions</h2>
+<h3>What is the best position sizing method?</h3>
+<p>For most retail traders, risking a fixed small percentage of capital on each trade. It keeps the loss at your stop the same whatever the price or stop distance.</p>
+<h3>Does position size depend on the price of the share?</h3>
+<p>Only through the stop distance. A ₹5,000 share and a ₹50 share with the same rupee stop distance get the same quantity.</p>
+<h3>Should I increase position size when I am winning?</h3>
+<p>With a percentage rule, it happens on its own as the account grows. Raising the percentage itself after a hot streak is a common way to give the gains back.</p>
+<h2>Related guides</h2><ul class="g-related"><li><a href="position-size-calculator-india.html">How to calculate position size</a>: the core formula step by step</li><li><a href="how-much-to-risk-per-trade.html">How much to risk per trade</a>: choosing the percentage</li><li><a href="losing-streak-probability.html">Losing streak odds</a>: what your sizing has to survive</li><li><a href="stop-loss-calculator.html">Stop-loss calculator</a>: work out the stop and the quantity</li></ul>
+<aside class="g-box"><b>Try it with your own numbers.</b> The free TradeMath calculator does this sum for you, with charges, lot sizes and a trade journal. No sign-up needed.<br><a class="g-btn" href="/">Open the calculator</a></aside>
+<p class="g-fine">Updated 22 November 2026. This page is for education and is not investment advice. Markets carry risk of loss. Examples are hypothetical and use round numbers. Check lot sizes, margins and charges with your broker and the exchange before you trade.</p>
+</main>
+<footer class="g-foot"><a href="/">Calculator</a> · <a href="guides.html">All guides</a> · <a href="position-size-calculator-india.html">Position size</a> · <a href="risk-reward-ratio-explained.html">Risk-reward</a> · <a href="nse-fno-lot-sizes.html">F&amp;O lot sizes</a> · <a href="trading-journal-india.html">Trading journal</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="https://razorpay.me/@trademath" target="_blank" rel="noopener">Support TradeMath</a> · <a href="about.html">About</a> · <a href="contact.html">Contact</a> · <a href="mailto:support@trademath.in">support@trademath.in</a><br>Free tools: <a href="break-even-win-rate-calculator.html">Break-even win rate</a> · <a href="stop-loss-calculator.html">Stop-loss calculator</a> · <a href="stock-average-calculator.html">Stock average calculator</a> · <a href="losing-streak-probability.html">Losing streak odds</a> · <a href="trading-journal-excel-template.html">Journal template</a></footer>
+</body>
+</html>
