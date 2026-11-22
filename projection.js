@@ -116,7 +116,8 @@
       tpd:     Math.round(num("p_tpd", DEFAULTS.tpd, 1, 50)),
       days:    Math.round(num("p_days", DEFAULTS.days, 1, 31)),
       months:  Math.round(num("p_months", DEFAULTS.months, 1, 36)),
-      cost:    num("p_cost", DEFAULTS.cost, 0, 1e9),
+      fees:    $("p_fees") ? $("p_fees").checked : true,
+      cost:    ($("p_fees") && !$("p_fees").checked) ? 0 : num("p_cost", DEFAULTS.cost, 0, 1e9),   // fees off: no cost is taken from any trade
       seed:    Math.round(num("p_seed", 1, 1, 2147483646)),
       vary:    Math.max(0, parseFloat($("p_var").value) || 0),
       maxWins: K, wmax,
@@ -131,10 +132,12 @@
     const v = Object.assign({}, DEFAULTS, s);
     if (!v.seed) v.seed = Math.floor(Math.random() * 900000) + 100000;
     Object.keys(FIELDS).forEach(k => { const el = $(FIELDS[k]); if (el) el.value = v[k]; });
+    if ($("p_fees")) $("p_fees").checked = !(s.fees === "0" || s.fees === false);
   }
   function saveInputs() {
     const o = {};
     Object.keys(FIELDS).forEach(k => { const el = $(FIELDS[k]); if (el) o[k] = el.value; });
+    if ($("p_fees")) o.fees = $("p_fees").checked ? "1" : "0";
     tmSet(LS_KEY, o);
   }
 
@@ -159,6 +162,7 @@
     const tradesPerMonth = cfg.tpd * cfg.days;
     const breakEven = (risk0 + cfg.cost) / (risk0 * (cfg.rr + 1)) * 100;
 
+    $("p_cost").disabled = !cfg.fees; $("p_fees_lbl").textContent = cfg.fees ? "Fees on" : "Fees off";
     $("p_win").max = cfg.wmax;
     $("p_win_hint").textContent = "max " + cfg.wmax;
     $("proj_rule").innerHTML = (isFinite(K) ? `Never more than <strong>${K} wins in a row</strong>. ` : "No limit on win streaks. ") +
@@ -187,9 +191,9 @@
     const avgMonth = res.months.length ? res.pnl / res.months.length : 0;
     $("proj_tiles").innerHTML =
       tile("Ending balance", money(res.endCap), `started with ${money(cfg.capital)}`, cls(res.pnl), true) +
-      tile("Profit before fees", signed(gross), `${res.wins} wins, ${res.losses} losses`, cls(gross)) +
-      tile("Fees paid", money(costs), `${res.trades} trades × ${money(cfg.cost)}${gross > 0 ? " · " + pct1(costs / gross * 100) + " of that profit" : ""}`, "neg") +
-      tile("Net profit / loss", signed(res.pnl), `${retTxt} return, after fees`, cls(res.pnl)) +
+      tile(cfg.fees ? "Profit before fees" : "Profit", signed(gross), `${res.wins} wins, ${res.losses} losses`, cls(gross)) +
+      (cfg.fees ? tile("Fees paid", money(costs), `${res.trades} trades × ${money(cfg.cost)}${gross > 0 ? " · " + pct1(costs / gross * 100) + " of that profit" : ""}`, "neg") : tile("Fees paid", "Off", "turn fees on to count them")) +
+      tile("Net profit / loss", signed(res.pnl), `${retTxt} return${cfg.fees ? ", after fees" : ", fees not counted"}`, cls(res.pnl)) +
       tile("Average / month", signed(avgMonth), `net profit ÷ ${res.months.length} month${res.months.length === 1 ? "" : "s"}`, cls(avgMonth)) +
       tile("Worst month", signed(worst), `Month ${worstM} · ${redMonths} of ${res.months.length} months lost money`, cls(worst)) +
       tile("Biggest fall", "−" + money(res.maxDD), `${pct1(res.maxDDp)} down from the highest balance`, "neg") +
@@ -315,6 +319,7 @@
     });
   });
   $("proj_tiles").addEventListener("click", e => { if (e.target.closest(".pl-reroll")) $("p_reroll").click(); });
+  if ($("p_fees")) $("p_fees").addEventListener("change", schedule);
   $("p_reroll").addEventListener("click", () => {
     $("p_seed").value = Math.floor(Math.random() * 900000) + 100000;
     saveInputs(); render();
@@ -322,6 +327,7 @@
   $("p_example").addEventListener("change", () => {
     const ex = EXAMPLES[$("p_example").value]; if (!ex) return;
     Object.keys(ex).forEach(k => { const el = $(FIELDS[k]); if (el) el.value = ex[k]; });
+    if ($("p_fees")) $("p_fees").checked = true;
     $("p_example").value = ""; selMonth = 1; noteText = ""; clampNotice = false;
     saveInputs(); render();
   });
