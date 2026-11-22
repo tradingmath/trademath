@@ -175,46 +175,55 @@
     if (cfg.riskmode === "pct" && cfg.risk > 5 || cfg.riskmode === "abs" && cfg.risk > cfg.capital * 0.05) msgs.push(["warn", "Risking more than 5% of your balance per trade makes deep drawdowns and wipe-outs very likely."]);
     $("proj_msgs").innerHTML = msgs.map(m => `<div class="proj-msg ${m[0]}" role="${m[0] === "info" ? "note" : "alert"}">${m[1]}</div>`).join("");
 
-    const mp = res.months.map(m => m.pnl);
-    const avg = mp.length ? mp.reduce((a, b) => a + b, 0) / mp.length : 0;
-    const best = mp.length ? Math.max.apply(null, mp) : 0, worst = mp.length ? Math.min.apply(null, mp) : 0;
-    const bestM = mp.indexOf(best) + 1, worstM = mp.indexOf(worst) + 1;
-    const redMonths = mp.filter(x => x < 0).length;
-    const retPct = res.pnl / cfg.capital * 100;
-    const eff = res.trades ? res.wins / res.trades * 100 : 0;
-    $("proj_tiles").innerHTML =
-      tile("Average / month", signed(expTrade * tradesPerMonth), `from your numbers · ${tradesPerMonth} trades × ${signed(expTrade)}${cfg.riskmode === "pct" ? " (month 1)" : ""}`, cls(expTrade), true) +
-      tile("This run: avg / month", signed(avg), `${res.months.length - redMonths} green · ${redMonths} red month${redMonths === 1 ? "" : "s"}`, cls(avg)) +
-      tile("Best month", signed(best), `Month ${bestM}`, cls(best)) +
-      tile("Worst month", signed(worst), `Month ${worstM}`, cls(worst)) +
-      tile("Ending balance", money(res.endCap), `${signed(res.pnl)} · ${(retPct >= 0 ? "+" : "−") + fmtP(retPct, Math.abs(retPct) >= 1000 ? 0 : 1) + "% · "}your inputs only`, cls(res.pnl)) +
-      tile("Net P&L", signed(res.pnl), `after ${money(res.trades * cfg.cost)} costs · ${(retPct >= 0 ? "+" : "−") + fmtP(retPct, Math.abs(retPct) >= 1000 ? 0 : 1)}%`, cls(res.pnl)) +
-      tile("Costs paid", money(res.trades * cfg.cost), `${res.trades} trades × ${money(cfg.cost)}`) +
-      tile("Max drawdown", "−" + money(res.maxDD), `${pct1(res.maxDDp)} from peak`, "neg") +
-      tile("Win rate (this run)", pct1(eff), `${res.wins} W · ${res.losses} L`) +
-      tile("Longest streaks", `${res.maxW}W · ${res.maxL}L`, isFinite(K) ? `win streak limited to ${K}` : "no win-streak limit");
-
+    /* Many different luck paths first: one run can flatter or punish, so the planner leads with the spread, worst case first. */
     const runs = res.trades > 20000 ? 60 : 200;
-    const ends = [], redShare = [];
+    const ends = [], ddp = [], ddv = [], mls = [], redShare = [];
+    let wiped = 0;
     for (let i = 1; i <= runs; i++) {
       const r = run(cfg, cfg.seed + i * 7919, false);
-      ends.push(r.endCap);
+      ends.push(r.endCap); ddp.push(r.maxDDp); ddv.push(r.maxDD); mls.push(r.maxL);
+      if (r.blown) wiped++;
       if (r.months.length) redShare.push(r.months.filter(m => m.pnl < 0).length / r.months.length);
     }
-    ends.sort((a, b) => a - b);
-    const q = f => ends[Math.min(ends.length - 1, Math.floor(f * ends.length))];
-    const profitable = ends.filter(e => e > cfg.capital).length / ends.length * 100;
+    const asc = a => a.slice().sort((x, y) => x - y);
+    const eS = asc(ends), dpS = asc(ddp), dvS = asc(ddv), mlS = asc(mls);
+    const at = (arr, f) => arr[Math.min(arr.length - 1, Math.floor(f * arr.length))];
+    const retStr = v => { const r = (v - cfg.capital) / cfg.capital * 100; return (r >= 0 ? "+" : "−") + fmtP(Math.abs(r), Math.abs(r) >= 1000 ? 0 : 1) + "%"; };
+    const outTile = (label, v, extra, hi) => tile(label, money(v), `${signed(v - cfg.capital)} · ${retStr(v)}${extra || ""}`, cls(v - cfg.capital), hi);
+    const losing = eS.filter(e => e <= cfg.capital).length / eS.length * 100;
+
+    const mp = res.months.map(m => m.pnl);
+    const worst = mp.length ? Math.min.apply(null, mp) : 0, worstM = mp.indexOf(worst) + 1;
+    const redMonths = mp.filter(x => x < 0).length;
+    const eff = res.trades ? res.wins / res.trades * 100 : 0;
+    const costs = res.trades * cfg.cost;
+    const sec = (title, note, btn) => `<div class="pl-sec"><div><div class="pl-sec-t">${title}</div><div class="pl-sec-n">${note}</div></div>${btn || ""}</div>`;
+
+    $("proj_tiles").innerHTML =
+      sec(`If you traded this plan ${runs} times`, `Luck decides a lot, so look at the bad-luck numbers first. Each path is the same plan with different luck. Do not plan around the good-luck case.`) +
+      outTile("Bad luck (1 in 10)", at(eS, 0.1), "", true) +
+      outTile(`Worst of ${runs}`, eS[0]) +
+      outTile("Middle result", at(eS, 0.5)) +
+      outTile("Good luck (1 in 10)", at(eS, 0.9)) +
+      tile("Chance of losing money", Math.round(losing) + "%", `${eS.filter(e => e <= cfg.capital).length} of ${runs} paths ended at or below the start`, losing >= 50 ? "neg" : "") +
+      tile("Chance of a wipe-out", wiped ? Math.round(wiped / runs * 100) + "%" : "0%", wiped ? `${wiped} of ${runs} paths hit zero` : `none of ${runs} paths hit zero`, wiped ? "neg" : "") +
+      tile("Drawdown to expect", "−" + pct1(at(dpS, 0.9)), `up to ${money(at(dvS, 0.9))} down from a peak · worst path −${pct1(dpS[dpS.length - 1])}`, "neg") +
+      tile("Losing streak to expect", `${at(mlS, 0.9)} L in a row`, `1 in 10 paths had at least this many · worst path ${mlS[mlS.length - 1]}`) +
+      sec(`This one run · seed ${cfg.seed}`, `A seed is one roll of the dice. Click it to roll a different one and watch how much luck alone changes the same plan. Try a few before you trust any single run.`,
+          `<button type="button" class="btn btn-primary btn-sm pl-reroll">🎲 Try a different seed</button>`) +
+      tile("Ending balance", money(res.endCap), `${signed(res.pnl)} net after costs · ${retStr(res.endCap)}`, cls(res.pnl), true) +
+      tile("Worst month", signed(worst), `Month ${worstM} · ${redMonths} of ${res.months.length} months red`, cls(worst)) +
+      tile("Max drawdown", "−" + money(res.maxDD), `${pct1(res.maxDDp)} from peak · longest losing streak ${res.maxL}`, "neg") +
+      tile("Costs paid", money(costs), `${res.trades} trades × ${money(cfg.cost)} · ${pct1(eff)} won`);
+
     const allDays = res.months.reduce((a, m) => a.concat(m.days || []), []);
     const redDays = allDays.length ? Math.round(allDays.filter(d => d.pnl < 0).length / allDays.length * 100) : 0;
     const flatDays = allDays.length ? Math.round(allDays.filter(d => d.pnl === 0).length / allDays.length * 100) : 0;
     const avgRed = redShare.length ? redShare.reduce((a, b) => a + b, 0) / redShare.length * 100 : 0;
-    $("proj_range").innerHTML = `<strong>Same strategy, ${runs} different lucky/unlucky paths</strong>
-      <span>Bad luck (10th pct) <b class="${cls(q(0.1) - cfg.capital)}">${money(q(0.1))}</b></span>
-      <span>Middle <b class="${cls(q(0.5) - cfg.capital)}">${money(q(0.5))}</b></span>
-      <span>Good luck (90th pct) <b class="${cls(q(0.9) - cfg.capital)}">${money(q(0.9))}</b></span>
-      <span><b>${Math.round(profitable)}%</b> of paths ended in profit</span>
+    $("proj_range").innerHTML = `<strong>What the bad days and months feel like</strong>
       <span>About <b>${redDays}%</b> of days were red${flatDays ? " and " + flatDays + "% flat" : ""} (this run)</span>
-      <span>About <b>${Math.round(avgRed)}%</b> of months were red</span>`;
+      <span>About <b>${Math.round(avgRed)}%</b> of months were red (across ${runs} paths)</span>
+      <span>Bad luck (1 in 10) ends near <b class="${cls(at(eS, 0.1) - cfg.capital)}">${money(at(eS, 0.1))}</b>. Plan your money for that, not for the good case.</span>`;
 
     $("proj_curve").innerHTML = curveSvg(res, cfg);
     if (selMonth > res.months.length) selMonth = res.months.length || 1;
@@ -314,6 +323,7 @@
       schedule();
     });
   });
+  $("proj_tiles").addEventListener("click", e => { if (e.target.closest(".pl-reroll")) $("p_reroll").click(); });
   $("p_reroll").addEventListener("click", () => {
     $("p_seed").value = Math.floor(Math.random() * 900000) + 100000;
     saveInputs(); render();
