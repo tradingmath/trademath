@@ -1282,3 +1282,5 @@ h1.logo { margin:0; line-height:inherit; }
 .support-modal .sup-text { color:var(--fg2); line-height:1.55; margin:6px 0 16px; font-size:14px; }
 .support-modal .tm-dialog-actions { display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; }
 .support-modal a.btn { text-decoration:none; display:inline-flex; align-items:center; color:var(--on-accent); }
+/* Planner: ten result tiles, five across on a wide screen */
+@media (min-width:1100px) { .proj-tiles { grid-template-columns:repeat(5,1fr); } }

@@ -188,6 +188,8 @@
       tile("Best month", signed(best), `Month ${bestM}`, cls(best)) +
       tile("Worst month", signed(worst), `Month ${worstM}`, cls(worst)) +
       tile("Ending balance", money(res.endCap), `${signed(res.pnl)} · ${(retPct >= 0 ? "+" : "−") + fmtP(retPct, Math.abs(retPct) >= 1000 ? 0 : 1) + "% · "}your inputs only`, cls(res.pnl)) +
+      tile("Net P&L", signed(res.pnl), `after ${money(res.trades * cfg.cost)} costs · ${(retPct >= 0 ? "+" : "−") + fmtP(retPct, Math.abs(retPct) >= 1000 ? 0 : 1)}%`, cls(res.pnl)) +
+      tile("Costs paid", money(res.trades * cfg.cost), `${res.trades} trades × ${money(cfg.cost)}`) +
       tile("Max drawdown", "−" + money(res.maxDD), `${pct1(res.maxDDp)} from peak`, "neg") +
       tile("Win rate (this run)", pct1(eff), `${res.wins} W · ${res.losses} L`) +
       tile("Longest streaks", `${res.maxW}W · ${res.maxL}L`, isFinite(K) ? `win streak limited to ${K}` : "no win-streak limit");
