@@ -15,7 +15,7 @@
     strong:    { win: 55, rr: 2,   cost: 50, tpd: 3, days: 22, risk: 1000, riskmode: "abs", months: 12, vary: "5", maxw: "3" },
   };
   const FIELDS = { capital: "p_capital", win: "p_win", rr: "p_rr", risk: "p_risk", riskmode: "p_riskmode", tpd: "p_tpd", days: "p_days", months: "p_months", cost: "p_cost", vary: "p_var", maxw: "p_maxw", seed: "p_seed" };
-  let selMonth = 1, clampNotice = false, noteText = "", lastRes = null;
+  let selMonth = 1, clampNotice = false, noteText = "", lastRes = null, curveGeo = null;
 
   function mulberry32(a) {
     return function () {
@@ -96,6 +96,22 @@
     return { months, curve, wins, losses, trades: wins + losses, endCap: cap, pnl: cap - cfg.capital, maxW, maxL, maxDD, maxDDp, blown, K };
   }
 
+  /* The seed shown by default (and by the dice) is a TYPICAL-to-UNLUCKY path, never a lucky one: it must have a real drawdown and
+     some red months, so the balance curve goes up and down the way real trading does instead of climbing smoothly. */
+  function realisticSeed() {
+    const cfg = readCfg(), tries = [];
+    for (let i = 0; i < 40; i++) {
+      const sd = Math.floor(Math.random() * 900000) + 100000, r = run(cfg, sd, false);
+      tries.push({ sd, end: r.endCap, dd: r.maxDDp, red: r.months.filter(m => m.pnl < 0).length });
+    }
+    const med = f => { const a = tries.map(f).sort((x, y) => x - y); return a[Math.floor(a.length / 2)]; };
+    const mEnd = med(t => t.end), mDD = med(t => t.dd), mRed = med(t => t.red);
+    const good = tries.filter(t => t.end <= mEnd && t.dd >= mDD && t.red >= mRed);       // not luckier than middle, with real dips
+    const pool = good.length ? good : tries.filter(t => t.end <= mEnd).sort((a, b) => b.dd - a.dd).slice(0, 5);
+    const pick = (pool.length ? pool : tries)[Math.floor(Math.random() * (pool.length || tries.length))];
+    return pick.sd;
+  }
+
   /* ── inputs ── */
   function num(id, def, lo, hi) {
     const el = $(id); let v = el ? parseFloat(el.value) : NaN;
@@ -116,7 +132,7 @@
       tpd:     Math.round(num("p_tpd", DEFAULTS.tpd, 1, 50)),
       days:    Math.round(num("p_days", DEFAULTS.days, 1, 31)),
       months:  Math.round(num("p_months", DEFAULTS.months, 1, 36)),
-      fees:    $("p_fees") ? $("p_fees").checked : true,
+      fees:    $("p_fees") ? $("p_fees").checked : false,
       cost:    ($("p_fees") && !$("p_fees").checked) ? 0 : num("p_cost", DEFAULTS.cost, 0, 1e9),   // fees off: no cost is taken from any trade
       seed:    Math.round(num("p_seed", 1, 1, 2147483646)),
       vary:    Math.max(0, parseFloat($("p_var").value) || 0),
@@ -132,7 +148,8 @@
     const v = Object.assign({}, DEFAULTS, s);
     if (!v.seed) v.seed = Math.floor(Math.random() * 900000) + 100000;
     Object.keys(FIELDS).forEach(k => { const el = $(FIELDS[k]); if (el) el.value = v[k]; });
-    if ($("p_fees")) $("p_fees").checked = !(s.fees === "0" || s.fees === false);
+    if ($("p_fees")) $("p_fees").checked = s.fees === "1";               // fees are off until someone turns them on
+    if (!s.seed) { $("p_seed").value = realisticSeed(); saveInputs(); }
   }
   function saveInputs() {
     const o = {};
@@ -242,11 +259,32 @@
     let ticks = "", cum = 0;
     res.months.forEach((m, k) => { if (k) ticks += `<line class="pl-tick" x1="${x(cum).toFixed(1)}" x2="${x(cum).toFixed(1)}" y1="${PT}" y2="${H - PB}"/>`; cum += m.trades; });
     const base = y(cfg.capital).toFixed(1);
-    return `<svg class="pl-curve" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Simulated account balance over ${res.months.length} months, from ${money(cfg.capital)} to ${money(res.endCap)}">
+    curveGeo = { W, H, PL, PR, PT, PB, lo, rg, n, cap: cfg.capital };
+    return `<div class="pl-curve-wrap"><svg class="pl-curve" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Simulated account balance over ${res.months.length} months, from ${money(cfg.capital)} to ${money(res.endCap)}">
       ${ticks}<line class="pl-base" x1="${PL}" x2="${W - PR}" y1="${base}" y2="${base}"/>
       <path class="pl-fill" d="${fill}"/><path class="pl-line" d="${line}"/></svg>
+      <div class="pl-hv" hidden><i class="pl-hv-line"></i><i class="pl-hv-dot"></i></div><div class="pl-tip" hidden></div></div>
       <div class="pl-axis"><span>Start ${money(cfg.capital)}</span><span>Low ${money(lo)} · High ${money(hi)}</span><span>End ${money(res.endCap)}</span></div>`;
   }
+
+  /* Hover (or touch) the balance chart to read the balance at that point: it shows the value, the change from the start, and which month, day and trade it is. */
+  function curveHover(e) {
+    const wrap = e.target.closest(".pl-curve-wrap"); if (!wrap || !lastRes || !curveGeo) return;
+    const g = curveGeo, box = wrap.getBoundingClientRect(), fx = Math.min(1, Math.max(0, (e.clientX - box.left) / box.width));
+    const vx = fx * g.W, i = Math.round(Math.min(1, Math.max(0, (vx - g.PL) / (g.W - g.PL - g.PR))) * (g.n - 1));
+    const v = lastRes.curve[i];
+    const px = (g.PL + i / Math.max(1, g.n - 1) * (g.W - g.PL - g.PR)) / g.W, py = (g.PT + (g.H - g.PT - g.PB) * (1 - (v - g.lo) / g.rg)) / g.H;
+    let where = "Start";
+    if (i > 0) { let left = i; where = ""; for (const m of lastRes.months) { if (left > m.trades) { left -= m.trades; continue; } for (const d of m.days) { if (left > d.t.length) { left -= d.t.length; continue; } where = `Month ${m.n} · Day ${d.n} · trade ${left} of ${d.t.length}`; break; } break; } }
+    const hv = wrap.querySelector(".pl-hv"), tip = wrap.querySelector(".pl-tip");
+    hv.hidden = false; tip.hidden = false;
+    hv.style.left = (px * 100) + "%";
+    hv.querySelector(".pl-hv-dot").style.top = (py * 100) + "%";
+    const d = v - g.cap;
+    tip.innerHTML = `<b>${money(v)}</b><span class="${cls(d)}">${i ? signed(d) + " from start" : "starting balance"}</span><em>${where}</em>`;
+    tip.style.left = Math.min(Math.max(px * box.width, 80), box.width - 80) + "px";
+  }
+  function curveLeave(e) { const w = e.target.closest ? e.target.closest(".pl-curve-wrap") : null; if (w) { w.querySelector(".pl-hv").hidden = true; w.querySelector(".pl-tip").hidden = true; } }
 
   /* One card per month: Sun–Sat grid, trading days fill Mon–Fri in order, coloured by that day's net result. */
   function calendarHtml(res) {
@@ -321,13 +359,12 @@
   $("proj_tiles").addEventListener("click", e => { if (e.target.closest(".pl-reroll")) $("p_reroll").click(); });
   if ($("p_fees")) $("p_fees").addEventListener("change", schedule);
   $("p_reroll").addEventListener("click", () => {
-    $("p_seed").value = Math.floor(Math.random() * 900000) + 100000;
+    $("p_seed").value = realisticSeed();
     saveInputs(); render();
   });
   $("p_example").addEventListener("change", () => {
     const ex = EXAMPLES[$("p_example").value]; if (!ex) return;
     Object.keys(ex).forEach(k => { const el = $(FIELDS[k]); if (el) el.value = ex[k]; });
-    if ($("p_fees")) $("p_fees").checked = true;
     $("p_example").value = ""; selMonth = 1; noteText = ""; clampNotice = false;
     saveInputs(); render();
   });
@@ -376,6 +413,9 @@
   $("projBtn").addEventListener("click", () => switchTab("journal", "planner"));
   $("projBack").addEventListener("click", () => switchTab("journal"));
   window.showJournalView = showJournalView;
+  $("proj_curve").addEventListener("pointermove", curveHover);
+  $("proj_curve").addEventListener("pointerdown", curveHover);
+  $("proj_curve").addEventListener("pointerleave", e => { const w = $("proj_curve").querySelector(".pl-curve-wrap"); if (w) { w.querySelector(".pl-hv").hidden = true; w.querySelector(".pl-tip").hidden = true; } });
   const pick = e => { const t = e.target.closest("[data-m]"); if (t) selectMonth(parseInt(t.dataset.m, 10)); };
   $("proj_months").addEventListener("click", pick);
   $("proj_cal").addEventListener("click", pick);
@@ -383,5 +423,5 @@
 
   loadInputs();
   window.renderProjection = render;
-  window.tmProjection = { run, adjustedP, effectiveRate, maxWinRate, readCfg };   // exposed for testing
+  window.tmProjection = { realisticSeed, run, adjustedP, effectiveRate, maxWinRate, readCfg };   // exposed for testing
 })();

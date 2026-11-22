@@ -1291,3 +1291,13 @@ h1.logo { margin:0; line-height:inherit; }
 .p-fee-head label { font-size:12px; color:var(--fg2); font-weight:500; }
 .p-fee-sw { display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--fg3); }
 #p_cost:disabled { opacity:.45; }
+
+/* Account balance chart: hover value */
+.pl-curve-wrap { position:relative; touch-action:pan-y; }
+.pl-hv { position:absolute; top:0; bottom:0; width:0; pointer-events:none; }
+.pl-hv-line { position:absolute; top:6px; bottom:16px; left:0; border-left:1px dashed var(--accent); }
+.pl-hv-dot { position:absolute; left:-5px; width:10px; height:10px; margin-top:-5px; border-radius:50%; background:var(--accent); border:2px solid var(--bg); box-sizing:border-box; }
+.pl-tip { position:absolute; top:4px; transform:translateX(-50%); pointer-events:none; z-index:3; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:6px 10px; display:flex; flex-direction:column; gap:1px; font-size:11px; color:var(--fg2); white-space:nowrap; box-shadow:0 4px 14px rgba(0,0,0,.35); }
+.pl-tip b { font-family:var(--mono); font-size:14px; color:var(--fg); }
+.pl-tip em { font-style:normal; color:var(--fg3); }
+.pl-tip .pos { color:var(--green); } .pl-tip .neg { color:var(--red); }
