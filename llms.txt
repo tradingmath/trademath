@@ -17,6 +17,13 @@
 - [MIS vs CNC (intraday vs delivery): margin, leverage and risk](https://trademath.in/mis-vs-cnc-intraday-delivery.html): Intraday vs delivery, leverage and risk
 - [Common trading mistakes and how a journal catches them](https://trademath.in/trading-mistakes-journal.html): Seven common mistakes and what each costs
 
+## Guides for US traders
+- [US guides](https://trademath.in/us/): position sizing and risk guides with US dollar examples
+- [How to calculate position size for US stocks](https://trademath.in/us/position-size-calculator.html): formula and long and short examples in dollars
+- [How much to risk per trade: the 1% rule](https://trademath.in/us/risk-per-trade.html): what losing streaks cost at different risk levels
+- [Pattern day trader (PDT) rule and position size](https://trademath.in/us/pattern-day-trader-rule.html): the $25,000 rule, cash accounts and why buying power is not a risk budget
+- [Crypto position size calculator](https://trademath.in/us/crypto-position-size-calculator.html): sizing futures in dollars, leverage and liquidation
+
 ## About
 - [About](https://trademath.in/about.html), [Contact](https://trademath.in/contact.html), [Privacy](https://trademath.in/privacy.html), [Terms](https://trademath.in/terms.html)
 

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Crypto Position Size Calculator: Futures, Leverage and Liquidation | TradeMath</title>
+<meta name="description" content="How to size a crypto futures or perpetual trade in dollars: the formula, how leverage and margin work, why liquidation matters, and a worked example.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#050a1c">
+<link rel="canonical" href="https://trademath.in/us/crypto-position-size-calculator.html">
+<link rel="icon" href="/logo-icon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="en_US">
+<meta property="og:site_name" content="TradeMath">
+<meta property="og:title" content="Crypto Position Size Calculator: Futures, Leverage and Liquidation">
+<meta property="og:description" content="How to size a crypto futures or perpetual trade in dollars: the formula, how leverage and margin work, why liquidation matters, and a worked example.">
+<meta property="og:url" content="https://trademath.in/us/crypto-position-size-calculator.html">
+<meta property="og:image" content="https://trademath.in/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<script>try{var s=JSON.parse(localStorage.getItem("tm_settings")||"{}");document.documentElement.dataset.theme=s.darkMode===false?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
+<link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/fonts.css?v=140c3a0f">
+<link rel="stylesheet" href="/styles.css?v=c2cff879">
+<link rel="stylesheet" href="/guide.css?v=5352cbf0">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "How to calculate position size for crypto futures", "description": "How to size a crypto futures or perpetual trade in dollars: the formula, how leverage and margin work, why liquidation matters, and a worked example.", "mainEntityOfPage": "https://trademath.in/us/crypto-position-size-calculator.html", "inLanguage": "en-US", "datePublished": "2026-11-22", "dateModified": "2026-11-22", "author": {"@type": "Organization", "name": "TradeMath", "url": "https://trademath.in/"}, "publisher": {"@type": "Organization", "name": "TradeMath", "logo": {"@type": "ImageObject", "url": "https://trademath.in/logo-512.png"}}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "TradeMath", "item": "https://trademath.in/"}, {"@type": "ListItem", "position": 2, "name": "US guides", "item": "https://trademath.in/us/"}, {"@type": "ListItem", "position": 3, "name": "How to calculate position size for crypto futures", "item": "https://trademath.in/us/crypto-position-size-calculator.html"}]}</script>
+</head>
+<body>
+<header class="g-head"><a class="g-brand" href="/"><img src="/logo-icon.svg" alt="" width="28" height="28"><span>Trade<b>Math</b></span></a>
+<nav class="g-nav" aria-label="US guides"><a href="position-size-calculator.html">Position size</a><a href="risk-per-trade.html">Risk per trade</a><a href="pattern-day-trader-rule.html">PDT rule</a><a href="crypto-position-size-calculator.html">Crypto</a><a href="./">All US guides</a></nav>
+<a class="g-cta" href="/">Open calculator</a></header>
+<main class="g-doc">
+<p class="g-crumb"><a href="/">TradeMath</a> / <a href="./">US guides</a></p>
+<h1>How to calculate position size for crypto futures</h1>
+<p class="g-lede">For crypto futures and perpetual contracts, position size works the same way as for stocks: risk first, then quantity. Leverage changes how much margin you post, not how much you can lose to your stop.</p>
+<h2>The formula</h2>
+<div class="g-formula">Size in coins = Risk in dollars ÷ (Entry price − Stop-loss price)</div>
+<p>The top is the dollar amount you will accept losing. The bottom is the loss per coin if your stop is hit. Multiply the answer by the entry price to get the position's dollar value, called the notional value.</p>
+
+<h2>Worked example</h2>
+<ul>
+<li>Account: $5,000</li>
+<li>Risk per trade: 2% = $100</li>
+<li>Long a coin at $65,000 with a stop at $63,700, a distance of $1,300</li>
+</ul>
+<p>Size = $100 ÷ $1,300 = <b>0.0769 coins</b>. Notional value = 0.0769 × $65,000 = <b>$5,000</b>. If the stop is hit you lose about $100, plus fees and slippage. If your target is twice your risk, the gross profit is about $200.</p>
+
+<h2>Leverage changes margin, not risk</h2>
+<p>With 10× leverage the margin needed for that $5,000 position is about $500. With 5× it is about $1,000. Either way, the loss at your stop is still about $100, because risk depends on the size and the stop distance. Higher leverage only lets you open the position with less margin, which makes it easier to over-trade.</p>
+
+<h2>Liquidation must be beyond your stop</h2>
+<p>On leveraged contracts the exchange closes your position if your margin falls too low. The price where that happens is the liquidation price. It depends on the leverage, the exchange's margin rules and fees, so the figure TradeMath shows is only an estimate.</p>
+<p>As a rough guide for a long, liquidation sits near entry × (1 − 1 ÷ leverage + maintenance margin rate). At 10× with a 0.5% maintenance rate on a $65,000 entry, that is roughly $58,800. Your stop at $63,700 is well above that, which is what you want. If your estimated liquidation price is <b>closer to the entry than your stop</b>, the exchange will close the trade before your stop does. Lower the leverage or tighten the plan.</p>
+
+<h2>Fees and funding</h2>
+<ul>
+<li><b>Trading fees</b> are charged on both entry and exit, and are often a percentage of the notional value. On small stops they are a large share of your risk.</li>
+<li><b>Funding</b> on perpetual contracts is paid between longs and shorts at regular intervals, and can add up if you hold for days.</li>
+<li><b>Slippage</b> in fast markets means a stop can fill worse than planned.</li>
+</ul>
+
+<h2>Know the rules where you live</h2>
+<p>Which crypto derivatives you may trade depends on your country and, in the United States, on regulation and on the platform. Many offshore platforms that offer perpetual futures do not accept US residents. Check that a platform is legal and available to you before you use it. TradeMath only does the maths. It does not connect to an exchange or place orders.</p>
+
+<h2>Common mistakes</h2>
+<ul>
+<li><b>Choosing leverage first.</b> Decide your risk and stop, then see what leverage that implies.</li>
+<li><b>Using full margin on one trade.</b> A single move against you can then wipe out the account.</li>
+<li><b>Forgetting that markets run all day.</b> Crypto trades around the clock, so gaps and sharp moves can happen while you sleep.</li>
+</ul>
+
+<h2>Common questions</h2>
+<h3>How do I calculate position size for a crypto trade?</h3>
+<p>Divide the dollars you are willing to lose by the loss per coin at your stop. For $100 risk and a $1,300 stop distance that is about 0.077 coins.</p>
+<h3>Does higher leverage mean more risk?</h3>
+<p>Not by itself. Your loss at the stop is set by the size and the stop distance. But high leverage puts liquidation closer to your entry and makes it easier to open positions that are too large.</p>
+<h3>Does TradeMath work for crypto in dollars?</h3>
+<p>Yes. In crypto mode you type your capital and risk in dollars, enter prices in USDT, and the calculator shows size in lots or coins, margin, an estimated liquidation price and optional fees.</p>
+<aside class="g-box"><b>Try it with your own numbers.</b> The free TradeMath calculator sizes the trade from your entry, stop-loss and risk, and keeps a journal. It shows US dollars automatically for visitors in the United States, and you can change country and currency in Settings. No sign-up needed.<br><a class="g-btn" href="/">Open the calculator</a></aside>
+<p class="g-fine">Updated 22 November 2026. Educational content only. It is not investment, legal or tax advice, and it is not a recommendation to buy or sell any security or digital asset. Trading involves risk of loss, including the loss of everything you put in. Examples are hypothetical, are shown for illustration, and do not predict or guarantee results. TradeMath is a software tool. It is not a broker-dealer, investment adviser or commodity trading advisor. Rules, fees and margin requirements change, so confirm the current details with your broker.</p>
+</main>
+<footer class="g-foot"><a href="/">Calculator</a> · <a href="./">US guides</a> · <a href="position-size-calculator.html">Position size</a> · <a href="risk-per-trade.html">Risk per trade</a> · <a href="pattern-day-trader-rule.html">PDT rule</a> · <a href="crypto-position-size-calculator.html">Crypto</a> · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a> · <a href="/about.html">About</a> · <a href="/contact.html">Contact</a> · <a href="mailto:support@trademath.in">support@trademath.in</a></footer>
+</body>
+</html>

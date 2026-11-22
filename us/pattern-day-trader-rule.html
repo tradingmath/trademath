@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pattern Day Trader (PDT) Rule Explained for Position Sizing | TradeMath</title>
+<meta name="description" content="What the pattern day trader rule is, how the $25,000 minimum works, what counts as a day trade, and how to size positions when buying power is limited.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#050a1c">
+<link rel="canonical" href="https://trademath.in/us/pattern-day-trader-rule.html">
+<link rel="icon" href="/logo-icon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="en_US">
+<meta property="og:site_name" content="TradeMath">
+<meta property="og:title" content="Pattern Day Trader (PDT) Rule Explained for Position Sizing">
+<meta property="og:description" content="What the pattern day trader rule is, how the $25,000 minimum works, what counts as a day trade, and how to size positions when buying power is limited.">
+<meta property="og:url" content="https://trademath.in/us/pattern-day-trader-rule.html">
+<meta property="og:image" content="https://trademath.in/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<script>try{var s=JSON.parse(localStorage.getItem("tm_settings")||"{}");document.documentElement.dataset.theme=s.darkMode===false?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
+<link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/fonts.css?v=140c3a0f">
+<link rel="stylesheet" href="/styles.css?v=c2cff879">
+<link rel="stylesheet" href="/guide.css?v=5352cbf0">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "The pattern day trader (PDT) rule, and how it affects position size", "description": "What the pattern day trader rule is, how the $25,000 minimum works, what counts as a day trade, and how to size positions when buying power is limited.", "mainEntityOfPage": "https://trademath.in/us/pattern-day-trader-rule.html", "inLanguage": "en-US", "datePublished": "2026-11-22", "dateModified": "2026-11-22", "author": {"@type": "Organization", "name": "TradeMath", "url": "https://trademath.in/"}, "publisher": {"@type": "Organization", "name": "TradeMath", "logo": {"@type": "ImageObject", "url": "https://trademath.in/logo-512.png"}}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "TradeMath", "item": "https://trademath.in/"}, {"@type": "ListItem", "position": 2, "name": "US guides", "item": "https://trademath.in/us/"}, {"@type": "ListItem", "position": 3, "name": "The pattern day trader (PDT) rule, and how it affects position size", "item": "https://trademath.in/us/pattern-day-trader-rule.html"}]}</script>
+</head>
+<body>
+<header class="g-head"><a class="g-brand" href="/"><img src="/logo-icon.svg" alt="" width="28" height="28"><span>Trade<b>Math</b></span></a>
+<nav class="g-nav" aria-label="US guides"><a href="position-size-calculator.html">Position size</a><a href="risk-per-trade.html">Risk per trade</a><a href="pattern-day-trader-rule.html">PDT rule</a><a href="crypto-position-size-calculator.html">Crypto</a><a href="./">All US guides</a></nav>
+<a class="g-cta" href="/">Open calculator</a></header>
+<main class="g-doc">
+<p class="g-crumb"><a href="/">TradeMath</a> / <a href="./">US guides</a></p>
+<h1>The pattern day trader (PDT) rule, and how it affects position size</h1>
+<p class="g-lede">If you day trade stocks in a US margin account, a rule from FINRA can limit how often you can trade when your account is small. Here is how it works in plain words, and why it should not change how you size risk.</p>
+<h2>The rule in short</h2>
+<p>Under FINRA's pattern day trader rule, a customer of a US broker who makes <b>four or more day trades within five business days</b> in a margin account, where those day trades are more than 6% of all their trades in that period, is generally treated as a pattern day trader. A pattern day trader must keep at least <b>$25,000</b> of equity in the margin account on any day they day trade. Brokers apply the details in slightly different ways, and your broker's own rules can be stricter than FINRA's.</p>
+<p><b>Rules change.</b> FINRA has proposed changes to its day trading rules, and brokers update their policies. Check the current rule on <a href="https://www.finra.org/" rel="noopener">FINRA's website</a> and with your broker before you rely on anything here.</p>
+
+<h2>What counts as a day trade</h2>
+<p>A day trade is opening and closing the same position in the same trading day, for example buying a stock and selling it before the close, or shorting and covering the same day. Buying a stock and selling it on a later day is not a day trade. Several buys and sells of the same stock in one day can count as more than one day trade, depending on how your broker counts them.</p>
+
+<h2>What happens if your account is below $25,000</h2>
+<p>If your broker flags you as a pattern day trader and your equity is below the minimum, it can restrict day trading in that account until you add funds or the restriction period ends. The exact consequences and time periods depend on the broker. This is why many small-account traders either limit themselves to three day trades in five business days, trade in a cash account, or hold positions for longer than a day.</p>
+
+<h2>Cash accounts and settlement</h2>
+<p>A cash account is not subject to the pattern day trader rule, but it has its own limits. Most US stock trades settle one business day after the trade (T+1). In a cash account you generally cannot use sale proceeds before they settle without risking a good faith violation, which your broker may penalise. Read your broker's cash account rules before you trade actively.</p>
+
+<h2>Buying power is not a risk budget</h2>
+<p>Margin accounts that qualify for day trading may offer extra intraday buying power, commonly up to four times the equity above the maintenance requirement. That number is a limit set by the broker. It is not a suggestion of how much to trade.</p>
+<p>Size every trade the same way, whatever your buying power is:</p>
+<div class="g-formula">Shares = (Account size × Risk %) ÷ (Entry price − Stop-loss price)</div>
+<p>Example: a $30,000 account, 1% risk ($300), a $40.00 entry and a $39.40 stop. The loss per share is $0.60, so the size is $300 ÷ $0.60 = <b>500 shares</b>, a $20,000 position. If your buying power allows $120,000 that makes no difference. The risk is still $300. Using all of your buying power on every trade would let one bad trade, or one gap, do far more damage than you planned.</p>
+
+<h2>Practical tips for small accounts</h2>
+<ul>
+<li><b>Keep a count of your day trades.</b> Your broker's platform usually shows how many you have used in the last five business days.</li>
+<li><b>Do not let the rule push you into oversized trades.</b> Having fewer trades is a reason to be more selective, not to risk more on each one.</li>
+<li><b>Log every trade.</b> A journal shows how many day trades you really make and whether they pay.</li>
+</ul>
+
+<h2>Common questions</h2>
+<h3>Does the PDT rule apply to cash accounts?</h3>
+<p>No, the pattern day trader rule applies to margin accounts. Cash accounts have settlement rules instead.</p>
+<h3>Does the rule apply to crypto?</h3>
+<p>No. The rule covers securities such as stocks and options in a margin account at a US broker. Crypto platforms have their own rules.</p>
+<h3>Can I avoid the rule by using several brokers?</h3>
+<p>Day trades are counted per account at each broker, but brokers may have their own policies, and some conduct is treated as an attempt to evade the rule. Check with your broker.</p>
+<aside class="g-box"><b>Try it with your own numbers.</b> The free TradeMath calculator sizes the trade from your entry, stop-loss and risk, and keeps a journal. It shows US dollars automatically for visitors in the United States, and you can change country and currency in Settings. No sign-up needed.<br><a class="g-btn" href="/">Open the calculator</a></aside>
+<p class="g-fine">Updated 22 November 2026. Educational content only. It is not investment, legal or tax advice, and it is not a recommendation to buy or sell any security or digital asset. Trading involves risk of loss, including the loss of everything you put in. Examples are hypothetical, are shown for illustration, and do not predict or guarantee results. TradeMath is a software tool. It is not a broker-dealer, investment adviser or commodity trading advisor. Rules, fees and margin requirements change, so confirm the current details with your broker.</p>
+</main>
+<footer class="g-foot"><a href="/">Calculator</a> · <a href="./">US guides</a> · <a href="position-size-calculator.html">Position size</a> · <a href="risk-per-trade.html">Risk per trade</a> · <a href="pattern-day-trader-rule.html">PDT rule</a> · <a href="crypto-position-size-calculator.html">Crypto</a> · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a> · <a href="/about.html">About</a> · <a href="/contact.html">Contact</a> · <a href="mailto:support@trademath.in">support@trademath.in</a></footer>
+</body>
+</html>

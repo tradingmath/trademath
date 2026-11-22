@@ -8,8 +8,10 @@ import hashlib, os, re, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ATTR = re.compile(r'(?P<a>\b(?:src|href)=")(?P<slash>/?)(?P<name>[\w.-]+\.(?:js|css))(?:\?v=[0-9a-f]+)?(?P<z>")')
 changed = 0
-for fn in sorted(os.listdir(ROOT)):
-    if not fn.endswith(".html"): continue
+pages = [fn for fn in sorted(os.listdir(ROOT)) if fn.endswith(".html")]
+us = os.path.join(ROOT, "us")                                # the US pages live in a folder and use /-rooted asset links
+if os.path.isdir(us): pages += ["us/" + fn for fn in sorted(os.listdir(us)) if fn.endswith(".html")]
+for fn in pages:
     p = os.path.join(ROOT, fn)
     raw = open(p, encoding="utf-8", newline="").read(); crlf = "\r\n" in raw; s = raw.replace("\r\n", "\n")
     def sub(m):

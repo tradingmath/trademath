@@ -197,3 +197,7 @@ git push origin main
 - Git operations (commit, push) — user runs manually or approves
 
 > Naming: the user-facing name of the projection feature is **Planner** (button "🎯 Planner", shown in every level: Quick, Trader and Pro). Its address is `#journal/planner` (the old `#journal/projection` still works and is renamed on arrival). Internally it is still called `projection` (projection.js, storage key `tm_proj`, element ids), so saved data keeps working. Never call it a forecast or projection in visible text: it is an illustration, not a promise.
+
+## Country, currency and US pages
+- `region.js` (loaded first) sets `window.TM_REGION` from Settings (`country`, `currency`). India is the default and is never changed for existing users; a brand-new visitor outside India gets a first guess from the browser timezone. `TM_REGION.india` = the country (markets, wording, SEBI text), `TM_REGION.inr` = the currency (symbol, lakh/crore grouping). Outside India a MutationObserver swaps the rupee sign and Indian wording, and CSS under `html[data-country]:not([data-country="IN"])` hides F&O, MIS and NSE-only controls.
+- `us/` holds the US guides (`/us/`, position size, risk per trade, PDT rule, crypto). They use `/`-rooted asset links, `lang="en-US"`, hreflang pairs with the India pages, and their own US-appropriate disclaimer (no SEBI text). `tools/stamp_assets.py` stamps `us/*.html` too. Keep the PDT and margin wording hedged ("rules change, check FINRA and your broker").
