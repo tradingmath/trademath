@@ -182,17 +182,15 @@
     const redMonths = mp.filter(x => x < 0).length;
     const retPct = res.pnl / cfg.capital * 100;
     const eff = res.trades ? res.wins / res.trades * 100 : 0;
+    const retTxt = (retPct >= 0 ? "+" : "−") + fmtP(Math.abs(retPct), Math.abs(retPct) >= 1000 ? 0 : 1) + "%";
+    const costs = res.trades * cfg.cost;
     $("proj_tiles").innerHTML =
-      tile("Average / month", signed(expTrade * tradesPerMonth), `from your numbers · ${tradesPerMonth} trades × ${signed(expTrade)}${cfg.riskmode === "pct" ? " (month 1)" : ""}`, cls(expTrade), true) +
-      tile("This run: avg / month", signed(avg), `${res.months.length - redMonths} green · ${redMonths} red month${redMonths === 1 ? "" : "s"}`, cls(avg)) +
-      tile("Best month", signed(best), `Month ${bestM}`, cls(best)) +
-      tile("Worst month", signed(worst), `Month ${worstM}`, cls(worst)) +
-      tile("Ending balance", money(res.endCap), `${signed(res.pnl)} · ${(retPct >= 0 ? "+" : "−") + fmtP(retPct, Math.abs(retPct) >= 1000 ? 0 : 1) + "% · "}your inputs only`, cls(res.pnl)) +
-      tile("Net P&L", signed(res.pnl), `after ${money(res.trades * cfg.cost)} costs · ${(retPct >= 0 ? "+" : "−") + fmtP(retPct, Math.abs(retPct) >= 1000 ? 0 : 1)}%`, cls(res.pnl)) +
-      tile("Costs paid", money(res.trades * cfg.cost), `${res.trades} trades × ${money(cfg.cost)}`) +
-      tile("Max drawdown", "−" + money(res.maxDD), `${pct1(res.maxDDp)} from peak`, "neg") +
-      tile("Win rate (this run)", pct1(eff), `${res.wins} W · ${res.losses} L`) +
-      tile("Longest streaks", `${res.maxW}W · ${res.maxL}L`, isFinite(K) ? `win streak limited to ${K}` : "no win-streak limit");
+      tile("Ending balance", money(res.endCap), `started with ${money(cfg.capital)}`, cls(res.pnl), true) +
+      tile("Net profit / loss", signed(res.pnl), `${retTxt} return, after ${money(costs)} costs`, cls(res.pnl)) +
+      tile("Worst month", signed(worst), `Month ${worstM} · ${redMonths} of ${res.months.length} months lost money`, cls(worst)) +
+      tile("Biggest fall", "−" + money(res.maxDD), `${pct1(res.maxDDp)} down from the highest balance`, "neg") +
+      tile("Longest losing streak", `${res.maxL} in a row`, "losing trades back to back", res.maxL >= 8 ? "neg" : "") +
+      `<div class="pl-note"><span>This is <b>one simulated run</b>: ${res.trades} trades, ${pct1(eff)} won (${res.wins} wins, ${res.losses} losses), seed ${cfg.seed}. Luck changes the result a lot, so click the dice to try another seed before you trust any single run.</span><button type="button" class="btn btn-primary btn-sm pl-reroll">🎲 Try another seed</button></div>`;
 
     const runs = res.trades > 20000 ? 60 : 200;
     const ends = [], redShare = [];
@@ -208,13 +206,11 @@
     const redDays = allDays.length ? Math.round(allDays.filter(d => d.pnl < 0).length / allDays.length * 100) : 0;
     const flatDays = allDays.length ? Math.round(allDays.filter(d => d.pnl === 0).length / allDays.length * 100) : 0;
     const avgRed = redShare.length ? redShare.reduce((a, b) => a + b, 0) / redShare.length * 100 : 0;
-    $("proj_range").innerHTML = `<strong>Same strategy, ${runs} different lucky/unlucky paths</strong>
-      <span>Bad luck (10th pct) <b class="${cls(q(0.1) - cfg.capital)}">${money(q(0.1))}</b></span>
-      <span>Middle <b class="${cls(q(0.5) - cfg.capital)}">${money(q(0.5))}</b></span>
-      <span>Good luck (90th pct) <b class="${cls(q(0.9) - cfg.capital)}">${money(q(0.9))}</b></span>
-      <span><b>${Math.round(profitable)}%</b> of paths ended in profit</span>
-      <span>About <b>${redDays}%</b> of days were red${flatDays ? " and " + flatDays + "% flat" : ""} (this run)</span>
-      <span>About <b>${Math.round(avgRed)}%</b> of months were red</span>`;
+    $("proj_range").innerHTML = `<strong>The same plan ${runs} times, with different luck each time</strong>
+      <span>Usual result: <b class="${cls(q(0.5) - cfg.capital)}">${money(q(0.5))}</b></span>
+      <span>Unlucky 1 in 10 ends at or below <b class="${cls(q(0.1) - cfg.capital)}">${money(q(0.1))}</b></span>
+      <span><b>${Math.round(100 - profitable)}%</b> of the ${runs} ended with a loss</span>
+      <span>About <b>${redDays}%</b> of days${flatDays ? " (and " + flatDays + "% flat)" : ""} and <b>${Math.round(avgRed)}%</b> of months lost money</span>`;
 
     $("proj_curve").innerHTML = curveSvg(res, cfg);
     if (selMonth > res.months.length) selMonth = res.months.length || 1;
@@ -314,6 +310,7 @@
       schedule();
     });
   });
+  $("proj_tiles").addEventListener("click", e => { if (e.target.closest(".pl-reroll")) $("p_reroll").click(); });
   $("p_reroll").addEventListener("click", () => {
     $("p_seed").value = Math.floor(Math.random() * 900000) + 100000;
     saveInputs(); render();
