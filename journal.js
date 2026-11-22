@@ -896,7 +896,7 @@ function grossPnl(t) {
 }
 /* Full Indian grouping (₹3,42,819), like a broker statement. */
 function fullINR(v, plain) {
-  const intl = window.TM_REGION && !TM_REGION.india, loc = intl ? "en-US" : "en-IN";           // India keeps its own digit grouping
+  const intl = window.TM_REGION && !TM_REGION.inr, loc = intl ? "en-US" : "en-IN";           // India keeps its own digit grouping
   const a = Math.abs(v), s = a >= 100 ? Math.round(a).toLocaleString(loc) : a.toLocaleString(loc, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return (v < 0 ? "−" : plain || v === 0 ? "" : "+") + (JUSD ? "$" : intl ? TM_REGION.pre : "₹") + s;
 }

@@ -55,6 +55,7 @@ const SETTINGS_FIELDS = [
   { scope: "settings", key: "rrRows",     label: "Risk-reward rows",    fb: "2,3,5",    get: () => draftRR.join(","),                     set: v => { draftRR = rrParse(v); renderRRSettings(); }, fmt: v => String(v).split(",").map(x => "1:" + x).join(", ") },
   { scope: "settings", key: "showFees",    label: "Include estimated fees", fb: false,     get: () => $("tog_show_fees").checked,            set: v => { $("tog_show_fees").checked = v; }, fmt: onOff },
   { scope: "settings", key: "country",     label: "Country",             fb: (window.TM_REGION ? TM_REGION.key : "IN"), get: () => $("s_country").value, set: v => { $("s_country").value = v; }, fmt: v => (TM_REGION.list[v] ? TM_REGION.list[v].name : v) },
+  { scope: "settings", key: "currency",    label: "Currency",            fb: (window.TM_REGION ? TM_REGION.cur : "INR"), get: () => $("s_currency").value, set: v => { $("s_currency").value = v; }, fmt: v => (TM_REGION.curName[v] || v) + " (" + v + ")" },
   { scope: "settings", key: "tradeStocks", label: "Trade stocks",        fb: true,       get: () => $("tog_stocks").checked,               set: v => { $("tog_stocks").checked = v; },   fmt: onOff },
   { scope: "settings", key: "tradeFno",    label: "Trade F&O",           fb: true,       get: () => $("tog_fno").checked,                  set: v => { $("tog_fno").checked = v; },      fmt: onOff },
   { scope: "settings", key: "tradeCrypto", label: "Trade crypto",        fb: true,       get: () => $("tog_crypto").checked,               set: v => { $("tog_crypto").checked = v; },   fmt: onOff },
@@ -154,7 +155,10 @@ function populateForm() {
 }
 (function fillCountries() {                                           // the Country list in Settings
   const el = document.getElementById("s_country"); if (!el || !window.TM_REGION) return;
-  el.innerHTML = Object.keys(TM_REGION.list).map(k => `<option value="${k}">${TM_REGION.list[k].name} (${TM_REGION.list[k].code})</option>`).join("");
+  el.innerHTML = Object.keys(TM_REGION.list).map(k => `<option value="${k}">${TM_REGION.list[k].name}</option>`).join("");
+  const cu = document.getElementById("s_currency");
+  if (cu) cu.innerHTML = Object.keys(TM_REGION.currencies).map(k => `<option value="${k}">${TM_REGION.curName[k]} (${k})</option>`).join("");
+  el.addEventListener("change", () => { if (cu && TM_REGION.list[el.value]) { cu.value = TM_REGION.list[el.value].code; cu.dispatchEvent(new Event("change", { bubbles: true })); } });   // picking a country also picks its usual currency
 })();
 
 /* Apply what is saved to the running app (page load). */
@@ -192,10 +196,16 @@ function commitSettings() {
     if (c.f.scope === "settings") s[c.f.key] = c.to;
     else if (c.f.scope === "alert") beep[c.f.key] = c.to;
   });
-  if (changed.has("country") && TM_REGION.list[s.country]) { s.usdInr = TM_REGION.list[s.country].fx; if (!TM_REGION.list[s.country].india) s.defaultLev = "1"; }   // the USD rate follows the country until you change it
+  if (changed.has("country") || changed.has("currency")) {
+    const cur = s.currency || (TM_REGION.list[s.country] || {}).code || "INR", cr = TM_REGION.currencies[cur];
+    if (cr) s.usdInr = cr.fx;                                                      // the USD rate follows the currency until you change it
+    if (TM_REGION.list[s.country] && !TM_REGION.list[s.country].india) s.defaultLev = "1";
+    if (cur === "INR") { if (s.defaultCap === 10000) s.defaultCap = 100000; } else if (!s.defaultCap || s.defaultCap === 100000) s.defaultCap = 10000;
+    try { localStorage.removeItem("tm_proj"); localStorage.removeItem("tm_calc"); } catch (e) {}   // the Planner and the last typed numbers were in the old currency
+  }
   tmSet("tm_settings", s);
-  if (changed.has("country")) {                                       // currency and markets are applied at load, so reload once
-    $("setConfirm").hidden = true; showToast("✓ Country changed. Reloading…"); setTimeout(() => location.reload(), 700); return;
+  if (changed.has("country") || changed.has("currency")) {            // currency and markets are applied at load, so reload once
+    $("setConfirm").hidden = true; showToast("✓ Applying your country and currency…"); setTimeout(() => location.reload(), 700); return;
   }
   if (Object.keys(beep).length) tmAlert.setConfig(beep);
   if (changed.has("checklist")) saveChecklistItems(draftChecklist);
@@ -229,7 +239,7 @@ function previewLook() {
 }
 
 /* ── wiring: every control only updates the draft ── */
-["tog_dark", "tog_quick_log", "s_country",
+["tog_dark", "tog_quick_log", "s_country", "s_currency",
  "tog_show_fees", "tog_stocks", "tog_fno", "tog_crypto", "s_brokerage", "s_gst_pct", "s_cry_taker", "s_cry_gst", "s_cry_fund", "s_cry_mmr",
  "alert_anchor", "alert_lead", "alert_hours", "alert_vol"].forEach(id => {
   const el = $(id); if (!el) return;

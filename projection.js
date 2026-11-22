@@ -7,7 +7,7 @@
   const LS_KEY = "tm_proj";
   /* Typical, not flattering: a 38% win rate at 1 : 2 is a small edge (0.14R a trade), and ₹50 a trade covers brokerage and taxes.
      Some months and many days come out red, as they do in real trading. A year is shown so months and the full year can be read. */
-  const IND = !window.TM_REGION || TM_REGION.india;                        // other countries start with smaller, dollar-sized numbers
+  const IND = !window.TM_REGION || TM_REGION.inr;                        // other countries start with smaller, dollar-sized numbers
   const CAP0 = IND ? 100000 : 10000, RISK0 = IND ? 1000 : 100, COST0 = IND ? 50 : 1;
   const DEFAULTS = { capital: CAP0, win: 38, rr: 2, risk: RISK0, riskmode: "abs", tpd: 3, days: 22, months: 12, cost: COST0, vary: "5", maxw: "3", seed: 0 };
   const EXAMPLES = {

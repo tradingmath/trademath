@@ -1310,4 +1310,5 @@ html[data-country]:not([data-country="IN"]) #lev_btn_5,
 html[data-country]:not([data-country="IN"]) #fee_old_row,
 html[data-country]:not([data-country="IN"]) .toggle-row:has(#tog_fno),
 html[data-country]:not([data-country="IN"]) .fee-group:has(#s_brokerage) { display:none !important; }
-html[data-country="US"] #ccy_sw { display:none !important; }   /* the home currency is already dollars */
+html[data-currency="USD"] #ccy_sw, html[data-currency="USD"] .cry-lbl:has(#i_fx) { display:none !important; }   /* the home currency is already dollars, so there is no rate to enter */
+html[data-country]:not([data-country="IN"]) .toggle-row:has(#alert_hours) { display:none !important; }   /* NSE market hours only */

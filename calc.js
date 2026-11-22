@@ -109,7 +109,7 @@ const $ = id => document.getElementById(id);
 const comma = n => Math.abs(n).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
 function fmtINR(n) {
-  if (window.TM_REGION && !TM_REGION.india) return TM_REGION.intl(n);     // other countries: their symbol and number style. India keeps the lines below.
+  if (window.TM_REGION && !TM_REGION.inr) return TM_REGION.intl(n);     // other countries: their symbol and number style. India keeps the lines below.
   const a = Math.abs(n), s = n < 0 ? "−" : "";
   if (a >= 1e7) return s + "₹" + (a / 1e7).toFixed(2) + "Cr";
   if (a >= 1e5) return s + "₹" + (a / 1e5).toFixed(2) + "L";

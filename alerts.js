@@ -8,7 +8,8 @@
   const SESSION_START = 555, SESSION_END = 930;   // 9:15 and 15:30, in minutes of the day
   const LOOKAHEAD_MS = 125000;
 
-  const cfg = { min: 5, anchor: 555, hours: false, vol: 60, sound: "radar", lead: 0 };
+  const IN = !window.TM_REGION || TM_REGION.india;   // NSE candles and NSE hours are India only; elsewhere the clock or crypto (UTC) is used
+  const cfg = { min: 5, anchor: IN ? 555 : 0, hours: false, vol: 60, sound: "radar", lead: 0 };
   let running = false, ctx = null, nextAt = null, timer = null, played = 0;
   let keep = null, warned = false;               // keep = silent tone that stops the browser idling the audio device
   let noteMsg = "", noteUntil = 0;                // short-lived message shown in place of the normal note
@@ -238,8 +239,8 @@
   function sanitize(c) {
     return {
       min:    Math.min(720, Math.max(1, Math.round(+c.min) || 5)),
-      anchor: +c.anchor === 0 ? 0 : +c.anchor === -1 ? -1 : 555,
-      hours:  !!c.hours,
+      anchor: +c.anchor === 0 ? 0 : +c.anchor === -1 ? -1 : (IN ? 555 : 0),
+      hours:  IN && !!c.hours,
       vol:    Math.min(100, Math.max(5, Math.round(+c.vol) || 60)),
       sound:  SOUNDS[c.sound] ? c.sound : "radar",
       lead:   Math.max(0, Math.round(+c.lead) || 0),

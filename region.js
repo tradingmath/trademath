@@ -44,9 +44,14 @@
       try { s.country = code; s.usdInr = REGIONS[code].fx; s.defaultCap = 10000; s.defaultLev = "1"; localStorage.setItem("tm_settings", JSON.stringify(s)); } catch (e) {}
     }
   }
-  const r = Object.assign({ key: code }, REGIONS[code]);
-  r.scale = r.india ? SCALE.IN : SCALE.default;
-  r.list = REGIONS;
+  /* Currency is its own choice: it follows the country until you pick another. */
+  const CURS = {}; Object.keys(REGIONS).forEach(k => { const g = REGIONS[k]; CURS[g.code] = { code: g.code, sym: g.sym, pre: g.pre, fx: g.fx, name: g.name.replace(/^United States$/, "US dollar") }; });
+  const CURNAME = { INR: "Indian rupee", USD: "US dollar", CAD: "Canadian dollar", GBP: "British pound", EUR: "Euro", AED: "UAE dirham", SGD: "Singapore dollar", AUD: "Australian dollar" };
+  const curCode = CURS[s.currency] ? s.currency : REGIONS[code].code;
+  const r = Object.assign({ key: code }, REGIONS[code], { code: curCode, sym: CURS[curCode].sym, pre: CURS[curCode].pre, fx: CURS[curCode].fx });
+  r.cur = curCode; r.inr = curCode === "INR"; r.india = code === "IN";   // india = the country (markets, wording); inr = the currency (symbol, digit grouping)
+  r.scale = r.inr ? SCALE.IN : SCALE.default;
+  r.list = REGIONS; r.currencies = CURS; r.curName = CURNAME;
   r.intl = n => {                                          // non-India number style: 12,345 and 1.2M
     const a = Math.abs(n), sg = n < 0 ? "−" : "";
     if (a >= 1e9) return sg + r.pre + (a / 1e9).toFixed(2) + "B";
@@ -56,27 +61,32 @@
   };
   window.TM_REGION = r;
   document.documentElement.setAttribute("data-country", code);
-  if (r.india) return;                                    // India: nothing below runs, so nothing changes
+  document.documentElement.setAttribute("data-currency", curCode);
+  if (r.india && r.inr) return;                                    // India: nothing below runs, so nothing changes
 
   /* ── everyone else: swap ₹ for their currency, wherever it is written, now and later ── */
-  const swap = str => str
-    .replace(/₹(?=[\d.])/g, r.pre).replace(/₹/g, r.sym)
-    .replace("e.g. RELIANCE, TCS, NIFTY", "e.g. AAPL, TSLA, SPY");
+  const swap = str => {
+    if (!r.inr) str = str.replace(/₹(?=[\d.])/g, r.pre).replace(/₹/g, r.sym);
+    if (!r.india) str = str.replace("e.g. RELIANCE, TCS, NIFTY", "e.g. AAPL, TSLA, SPY").replace("e.g. NIFTY, RELIANCE, BTCUSDT", "e.g. AAPL, TSLA, BTCUSDT");
+    return str;
+  };
   const SKIP = /^(SCRIPT|STYLE|TEXTAREA|NOSCRIPT)$/;
   const ATTRS = ["placeholder", "title", "aria-label", "alt"];
   /* Market names are shown in plain words. The saved value never changes, only what is displayed. */
-  const MARKET_LABEL = { "NSE Equity": "Stocks" };
+  const MARKET_LABEL = r.india ? {} : { "NSE Equity": "Stocks" };
   const HIDE_MARKET = ["Nifty F&O", "BankNifty F&O", "Stock F&O", "Other Index F&O", "MCX Gold", "MCX Crude"];
   /* Indian wording replaced with neutral wording */
   const WORDS = [
-    ["1× Cash (CNC / Delivery)", "1× Cash (no leverage)"], ["1× Cash Delivery (100% margin)", "1× Cash (100% margin)"],
+    ["1× Cash (CNC / Delivery)", "1× Cash (no leverage)"], ["Advanced: Pro (F&O lots, planner, checklist)", "Advanced: Pro (planner, checklist, more)"],
+    ["Intraday: 5× leverage (MIS)", "Intraday: leveraged trading"],
+    ["Everything: F&O lots, planner,", "Everything: planner,"], ["Clock (:00, for MCX)", "Clock (:00)"], ["Mon–Fri, 9:15–15:30. Turn off for MCX or crypto.", "Turn off for crypto and other markets that trade around the clock."], ["1× Cash Delivery (100% margin)", "1× Cash (100% margin)"],
     ["TradeMath is a free position size calculator and trade journal for Indian traders. Enter your entry, stop-loss, capital and risk to get quantity, margin, targets and charges for NSE stocks, F&O lots, MCX and crypto futures. Then log the trade and review your results.",
      "TradeMath is a free position size calculator and trade journal. Enter your entry, stop-loss, capital and risk to get quantity, margin and targets for stocks and crypto futures. Then log the trade and review your results."],
   ];
   function fixText(n) {
     let v = n.nodeValue;
-    if (v) { for (const [a, b] of WORDS) if (v.indexOf(a) >= 0) { v = v.replace(a, b); n.nodeValue = v; } }
-    if (v && v.indexOf("₹") >= 0) n.nodeValue = swap(v);
+    if (v && !r.india) { for (const [a, b] of WORDS) if (v.indexOf(a) >= 0) { v = v.replace(a, b); n.nodeValue = v; } }
+    if (v && (v.indexOf("₹") >= 0 || (!r.india && v.indexOf("RELIANCE") >= 0))) n.nodeValue = swap(v);
     const t = v ? v.trim() : "";
     if (MARKET_LABEL[t] && n.parentNode && n.parentNode.nodeName !== "OPTION") n.nodeValue = v.replace(t, MARKET_LABEL[t]);
   }
@@ -86,7 +96,7 @@
     if (el.nodeName === "OPTION") {
       const t = el.textContent.trim();
       if (MARKET_LABEL[t]) el.label = MARKET_LABEL[t];
-      if (HIDE_MARKET.indexOf(t) >= 0) el.hidden = true;
+      if (!r.india && (HIDE_MARKET.indexOf(t) >= 0 || /^NSE candles/.test(t))) el.hidden = true;
     }
   }
   function walk(root) {
@@ -98,6 +108,9 @@
   }
   function start() {
     walk(document.body);
+    if (!r.india) {                                              // the F&O lot-size guide is India only: drop its footer link and the dot before it
+      document.querySelectorAll('a[href="nse-fno-lot-sizes.html"]').forEach(a => { const p = a.previousSibling; if (p && p.nodeType === 3) p.nodeValue = p.nodeValue.replace(/·\s*$/, " "); a.remove(); });
+    }
     new MutationObserver(list => {
       list.forEach(m => {
         if (m.type === "characterData") fixText(m.target);
