@@ -184,9 +184,11 @@
     const eff = res.trades ? res.wins / res.trades * 100 : 0;
     const retTxt = (retPct >= 0 ? "+" : "−") + fmtP(Math.abs(retPct), Math.abs(retPct) >= 1000 ? 0 : 1) + "%";
     const costs = res.trades * cfg.cost;
+    const avgMonth = res.months.length ? res.pnl / res.months.length : 0;
     $("proj_tiles").innerHTML =
       tile("Ending balance", money(res.endCap), `started with ${money(cfg.capital)}`, cls(res.pnl), true) +
       tile("Net profit / loss", signed(res.pnl), `${retTxt} return, after ${money(costs)} costs`, cls(res.pnl)) +
+      tile("Average / month", signed(avgMonth), `net profit ÷ ${res.months.length} month${res.months.length === 1 ? "" : "s"}`, cls(avgMonth)) +
       tile("Worst month", signed(worst), `Month ${worstM} · ${redMonths} of ${res.months.length} months lost money`, cls(worst)) +
       tile("Biggest fall", "−" + money(res.maxDD), `${pct1(res.maxDDp)} down from the highest balance`, "neg") +
       tile("Longest losing streak", `${res.maxL} in a row`, "losing trades back to back", res.maxL >= 8 ? "neg" : "") +
