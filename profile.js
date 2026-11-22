@@ -357,7 +357,7 @@
    different days), and then at most once every 15 days. Kept on this device only. Never shown in the pop-out window,
    and never on top of another dialog. */
 (function () {
-  const KEY = "tm_support", DAY = 864e5, URL = "https://razorpay.me/@trademath";
+  const KEY = "tm_support", DAY = 864e5, URL = (window.TM_REGION && !TM_REGION.india) ? "https://buymeacoffee.com/trademath" : "https://razorpay.me/@trademath";   // Razorpay in India, Buy Me a Coffee elsewhere
   if (new URLSearchParams(location.search).get("popout") === "1") return;
   const st = (() => { const v = tmGet(KEY, null); return v && typeof v === "object" ? v : {}; })();
   const today = new Date().toISOString().slice(0, 10), now = Date.now();

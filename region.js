@@ -92,6 +92,7 @@
   }
   function fixEl(el) {
     if (el.nodeType !== 1 || SKIP.test(el.nodeName)) return;
+    if (el.nodeName === "A" && !r.india && (el.getAttribute("href") || "").indexOf("https://razorpay.me/") === 0) el.setAttribute("href", "https://buymeacoffee.com/trademath");   // outside India, Support goes to Buy Me a Coffee
     ATTRS.forEach(a => { const v = el.getAttribute(a); if (v) { const nv = swap(v); if (nv !== v) el.setAttribute(a, nv); } });
     if (el.nodeName === "OPTION") {
       const t = el.textContent.trim();
