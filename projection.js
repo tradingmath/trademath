@@ -187,7 +187,7 @@
       tile("This run: avg / month", signed(avg), `${res.months.length - redMonths} green · ${redMonths} red month${redMonths === 1 ? "" : "s"}`, cls(avg)) +
       tile("Best month", signed(best), `Month ${bestM}`, cls(best)) +
       tile("Worst month", signed(worst), `Month ${worstM}`, cls(worst)) +
-      tile("Ending balance", money(res.endCap), `${signed(res.pnl)} · ${Math.abs(retPct) <= 100 ? (retPct >= 0 ? "+" : "−") + Math.abs(retPct).toFixed(1) + "% · " : ""}your inputs only`, cls(res.pnl)) +
+      tile("Ending balance", money(res.endCap), `${signed(res.pnl)} · ${(retPct >= 0 ? "+" : "−") + fmtP(retPct, Math.abs(retPct) >= 1000 ? 0 : 1) + "% · "}your inputs only`, cls(res.pnl)) +
       tile("Max drawdown", "−" + money(res.maxDD), `${pct1(res.maxDDp)} from peak`, "neg") +
       tile("Win rate (this run)", pct1(eff), `${res.wins} W · ${res.losses} L`) +
       tile("Longest streaks", `${res.maxW}W · ${res.maxL}L`, isFinite(K) ? `win streak limited to ${K}` : "no win-streak limit");
