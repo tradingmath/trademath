@@ -196,4 +196,4 @@ git push origin main
 - Read/write all files in `C:\Users\Anirudh\Desktop\trademath\`
 - Git operations (commit, push) — user runs manually or approves
 
-> Naming: the user-facing name of the projection feature is **Planner** (button "🎯 Planner"). Its address is `#journal/planner` (the old `#journal/projection` still works and is renamed on arrival). Internally it is still called `projection` (projection.js, storage key `tm_proj`, element ids), so saved data keeps working. Never call it a forecast or projection in visible text: it is an illustration, not a promise.
+> Naming: the user-facing name of the projection feature is **Planner** (button "🎯 Planner", shown in every level: Quick, Trader and Pro). Its address is `#journal/planner` (the old `#journal/projection` still works and is renamed on arrival). Internally it is still called `projection` (projection.js, storage key `tm_proj`, element ids), so saved data keeps working. Never call it a forecast or projection in visible text: it is an illustration, not a promise.

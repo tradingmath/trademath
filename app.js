@@ -282,10 +282,6 @@ function parseRoute() {
   return { tab: PAGES.includes(tab) ? tab : "calc", sub };
 }
 function showRoute(tab, sub) {
-  if (tab === "journal" && sub === "planner" && getLevel() !== "pro") {   // The Planner belongs to Pro
-    sub = "";
-    if (location.hash !== "#journal") location.hash = "#journal";
-  }
   currentRoute = tab + "/" + sub;
   PAGES.forEach(t => {
     $("tab-"+t).hidden = t !== tab;
