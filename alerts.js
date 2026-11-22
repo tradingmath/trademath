@@ -35,19 +35,23 @@
     gong:    { label: "Soft gong",   play: (c, o, t) => { [[196, 1, 1.8], [392, 0.4, 1.2], [588, 0.2, 0.8]].forEach(([f, g, d]) => tone(c, o, t, f, d, "sine", g, 0.01)); } },
   };
 
-  /* Next candle close strictly after nowMs. anchor = minute of day the candles start from. */
+  /* Next candle close strictly after nowMs. anchor = minute of day the candles start from.
+     anchor -1 = crypto: candles start at UTC midnight, like Delta, Binance and TradingView. In India (UTC+5:30) a 1-hour crypto candle
+     therefore closes at :30, not :00, and 4-hour candles close at 1:30, 5:30, 9:30 ... */
   function nextBeepAfter(nowMs, N, anchor, hoursOnly) {
+    const utc = anchor === -1; if (utc) anchor = 0;
     const d0 = new Date(nowMs);
     const lo = hoursOnly ? SESSION_START : 0, hi = hoursOnly ? SESSION_END : 1439;
     const kLo = Math.ceil((lo - anchor) / N);
     for (let off = 0; off < 6; off++) {
-      const day = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() + off);
-      if (hoursOnly && (day.getDay() === 0 || day.getDay() === 6)) continue;
+      const day = utc ? new Date(Date.UTC(d0.getUTCFullYear(), d0.getUTCMonth(), d0.getUTCDate() + off)) : new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() + off);
+      const dow = utc ? day.getUTCDay() : day.getDay();
+      if (hoursOnly && (dow === 0 || dow === 6)) continue;
       const nowMin = (nowMs - day.getTime()) / 60000;
       for (let k = Math.max(kLo, Math.floor((nowMin - anchor) / N)); ; k++) {
         const c = anchor + k * N;
         if (c > hi) break;
-        const ts = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, c).getTime();
+        const ts = utc ? day.getTime() + c * 60000 : new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, c).getTime();
         if (ts > nowMs) return ts;
       }
     }
@@ -234,7 +238,7 @@
   function sanitize(c) {
     return {
       min:    Math.min(720, Math.max(1, Math.round(+c.min) || 5)),
-      anchor: +c.anchor === 0 ? 0 : 555,
+      anchor: +c.anchor === 0 ? 0 : +c.anchor === -1 ? -1 : 555,
       hours:  !!c.hours,
       vol:    Math.min(100, Math.max(5, Math.round(+c.vol) || 60)),
       sound:  SOUNDS[c.sound] ? c.sound : "radar",

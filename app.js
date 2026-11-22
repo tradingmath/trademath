@@ -63,7 +63,7 @@ const SETTINGS_FIELDS = [
   { scope: "settings", key: "cryptoGst",     label: "GST on crypto fees",    fb: 18,   get: () => nonNeg("s_cry_gst", 18),      set: v => { $("s_cry_gst").value = v; },   fmt: v => v + "%" },
   { scope: "settings", key: "cryptoFunding", label: "Funding per 8 hours",   fb: 0.01, get: () => nonNeg("s_cry_fund", 0.01),   set: v => { $("s_cry_fund").value = v; },  fmt: v => v + "%" },
   { scope: "settings", key: "cryptoMmr",     label: "Maintenance margin",    fb: 0.5,  get: () => nonNeg("s_cry_mmr", 0.5),     set: v => { $("s_cry_mmr").value = v; },   fmt: v => v + "%" },
-  { scope: "alert",    key: "anchor", label: "Beep aligned to",    get: () => +$("alert_anchor").value,          set: v => { $("alert_anchor").value = String(v); }, fmt: v => +v === 0 ? "Clock (:00)" : "NSE candles (9:15)" },
+  { scope: "alert",    key: "anchor", label: "Beep aligned to",    get: () => +$("alert_anchor").value,          set: v => { $("alert_anchor").value = String(v); }, fmt: v => +v === 0 ? "Clock (:00)" : +v === -1 ? "Crypto (UTC)" : "NSE candles (9:15)" },
   { scope: "alert",    key: "lead",   label: "Beep before close",  get: () => +$("alert_lead").value,            set: v => { $("alert_lead").value = String(v); },   fmt: v => +v ? v + " sec early" : "At the close" },
   { scope: "alert",    key: "sound",  label: "Beep sound",         get: () => $("alert_sound").value,            set: v => { $("alert_sound").value = v; },         fmt: v => (tmAlert.SOUNDS[v] || {}).label || v },
   { scope: "alert",    key: "vol",    label: "Beep volume",        get: () => +$("alert_vol").value,             set: v => { $("alert_vol").value = v; },           fmt: v => v + "%" },
