@@ -1282,9 +1282,8 @@ h1.logo { margin:0; line-height:inherit; }
 .support-modal .sup-text { color:var(--fg2); line-height:1.55; margin:6px 0 16px; font-size:14px; }
 .support-modal .tm-dialog-actions { display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; }
 .support-modal a.btn { text-decoration:none; display:inline-flex; align-items:center; color:var(--on-accent); }
-/* Planner: six result tiles, three across, or six on a very wide screen */
-@media (min-width:700px) { .proj-tiles { grid-template-columns:repeat(3,1fr); } }
-@media (min-width:1800px) { .proj-tiles { grid-template-columns:repeat(6,1fr); } }
+/* Planner: eight result tiles, four across */
+@media (min-width:900px) { .proj-tiles { grid-template-columns:repeat(4,1fr); } }
 .pl-note { grid-column:1 / -1; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; font-size:12.5px; color:var(--fg2); line-height:1.5; }
 .pl-note b { color:var(--fg); }
 .pl-reroll { white-space:nowrap; }
