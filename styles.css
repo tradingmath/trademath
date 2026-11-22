@@ -1282,10 +1282,5 @@ h1.logo { margin:0; line-height:inherit; }
 .support-modal .sup-text { color:var(--fg2); line-height:1.55; margin:6px 0 16px; font-size:14px; }
 .support-modal .tm-dialog-actions { display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; }
 .support-modal a.btn { text-decoration:none; display:inline-flex; align-items:center; color:var(--on-accent); }
-
-/* Planner result sections: worst case first, then one run */
-.pl-sec { grid-column:1 / -1; display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-top:8px; }
-.pl-sec:first-child { margin-top:0; }
-.pl-sec-t { font-size:14px; font-weight:700; color:var(--fg); }
-.pl-sec-n { font-size:12px; color:var(--fg2); max-width:760px; line-height:1.5; margin-top:2px; }
-.pl-reroll { white-space:nowrap; }
+/* Planner: ten result tiles, five across on a wide screen */
+@media (min-width:1100px) { .proj-tiles { grid-template-columns:repeat(5,1fr); } }
