@@ -7,12 +7,14 @@
   const LS_KEY = "tm_proj";
   /* Typical, not flattering: a 38% win rate at 1 : 2 is a small edge (0.14R a trade), and ₹50 a trade covers brokerage and taxes.
      Some months and many days come out red, as they do in real trading. A year is shown so months and the full year can be read. */
-  const DEFAULTS = { capital: 100000, win: 38, rr: 2, risk: 1000, riskmode: "abs", tpd: 3, days: 22, months: 12, cost: 50, vary: "5", maxw: "3", seed: 0 };
+  const IND = !window.TM_REGION || TM_REGION.india;                        // other countries start with smaller, dollar-sized numbers
+  const CAP0 = IND ? 100000 : 10000, RISK0 = IND ? 1000 : 100, COST0 = IND ? 50 : 1;
+  const DEFAULTS = { capital: CAP0, win: 38, rr: 2, risk: RISK0, riskmode: "abs", tpd: 3, days: 22, months: 12, cost: COST0, vary: "5", maxw: "3", seed: 0 };
   const EXAMPLES = {
-    typical:   { win: 38, rr: 2,   cost: 50, tpd: 3, days: 22, risk: 1000, riskmode: "abs", months: 12, vary: "5", maxw: "3" },
-    breakeven: { win: 33, rr: 2,   cost: 50, tpd: 3, days: 22, risk: 1000, riskmode: "abs", months: 12, vary: "5", maxw: "3" },
-    losing:    { win: 35, rr: 1.5, cost: 50, tpd: 3, days: 22, risk: 1000, riskmode: "abs", months: 12, vary: "5", maxw: "3" },
-    strong:    { win: 55, rr: 2,   cost: 50, tpd: 3, days: 22, risk: 1000, riskmode: "abs", months: 12, vary: "5", maxw: "3" },
+    typical:   { win: 38, rr: 2,   cost: COST0, tpd: 3, days: 22, risk: RISK0, riskmode: "abs", months: 12, vary: "5", maxw: "3" },
+    breakeven: { win: 33, rr: 2,   cost: COST0, tpd: 3, days: 22, risk: RISK0, riskmode: "abs", months: 12, vary: "5", maxw: "3" },
+    losing:    { win: 35, rr: 1.5, cost: COST0, tpd: 3, days: 22, risk: RISK0, riskmode: "abs", months: 12, vary: "5", maxw: "3" },
+    strong:    { win: 55, rr: 2,   cost: COST0, tpd: 3, days: 22, risk: RISK0, riskmode: "abs", months: 12, vary: "5", maxw: "3" },
   };
   const FIELDS = { capital: "p_capital", win: "p_win", rr: "p_rr", risk: "p_risk", riskmode: "p_riskmode", tpd: "p_tpd", days: "p_days", months: "p_months", cost: "p_cost", vary: "p_var", maxw: "p_maxw", seed: "p_seed" };
   let selMonth = 1, clampNotice = false, noteText = "", lastRes = null, curveGeo = null;

@@ -313,7 +313,7 @@ function fillMarketSelects() {
   ["j_market", "s_default_market"].forEach(id => { const el = $(id); if (el) el.innerHTML = mine; });
   const dm = $("d_market"); if (dm) dm.innerHTML = opts;
   const f = $("flt_market"); if (f) f.innerHTML = '<option value="">All Markets</option>' + opts;
-  const dl = $("sym_list"); if (dl) dl.innerHTML = SYMBOLS.map(x => `<option value="${x.name}">`).join("");
+  const dl = $("sym_list"); if (dl) dl.innerHTML = (window.TM_REGION && !TM_REGION.india ? [] : SYMBOLS).map(x => `<option value="${x.name}">`).join("");
 }
 fillMarketSelects();
 
@@ -896,8 +896,9 @@ function grossPnl(t) {
 }
 /* Full Indian grouping (₹3,42,819), like a broker statement. */
 function fullINR(v, plain) {
-  const a = Math.abs(v), s = a >= 100 ? Math.round(a).toLocaleString("en-IN") : a.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  return (v < 0 ? "−" : plain || v === 0 ? "" : "+") + (JUSD ? "$" : "₹") + s;
+  const intl = window.TM_REGION && !TM_REGION.india, loc = intl ? "en-US" : "en-IN";           // India keeps its own digit grouping
+  const a = Math.abs(v), s = a >= 100 ? Math.round(a).toLocaleString(loc) : a.toLocaleString(loc, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return (v < 0 ? "−" : plain || v === 0 ? "" : "+") + (JUSD ? "$" : intl ? TM_REGION.pre : "₹") + s;
 }
 const signed = v => fullINR(v);
 const pctTxt = v => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(Math.abs(v) >= 10 ? 1 : 2) + "%";

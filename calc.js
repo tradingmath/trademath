@@ -109,6 +109,7 @@ const $ = id => document.getElementById(id);
 const comma = n => Math.abs(n).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
 function fmtINR(n) {
+  if (window.TM_REGION && !TM_REGION.india) return TM_REGION.intl(n);     // other countries: their symbol and number style. India keeps the lines below.
   const a = Math.abs(n), s = n < 0 ? "−" : "";
   if (a >= 1e7) return s + "₹" + (a / 1e7).toFixed(2) + "Cr";
   if (a >= 1e5) return s + "₹" + (a / 1e5).toFixed(2) + "L";
@@ -368,7 +369,7 @@ function initSymbolAutocomplete() {
 
   /* Starred symbols are kept for stocks and for coins separately, and are what you see first when you click the box. */
   const mode = () => (instrType === "crypto" ? "crypto" : "std");
-  const pool = () => (instrType === "crypto" ? CRYPTO_COINS.map(x => ({ name: x.name, sector: "1 lot = " + x.lot, lot: 0 })) : SYMBOLS);
+  const pool = () => (instrType === "crypto" ? CRYPTO_COINS.map(x => ({ name: x.name, sector: "1 lot = " + x.lot, lot: 0 })) : (window.TM_REGION && !TM_REGION.india ? [] : SYMBOLS));   // the stock list is NSE only
   const favs = () => { const f = (typeof getAppSettings === "function" ? getAppSettings().favSyms : null) || {}; return Array.isArray(f[mode()]) ? f[mode()] : []; };
   function toggleFav(name) {
     const all = Object.assign({}, getAppSettings().favSyms || {}), cur = favs().slice(), i = cur.indexOf(name);

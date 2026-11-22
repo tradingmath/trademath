@@ -29,7 +29,7 @@
 <link rel="preload" href="fonts/jetbrains-mono.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts.css?v=140c3a0f">
 <link rel="icon" href="logo-icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css?v=aa60b771">
+<link rel="stylesheet" href="styles.css?v=88eceba1">
 <script>
 /* Runs before the page paints: apply the saved theme and level now, and keep the page hidden until the app has
    finished setting itself up, so nothing flashes dark, then light, or jumps between modes. */
@@ -536,7 +536,11 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
   </div>
 
   <div class="settings-section" id="markets_settings">
-    <div class="p-title">What you trade</div>
+    <div class="p-title">Country and what you trade</div>
+    <div class="field" style="margin-bottom:14px">
+      <label for="s_country">Country <span class="proj-hint">sets your currency and which markets are shown</span></label>
+      <select id="s_country"></select>
+    </div>
     <div style="font-size:12px;color:var(--fg2);margin-bottom:12px">Turn off what you do not trade, to keep the calculator and journal simple. At least one stays on.</div>
     <div class="toggle-row"><div><div class="toggle-label">Stocks</div><div class="toggle-sub">Cash and intraday equity</div></div><label class="toggle-switch"><input type="checkbox" id="tog_stocks" checked><span class="toggle-track"></span></label></div>
     <div class="toggle-row"><div><div class="toggle-label">F&amp;O</div><div class="toggle-sub">Options and futures, traded in lots</div></div><label class="toggle-switch"><input type="checkbox" id="tog_fno" checked><span class="toggle-track"></span></label></div>
@@ -961,13 +965,14 @@ setTimeout(function(){d.classList.remove("tm-boot")},2000);})();
 
 <p class="note" style="max-width:720px;margin:24px auto 0;text-align:center;line-height:1.7">TradeMath is a free position size calculator and trade journal for Indian traders. Enter your entry, stop-loss, capital and risk to get quantity, margin, targets and charges for NSE stocks, F&amp;O lots, MCX and crypto futures. Then log the trade and review your results.</p>
 <p class="note" style="text-align:center;margin:10px 0 8px">Guides: <a href="position-size-calculator-india.html" style="color:inherit">Position size</a> · <a href="risk-reward-ratio-explained.html" style="color:inherit">Risk-reward</a> · <a href="nse-fno-lot-sizes.html" style="color:inherit">F&amp;O lot sizes</a> · <a href="trading-journal-india.html" style="color:inherit">Trading journal</a> · <a href="guides.html" style="color:inherit">All guides</a><br><a href="about.html" style="color:inherit">About</a> · <a href="contact.html" style="color:inherit">Contact</a> · <a href="privacy.html" style="color:inherit">Privacy</a> · <a href="terms.html" style="color:inherit">Terms</a> · <a href="https://razorpay.me/@trademath" target="_blank" rel="noopener" style="color:inherit">Support TradeMath</a> · Not investment advice</p>
-<script src="calc.js?v=894809f9"></script>
-<script src="journal.js?v=923a173f"></script>
-<script src="projection.js?v=a8284c9d"></script>
+<script src="region.js?v=511edcf8"></script>
+<script src="calc.js?v=b257eb6e"></script>
+<script src="journal.js?v=212af96c"></script>
+<script src="projection.js?v=19000e74"></script>
 <script src="alerts.js?v=30dc437c"></script>
-<script src="app.js?v=ec98b9a8"></script>
+<script src="app.js?v=4ea33d1c"></script>
 <script src="cloud.js?v=459e79da"></script>
-<script src="profile.js?v=69d20007"></script>
+<script src="profile.js?v=9cb8173c"></script>
 
 </body>
 </html>

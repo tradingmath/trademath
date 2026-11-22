@@ -54,6 +54,7 @@ const SETTINGS_FIELDS = [
   { scope: "settings", key: "strategies", label: "My strategies", fb: "",             get: () => draftStrategies.join("|"),            set: v => { draftStrategies = v ? String(v).split("|").filter(Boolean) : []; renderStrategySettings(); }, fmt: v => (v ? v.split("|").length : 0) + " strateg" + ((v ? v.split("|").length : 0) === 1 ? "y" : "ies") },
   { scope: "settings", key: "rrRows",     label: "Risk-reward rows",    fb: "2,3,5",    get: () => draftRR.join(","),                     set: v => { draftRR = rrParse(v); renderRRSettings(); }, fmt: v => String(v).split(",").map(x => "1:" + x).join(", ") },
   { scope: "settings", key: "showFees",    label: "Include estimated fees", fb: false,     get: () => $("tog_show_fees").checked,            set: v => { $("tog_show_fees").checked = v; }, fmt: onOff },
+  { scope: "settings", key: "country",     label: "Country",             fb: (window.TM_REGION ? TM_REGION.key : "IN"), get: () => $("s_country").value, set: v => { $("s_country").value = v; }, fmt: v => (TM_REGION.list[v] ? TM_REGION.list[v].name : v) },
   { scope: "settings", key: "tradeStocks", label: "Trade stocks",        fb: true,       get: () => $("tog_stocks").checked,               set: v => { $("tog_stocks").checked = v; },   fmt: onOff },
   { scope: "settings", key: "tradeFno",    label: "Trade F&O",           fb: true,       get: () => $("tog_fno").checked,                  set: v => { $("tog_fno").checked = v; },      fmt: onOff },
   { scope: "settings", key: "tradeCrypto", label: "Trade crypto",        fb: true,       get: () => $("tog_crypto").checked,               set: v => { $("tog_crypto").checked = v; },   fmt: onOff },
@@ -151,6 +152,10 @@ function populateForm() {
   });
   paintChoices(); renderChecklistSettings(); refreshDirty(); syncFeeUI();
 }
+(function fillCountries() {                                           // the Country list in Settings
+  const el = document.getElementById("s_country"); if (!el || !window.TM_REGION) return;
+  el.innerHTML = Object.keys(TM_REGION.list).map(k => `<option value="${k}">${TM_REGION.list[k].name} (${TM_REGION.list[k].code})</option>`).join("");
+})();
 
 /* Apply what is saved to the running app (page load). */
 function loadSettings() {
@@ -187,7 +192,11 @@ function commitSettings() {
     if (c.f.scope === "settings") s[c.f.key] = c.to;
     else if (c.f.scope === "alert") beep[c.f.key] = c.to;
   });
+  if (changed.has("country") && TM_REGION.list[s.country]) { s.usdInr = TM_REGION.list[s.country].fx; if (!TM_REGION.list[s.country].india) s.defaultLev = "1"; }   // the USD rate follows the country until you change it
   tmSet("tm_settings", s);
+  if (changed.has("country")) {                                       // currency and markets are applied at load, so reload once
+    $("setConfirm").hidden = true; showToast("✓ Country changed. Reloading…"); setTimeout(() => location.reload(), 700); return;
+  }
   if (Object.keys(beep).length) tmAlert.setConfig(beep);
   if (changed.has("checklist")) saveChecklistItems(draftChecklist);
 
@@ -220,7 +229,7 @@ function previewLook() {
 }
 
 /* ── wiring: every control only updates the draft ── */
-["tog_dark", "tog_quick_log",
+["tog_dark", "tog_quick_log", "s_country",
  "tog_show_fees", "tog_stocks", "tog_fno", "tog_crypto", "s_brokerage", "s_gst_pct", "s_cry_taker", "s_cry_gst", "s_cry_fund", "s_cry_mmr",
  "alert_anchor", "alert_lead", "alert_hours", "alert_vol"].forEach(id => {
   const el = $(id); if (!el) return;

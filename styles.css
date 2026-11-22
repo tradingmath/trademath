@@ -1301,3 +1301,13 @@ h1.logo { margin:0; line-height:inherit; }
 .pl-tip b { font-family:var(--mono); font-size:14px; color:var(--fg); }
 .pl-tip em { font-style:normal; color:var(--fg3); }
 .pl-tip .pos { color:var(--green); } .pl-tip .neg { color:var(--red); }
+
+/* Outside India: hide what only applies to Indian markets (F&O lots, MIS, NSE-specific fee rules). India is never affected. */
+html[data-country]:not([data-country="IN"]) #opt_field,
+html[data-country]:not([data-country="IN"]) #fut_field,
+html[data-country]:not([data-country="IN"]) #lot_wrap,
+html[data-country]:not([data-country="IN"]) #lev_btn_5,
+html[data-country]:not([data-country="IN"]) #fee_old_row,
+html[data-country]:not([data-country="IN"]) .toggle-row:has(#tog_fno),
+html[data-country]:not([data-country="IN"]) .fee-group:has(#s_brokerage) { display:none !important; }
+html[data-country="US"] #ccy_sw { display:none !important; }   /* the home currency is already dollars */
