@@ -62,7 +62,8 @@
   window.TM_REGION = r;
   document.documentElement.setAttribute("data-country", code);
   document.documentElement.setAttribute("data-currency", curCode);
-  if (r.india && r.inr) return;                                    // India: nothing below runs, so nothing changes
+  if (r.india && r.inr) return;
+  if (!r.india) document.title = document.title.replace(" for Indian Traders", "");   // the tab title should not say Indian for everyone else                                    // India: nothing below runs, so nothing changes
 
   /* ── everyone else: swap ₹ for their currency, wherever it is written, now and later ── */
   const swap = str => {

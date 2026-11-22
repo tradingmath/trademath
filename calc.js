@@ -750,7 +750,7 @@ function renderFeeBreakdown() {
   document.querySelectorAll(".cry-fee").forEach(el => { el.hidden = !showFees; });          // fee boxes in Crypto settings, only while fees are on
   const cfe = $("i_cfee"); if (cfe && document.activeElement !== cfe) cfe.value = cryptoFeeCfg().taker;
   const csl = $("cfee_sl");                                                                 // the "Include fees in SL" button
-  if (csl) { const on = getAppSettings().cryptoFeeInSL === true; csl.classList.toggle("on", on); csl.setAttribute("aria-pressed", String(on)); }
+  if (csl && typeof getAppSettings === "function") { const on = getAppSettings().cryptoFeeInSL === true; csl.classList.toggle("on", on); csl.setAttribute("aria-pressed", String(on)); }   // getAppSettings is defined later, in app.js, and this first runs while the scripts load
   if (!showFees || !lastCalc) { fb.innerHTML = ""; return; }
 
   const { entry, sl, isLong, units, lotSize } = lastCalc;

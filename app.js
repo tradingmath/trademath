@@ -199,7 +199,7 @@ function commitSettings() {
   if (changed.has("country") || changed.has("currency")) {
     const cur = s.currency || (TM_REGION.list[s.country] || {}).code || "INR", cr = TM_REGION.currencies[cur];
     if (cr) s.usdInr = cr.fx;                                                      // the USD rate follows the currency until you change it
-    if (TM_REGION.list[s.country] && !TM_REGION.list[s.country].india) s.defaultLev = "1";
+    if (TM_REGION.list[s.country] && !TM_REGION.list[s.country].india) s.defaultLev = "1"; else delete s.defaultLev;   // India goes back to its usual 5x intraday start
     if (cur === "INR") { if (s.defaultCap === 10000) s.defaultCap = 100000; } else if (!s.defaultCap || s.defaultCap === 100000) s.defaultCap = 10000;
     try { localStorage.removeItem("tm_proj"); localStorage.removeItem("tm_calc"); } catch (e) {}   // the Planner and the last typed numbers were in the old currency
   }
