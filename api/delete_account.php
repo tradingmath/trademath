@@ -16,7 +16,7 @@ try {
     $pdo->commit();
 } catch (Throwable $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();
-    error_log('TradeMath delete failed: ' . $e->getMessage());
+    error_log('TradingMath delete failed: ' . $e->getMessage());
     fail('Could not delete the account. Try again.', 500);
 }
 set_session_cookie('', time() - 3600);

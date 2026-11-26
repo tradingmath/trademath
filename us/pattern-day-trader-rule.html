@@ -3,36 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Pattern Day Trader (PDT) Rule Explained for Position Sizing | TradeMath</title>
+<title>Pattern Day Trader (PDT) Rule Explained for Position Sizing | TradingMath</title>
 <meta name="description" content="What the pattern day trader rule is, how the $25,000 minimum works, what counts as a day trade, and how to size positions when buying power is limited.">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="theme-color" content="#050a1c">
-<link rel="canonical" href="https://trademath.in/us/pattern-day-trader-rule.html">
-<link rel="icon" href="/logo-icon.svg" type="image/svg+xml">
-<link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="canonical" href="https://castlingtrader.com/tradingmath/us/pattern-day-trader-rule.html">
+<link rel="icon" href="/tradingmath/logo-icon.svg" type="image/svg+xml">
+<link rel="icon" href="/tradingmath/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/tradingmath/apple-touch-icon.png">
 <meta property="og:type" content="article">
 <meta property="og:locale" content="en_US">
-<meta property="og:site_name" content="TradeMath">
+<meta property="og:site_name" content="TradingMath">
 <meta property="og:title" content="Pattern Day Trader (PDT) Rule Explained for Position Sizing">
 <meta property="og:description" content="What the pattern day trader rule is, how the $25,000 minimum works, what counts as a day trade, and how to size positions when buying power is limited.">
-<meta property="og:url" content="https://trademath.in/us/pattern-day-trader-rule.html">
-<meta property="og:image" content="https://trademath.in/og-image.png">
+<meta property="og:url" content="https://castlingtrader.com/tradingmath/us/pattern-day-trader-rule.html">
+<meta property="og:image" content="https://castlingtrader.com/tradingmath/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
 <script>try{var s=JSON.parse(localStorage.getItem("tm_settings")||"{}");document.documentElement.dataset.theme=s.darkMode===false?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
-<link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/fonts.css?v=140c3a0f">
-<link rel="stylesheet" href="/styles.css?v=c2cff879">
-<link rel="stylesheet" href="/guide.css?v=4f89a7cb">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "The pattern day trader (PDT) rule, and how it affects position size", "description": "What the pattern day trader rule is, how the $25,000 minimum works, what counts as a day trade, and how to size positions when buying power is limited.", "mainEntityOfPage": "https://trademath.in/us/pattern-day-trader-rule.html", "inLanguage": "en-US", "datePublished": "2026-11-22", "dateModified": "2026-11-22", "author": {"@type": "Organization", "name": "TradeMath", "url": "https://trademath.in/"}, "publisher": {"@type": "Organization", "name": "TradeMath", "logo": {"@type": "ImageObject", "url": "https://trademath.in/logo-512.png"}}}</script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "TradeMath", "item": "https://trademath.in/"}, {"@type": "ListItem", "position": 2, "name": "US guides", "item": "https://trademath.in/us/"}, {"@type": "ListItem", "position": 3, "name": "The pattern day trader (PDT) rule, and how it affects position size", "item": "https://trademath.in/us/pattern-day-trader-rule.html"}]}</script>
+<link rel="preload" href="/tradingmath/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/tradingmath/fonts.css?v=140c3a0f">
+<link rel="stylesheet" href="/tradingmath/styles.css?v=c2cff879">
+<link rel="stylesheet" href="/tradingmath/guide.css?v=4f89a7cb">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "The pattern day trader (PDT) rule, and how it affects position size", "description": "What the pattern day trader rule is, how the $25,000 minimum works, what counts as a day trade, and how to size positions when buying power is limited.", "mainEntityOfPage": "https://castlingtrader.com/tradingmath/us/pattern-day-trader-rule.html", "inLanguage": "en-US", "datePublished": "2026-11-22", "dateModified": "2026-11-22", "author": {"@type": "Organization", "name": "TradingMath", "url": "https://castlingtrader.com/tradingmath/"}, "publisher": {"@type": "Organization", "name": "TradingMath", "logo": {"@type": "ImageObject", "url": "https://castlingtrader.com/tradingmath/logo-512.png"}}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "TradingMath", "item": "https://castlingtrader.com/tradingmath/"}, {"@type": "ListItem", "position": 2, "name": "US guides", "item": "https://castlingtrader.com/tradingmath/us/"}, {"@type": "ListItem", "position": 3, "name": "The pattern day trader (PDT) rule, and how it affects position size", "item": "https://castlingtrader.com/tradingmath/us/pattern-day-trader-rule.html"}]}</script>
 </head>
 <body>
-<header class="g-head"><a class="g-brand" href="/"><img src="/logo-icon.svg" alt="" width="28" height="28"><span>Trade<b>Math</b></span></a>
+<header class="g-head"><a class="g-brand" href="/tradingmath/"><img src="/tradingmath/logo-icon.svg" alt="" width="28" height="28"><span>Trading<b>Math</b></span></a>
 <nav class="g-nav" aria-label="US guides"><a href="position-size-calculator.html">Position size</a><a href="risk-per-trade.html">Risk per trade</a><a href="pattern-day-trader-rule.html">PDT rule</a><a href="crypto-position-size-calculator.html">Crypto</a><a href="./">All US guides</a></nav>
-<a class="g-cta" href="/">Open calculator</a></header>
+<a class="g-cta" href="/tradingmath/">Open calculator</a></header>
 <main class="g-doc">
-<p class="g-crumb"><a href="/">TradeMath</a> / <a href="./">US guides</a></p>
+<p class="g-crumb"><a href="/tradingmath/">TradingMath</a> / <a href="./">US guides</a></p>
 <h1>The pattern day trader (PDT) rule, and how it affects position size</h1>
 <p class="g-lede">If you day trade stocks in a US margin account, a rule from FINRA can limit how often you can trade when your account is small. Here is how it works in plain words, and why it should not change how you size risk.</p>
 <h2>The rule in short</h2>
@@ -68,9 +68,9 @@
 <p>No. The rule covers securities such as stocks and options in a margin account at a US broker. Crypto platforms have their own rules.</p>
 <h3>Can I avoid the rule by using several brokers?</h3>
 <p>Day trades are counted per account at each broker, but brokers may have their own policies, and some conduct is treated as an attempt to evade the rule. Check with your broker.</p>
-<aside class="g-box"><b>Try it with your own numbers.</b> The free TradeMath calculator sizes the trade from your entry, stop-loss and risk, and keeps a journal. It shows US dollars automatically for visitors in the United States, and you can change country and currency in Settings. No sign-up needed.<br><a class="g-btn" href="/">Open the calculator</a></aside>
-<p class="g-fine">Updated 22 November 2026. Educational content only. It is not investment, legal or tax advice, and it is not a recommendation to buy or sell any security or digital asset. Trading involves risk of loss, including the loss of everything you put in. Examples are hypothetical, are shown for illustration, and do not predict or guarantee results. TradeMath is a software tool. It is not a broker-dealer, investment adviser or commodity trading advisor. Rules, fees and margin requirements change, so confirm the current details with your broker.</p>
+<aside class="g-box"><b>Try it with your own numbers.</b> The free TradingMath calculator sizes the trade from your entry, stop-loss and risk, and keeps a journal. It shows US dollars automatically for visitors in the United States, and you can change country and currency in Settings. No sign-up needed.<br><a class="g-btn" href="/tradingmath/">Open the calculator</a></aside>
+<p class="g-fine">Updated 22 November 2026. Educational content only. It is not investment, legal or tax advice, and it is not a recommendation to buy or sell any security or digital asset. Trading involves risk of loss, including the loss of everything you put in. Examples are hypothetical, are shown for illustration, and do not predict or guarantee results. TradingMath is a software tool. It is not a broker-dealer, investment adviser or commodity trading advisor. Rules, fees and margin requirements change, so confirm the current details with your broker.</p>
 </main>
-<footer class="g-foot"><a href="/">Calculator</a> · <a href="./">US guides</a> · <a href="position-size-calculator.html">Position size</a> · <a href="risk-per-trade.html">Risk per trade</a> · <a href="pattern-day-trader-rule.html">PDT rule</a> · <a href="crypto-position-size-calculator.html">Crypto</a> · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a> · <a href="https://buymeacoffee.com/trademath" target="_blank" rel="noopener">Support TradeMath</a> · <a href="/about.html">About</a> · <a href="/contact.html">Contact</a> · <a href="mailto:support@trademath.in">support@trademath.in</a></footer>
+<footer class="g-foot"><a href="/tradingmath/">Calculator</a> · <a href="./">US guides</a> · <a href="position-size-calculator.html">Position size</a> · <a href="risk-per-trade.html">Risk per trade</a> · <a href="pattern-day-trader-rule.html">PDT rule</a> · <a href="crypto-position-size-calculator.html">Crypto</a> · <a href="/tradingmath/privacy.html">Privacy</a> · <a href="/tradingmath/terms.html">Terms</a> · <a href="https://buymeacoffee.com/trademath" target="_blank" rel="noopener">Support TradingMath</a> · <a href="/tradingmath/about.html">About</a> · <a href="/tradingmath/contact.html">Contact</a> · <a href="mailto:support@trademath.in">support@trademath.in</a></footer>
 </body>
 </html>

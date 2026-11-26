@@ -2,5 +2,6 @@ User-agent: *
 Content-Signal: search=yes, ai-input=yes, ai-train=no
 Allow: /
 Disallow: /api/
+Disallow: /tradingmath/api/
 
-Sitemap: https://trademath.in/sitemap.xml
+Sitemap: https://castlingtrader.com/tradingmath/sitemap.xml

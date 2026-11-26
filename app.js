@@ -289,13 +289,25 @@ document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("setCon
 window.addEventListener("beforeunload", e => { if (changes().length) { e.preventDefault(); e.returnValue = ""; } });
 
 /* ══════════════ TABS ══════════════ */
-/* Every page has its own link: #calc (home), #journal, #journal/planner, #settings. (The old #journal/projection still works and is renamed on arrival.)
-   Hash links work on any host, on localhost and when index.html is opened straight from disk. */
+/* Every page has its own address. On the website: /tradingmath/ (home), /tradingmath/journal, /tradingmath/planner, /tradingmath/settings, /tradingmath/profile.
+   When index.html is opened from disk (or on localhost outside that folder) the same pages use #calc, #journal, #journal/planner, #settings.
+   Old hash links (#journal, #journal/projection ...) still work on the website: they are rewritten to the clean address on arrival. */
 const PAGES = ["calc", "journal", "settings", "profile"];
-const PAGE_TITLES = { calc: document.title, journal: "TradeMath · Journal", settings: "TradeMath · Settings", profile: "TradeMath · Profile" };
+const PAGE_TITLES = { calc: document.title, journal: "TradingMath · Journal", settings: "TradingMath · Settings", profile: "TradingMath · Profile" };
+const PATH_MODE = /^https?:$/.test(location.protocol) && /^\/tradingmath(?:\/(?:index\.html|journal|planner|settings|profile))?\/?$/.test(location.pathname);
+const PATH_BASE = "/tradingmath/";
 let currentRoute = null;
 
+function addressFor(tab, sub) {            // the address that belongs to a page
+  if (PATH_MODE) return PATH_BASE + (tab === "calc" ? "" : (tab === "journal" && sub === "planner") ? "planner" : tab) + location.search;
+  return location.pathname + location.search + (tab === "calc" ? "" : "#" + tab + (sub ? "/" + sub : ""));
+}
 function parseRoute() {
+  if (PATH_MODE) {
+    const seg = location.pathname.slice(PATH_BASE.length - 1).replace(/^\/+|\/+$/g, "").replace(/^index\.html$/, "");
+    if (seg === "planner") return { tab: "journal", sub: "planner" };
+    return { tab: PAGES.includes(seg) ? seg : "calc", sub: "" };
+  }
   const [tab, sub0] = location.hash.replace(/^#\/?/, "").split("/");
   const sub = sub0 === "projection" ? "planner" : (sub0 || "");           // old links keep working
   return { tab: PAGES.includes(tab) ? tab : "calc", sub };
@@ -306,7 +318,7 @@ function showRoute(tab, sub) {
     $("tab-"+t).hidden = t !== tab;
     const tb = document.querySelector('.tab-btn[data-tab="'+t+'"]'); if (tb) tb.classList.toggle("active", t === tab);   // Profile has no tab button
   });
-  document.title = sub === "planner" && tab === "journal" ? "TradeMath · Planner" : PAGE_TITLES[tab];
+  document.title = sub === "planner" && tab === "journal" ? "TradingMath · Planner" : PAGE_TITLES[tab];
   if (tab === "calc")    { renderTodayTrades(); renderDailyBanner(); }
   if (tab === "profile" && window.tmProfileShow) window.tmProfileShow();
   if (tab === "journal") {
@@ -314,20 +326,41 @@ function showRoute(tab, sub) {
     showJournalView(proj ? "projection" : "main");
     if (!proj) refreshJournal();
   }
+  setRobots(tab);
+}
+function setRobots(tab) {                  // only the home page is for search engines; the journal, settings and profile screens are personal
+  let m = document.querySelector('meta[name="robots"]');
+  if (!m) { if (tab === "calc") return; m = document.createElement("meta"); m.name = "robots"; document.head.appendChild(m); m.dataset.orig = ""; }
+  if (m.dataset.orig === undefined) m.dataset.orig = m.content;
+  m.content = tab === "calc" ? m.dataset.orig : "noindex";
 }
 function switchTab(tab, sub) {
   sub = sub || "";
-  const h = tab === "calc" ? "" : "#" + tab + (sub ? "/" + sub : "");   // the home tab has no #, so the address is just trademath.in
   showRoute(tab, sub);                       // synchronous, so callers can act on the new page straight away
-  if (tab === "calc") { if (location.hash) history.pushState(null, "", location.pathname + location.search); }
-  else if (location.hash !== h) location.hash = h; // hashchange then fires, but showRoute is skipped (already on this route)
+  const addr = addressFor(tab, sub);
+  if (PATH_MODE) { if (location.pathname + location.search !== addr) history.pushState(null, "", addr); }
+  else if (tab === "calc") { if (location.hash) history.pushState(null, "", location.pathname + location.search); }
+  else { const h = "#" + tab + (sub ? "/" + sub : ""); if (location.hash !== h) location.hash = h; }  // hashchange then fires, but showRoute is skipped (already on this route)
 }
-if (location.hash === "#calc") history.replaceState(null, "", location.pathname + location.search);
-if (location.hash === "#journal/projection") history.replaceState(null, "", location.pathname + location.search + "#journal/planner");   // show the new name in the address   // old links to #calc show the clean address
-window.addEventListener("hashchange", () => {  // back/forward buttons, typed or bookmarked links
+function tidyAddress() {                  // old links: show the clean address
+  if (PATH_MODE) {
+    const h = location.hash.replace(/^#\/?/, "");
+    if (!h) return;
+    const [t, s0] = h.split("/"); const s = s0 === "projection" ? "planner" : s0;
+    if (PAGES.includes(t)) history.replaceState(null, "", addressFor(t, s || ""));
+    else history.replaceState(null, "", location.pathname + location.search);
+  } else {
+    if (location.hash === "#calc") history.replaceState(null, "", location.pathname + location.search);
+    if (location.hash === "#journal/projection") history.replaceState(null, "", location.pathname + location.search + "#journal/planner");
+  }
+}
+tidyAddress();
+const onRouteChange = () => {              // back/forward buttons, typed or bookmarked links
   const { tab, sub } = parseRoute();
   if (tab + "/" + sub !== currentRoute) showRoute(tab, sub);
-});
+};
+window.addEventListener(PATH_MODE ? "popstate" : "hashchange", onRouteChange);
+if (PATH_MODE) window.addEventListener("hashchange", () => { tidyAddress(); onRouteChange(); });   // an old #link clicked inside an open page
 document.querySelectorAll(".tab-btn").forEach(b => {
   b.addEventListener("click", () => switchTab(b.dataset.tab));
 });
@@ -467,7 +500,7 @@ $("popBtn").addEventListener("click", () => {
   const w = 380, h = 500;
   const left = Math.max(0, screen.width - w - 20);
   const top  = Math.max(0, Math.round((screen.height - h) / 2));
-  const win  = window.open(location.origin + location.pathname + "?popout=1#calc", "trademath_popout",
+  const win  = window.open(location.origin + location.pathname + "?popout=1#calc", "tradingmath_popout",
     `width=${w},height=${h},left=${left},top=${top},resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no,status=no`);
   if (!win) tmAsk({ title: "Pop-up blocked", body: "Please allow pop-ups for this site in your browser.", ok: "OK", cancel: false });
 });

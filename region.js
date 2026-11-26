@@ -3,7 +3,7 @@
    India is the default and is left exactly as it was. For anyone else the app switches to their currency and number style,
    and hides the India-only parts (F&O lots, MIS, NSE symbols).
    The country comes from Settings. A brand-new visitor gets a first guess from the browser's own timezone: nothing is sent anywhere
-   and no location service is used. People who already use TradeMath are never switched: they stay on India until they choose otherwise.
+   and no location service is used. People who already use TradingMath are never switched: they stay on India until they choose otherwise.
    Loaded first, before calc.js, so every formatter can ask TM_REGION. */
 (function () {
   const REGIONS = {
@@ -81,8 +81,8 @@
     ["1× Cash (CNC / Delivery)", "1× Cash (no leverage)"], ["Advanced: Pro (F&O lots, planner, checklist)", "Advanced: Pro (planner, checklist, more)"],
     ["Intraday: 5× leverage (MIS)", "Intraday: leveraged trading"],
     ["Everything: F&O lots, planner,", "Everything: planner,"], ["Clock (:00, for MCX)", "Clock (:00)"], ["Mon–Fri, 9:15–15:30. Turn off for MCX or crypto.", "Turn off for crypto and other markets that trade around the clock."], ["1× Cash Delivery (100% margin)", "1× Cash (100% margin)"],
-    ["TradeMath is a free position size calculator and trade journal for Indian traders. Enter your entry, stop-loss, capital and risk to get quantity, margin, targets and charges for NSE stocks, F&O lots, MCX and crypto futures. Then log the trade and review your results.",
-     "TradeMath is a free position size calculator and trade journal. Enter your entry, stop-loss, capital and risk to get quantity, margin and targets for stocks and crypto futures. Then log the trade and review your results."],
+    ["TradingMath is a free position size calculator and trade journal for Indian traders. Enter your entry, stop-loss, capital and risk to get quantity, margin, targets and charges for NSE stocks, F&O lots, MCX and crypto futures. Then log the trade and review your results.",
+     "TradingMath is a free position size calculator and trade journal. Enter your entry, stop-loss, capital and risk to get quantity, margin and targets for stocks and crypto futures. Then log the trade and review your results."],
   ];
   function fixText(n) {
     let v = n.nodeValue;

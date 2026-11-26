@@ -1,13 +1,24 @@
-# TradeMath — Project Context for Claude
+# TradingMath — Project Context for Claude (formerly TradeMath; company: Castling Trader)
 
 ## Project
-Trade calculator + journal for Indian retail traders. Live at: https://trademath.in (hosted on Hostinger; Netlify is no longer used)
+Trade calculator + journal for Indian retail traders. Live at: https://castlingtrader.com/tradingmath/ (old address https://trademath.in redirects there). Hosted on Hostinger; Netlify is no longer used.
 GitHub: https://github.com/tradingmath/trademath.git (branch: main)
 Hostinger deploys the main branch from GitHub on push (hPanel, Deploy from Git). api/config.php is untracked and lives only on the server.
 
 ## CRITICAL RULE
 **Never push to GitHub or deploy unless the user explicitly says "deploy".**
 User tests with the local .html file first.
+
+## Domains and routing (moved Nov 2026)
+- One Hostinger website (docroot of trademath.in); castlingtrader.com is a **parked alias** of it. `.htaccess` decides per host:
+  - castlingtrader.com: `/` -> `/tradingmath/`; `/tradingmath/X` is served from the file `X` (the prefix is stripped by rewrite); app pages `/tradingmath/{journal,planner,settings,profile}` serve `index.html`; anything outside `/tradingmath/` is 301'd into it.
+  - trademath.in: the app entry (`/`) first goes to `move.html` (see below); everything else, and crawlers, get a 301 to the same path under `https://castlingtrader.com/tradingmath/`. Cookies: `tm_moved=1` (already moved), `tm_stay=1` (fallback: keep using the old site).
+- Every root-absolute link in the guide pages is written `/tradingmath/...`. `index.html` keeps relative links (so it still opens from disk). `tools/stamp_assets.py` understands both.
+- `app.js`: on the website the pages have real addresses (`PATH_MODE`); from disk or localhost outside `/tradingmath/` the old `#calc/#journal/#journal/planner/#settings` routes are used. Old `#` links are rewritten to the clean address. Home is `index`, the other screens set `noindex`.
+- **Saved data is per domain** (localStorage). `move.js` (on trademath.in) packs all `tm_*` keys (gzip + base64url, max 100 000 chars) into the redirect to `migrate.html#d=...`; `migrate.js` (on castlingtrader.com) accepts it only if `document.referrer` starts with `https://trademath.in/`, never overwrites existing data, writes `tm_migrated_from`, clears the address and opens the page. A hidden-iframe version does NOT work (browsers partition third-party storage). Too-large journals get a backup-file download instead. Recovery for a user: `https://trademath.in/move.html?recover=1`.
+- Backups are labelled `app: "TradingMath"`; restore and `api/sync.php` still accept the old label `TradeMath`.
+- Still `support@trademath.in` for email (the old domain's mailbox keeps working). `contact@castlingtrader.com` exists.
+- Google sign-in needs `https://castlingtrader.com` added as an Authorized JavaScript origin in the Google Cloud console. Sessions are per domain, so people sign in again once.
 
 ## File Structure
 | File | Purpose |

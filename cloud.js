@@ -1,6 +1,6 @@
 "use strict";
 /* ══════════════ ACCOUNT & CLOUD SYNC (optional) ══════════════
-   TradeMath works fully without this. If the server API is not there (a static host, or not set up yet), the sign-in
+   TradingMath works fully without this. If the server API is not there (a static host, or not set up yet), the sign-in
    button and the Settings section simply stay hidden. When it is there you can sign in with Google or with an emailed
    6-digit code, and a copy of your backup (trades, settings, checklist) is kept in the cloud. The copy is replaced as a
    whole and versioned, so two devices can never silently overwrite each other: a stale upload is refused and you

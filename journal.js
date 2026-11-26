@@ -57,7 +57,7 @@ function showRescueBanner() {
   try { raw = localStorage.getItem("tm_trades_corrupt"); } catch (e) {}
   if (!raw) { tmBannerOff("tm_rescue_banner"); return; }
   tmBanner("tm_rescue_banner", '<span><b>Part of your saved journal could not be read.</b> A copy of the original data was kept so nothing is lost.</span><button type="button" id="rescue_dl">Download copy</button><button type="button" id="rescue_dismiss">Dismiss</button>', b => {
-    b.querySelector("#rescue_dl").onclick = () => tmDownload("trademath-unreadable-journal.json", raw);
+    b.querySelector("#rescue_dl").onclick = () => tmDownload("tradingmath-unreadable-journal.json", raw);
     b.querySelector("#rescue_dismiss").onclick = async () => {
       if (await tmAsk({ title: "Delete the kept copy?", body: "Download it first if you might need it. This cannot be undone.", ok: "Delete", danger: true })) { try { localStorage.removeItem("tm_trades_corrupt"); } catch (e) {} tmBannerOff("tm_rescue_banner"); }
     };
@@ -94,14 +94,14 @@ function saveTrades() {
 /* ── Backup & restore (Settings → Your data) ── */
 const BACKUP_KEYS = { settings: "tm_settings", checklist: "tm_checklist", alert: "tm_alert", projection: "tm_proj" };
 function buildBackup() {
-  const out = { app: "TradeMath", version: 1, exported: new Date().toISOString(), trades: trades.filter(t => !t.demo) };   // sample trades are never saved
+  const out = { app: "TradingMath", version: 1, exported: new Date().toISOString(), trades: trades.filter(t => !t.demo) };   // sample trades are never saved
   Object.keys(BACKUP_KEYS).forEach(k => { out[k] = tmGet(BACKUP_KEYS[k], null); });
   return out;
 }
-/* Backups are encrypted (AES-256-GCM), so the file is unreadable outside TradeMath and any edit to it is detected on restore.
+/* Backups are encrypted (AES-256-GCM), so the file is unreadable outside TradingMath and any edit to it is detected on restore.
    The key is built into the app, which stops other tools and casual copying but is not a password: anyone with this
    page's source could still derive it. Older, unencrypted backups can still be restored. */
-const BK_SECRET = "TradeMath/backup/v2/7f3c9a1e5b8d4062";
+const BK_SECRET = "TradingMath/backup/v2/7f3c9a1e5b8d4062";
 const bkB64  = u8 => { let s = ""; u8.forEach(b => { s += String.fromCharCode(b); }); return btoa(s); };
 const bkUnB64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
 async function bkKey(salt) {
@@ -111,7 +111,7 @@ async function bkKey(salt) {
 async function bkEncrypt(obj) {
   const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
   const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await bkKey(salt), new TextEncoder().encode(JSON.stringify(obj))));
-  return JSON.stringify({ app: "TradeMath", format: "encrypted-backup", v: 2, salt: bkB64(salt), iv: bkB64(iv), data: bkB64(ct) });
+  return JSON.stringify({ app: "TradingMath", format: "encrypted-backup", v: 2, salt: bkB64(salt), iv: bkB64(iv), data: bkB64(ct) });
 }
 async function bkDecrypt(w) {
   const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: bkUnB64(w.iv) }, await bkKey(bkUnB64(w.salt)), bkUnB64(w.data));
@@ -119,12 +119,12 @@ async function bkDecrypt(w) {
 }
 async function downloadBackup() {
   const msg = $("bk_msg");
-  if (!(window.crypto && crypto.subtle)) { msg.textContent = "This browser cannot encrypt the backup here. Open TradeMath over https and try again."; msg.className = "bk-msg bad"; return; }
+  if (!(window.crypto && crypto.subtle)) { msg.textContent = "This browser cannot encrypt the backup here. Open TradingMath over https and try again."; msg.className = "bk-msg bad"; return; }
   try {
-    tmDownload("trademath-backup-" + todayStr() + ".tmbackup", await bkEncrypt(buildBackup()));
+    tmDownload("tradingmath-backup-" + todayStr() + ".tmbackup", await bkEncrypt(buildBackup()));
     tmSet("tm_last_backup", new Date().toISOString());
     renderBackupInfo();
-    msg.textContent = "Encrypted backup downloaded. It can only be restored in TradeMath."; msg.className = "bk-msg";
+    msg.textContent = "Encrypted backup downloaded. It can only be restored in TradingMath."; msg.className = "bk-msg";
   } catch (e) { msg.textContent = "Could not create the backup. Try again."; msg.className = "bk-msg bad"; }
 }
 function renderBackupInfo() {
@@ -139,17 +139,17 @@ function readBackupFile(file) {
   box.hidden = true; pendingRestore = null;
   const fail = t => { msg.textContent = t; msg.className = "bk-msg bad"; };
   if (!file) return;
-  if (file.size > 20 * 1024 * 1024) return fail("That file is too large to be a TradeMath backup.");
+  if (file.size > 20 * 1024 * 1024) return fail("That file is too large to be a TradingMath backup.");
   const r = new FileReader();
   r.onerror = () => fail("Could not read that file.");
   r.onload = async () => {
     let data;
-    try { data = JSON.parse(r.result); } catch (e) { return fail("That file is not a TradeMath backup."); }
+    try { data = JSON.parse(r.result); } catch (e) { return fail("That file is not a TradingMath backup."); }
     if (data && data.format === "encrypted-backup") {
-      if (!(window.crypto && crypto.subtle)) return fail("This browser cannot open encrypted backups here. Open TradeMath over https and try again.");
-      try { data = await bkDecrypt(data); } catch (e) { return fail("Could not open that backup. It may be damaged, edited, or not made by TradeMath."); }
+      if (!(window.crypto && crypto.subtle)) return fail("This browser cannot open encrypted backups here. Open TradingMath over https and try again.");
+      try { data = await bkDecrypt(data); } catch (e) { return fail("Could not open that backup. It may be damaged, edited, or not made by TradingMath."); }
     }
-    if (!data || data.app !== "TradeMath" || !Array.isArray(data.trades)) return fail("That file is not a TradeMath backup.");
+    if (!data || (data.app !== "TradingMath" && data.app !== "TradeMath") || !Array.isArray(data.trades)) return fail("That file is not a TradingMath backup.");
     const good = data.trades.filter(t => t && typeof t === "object" && (t.dir === "LONG" || t.dir === "SHORT"));
     if (!good.length && data.trades.length) return fail("No usable trades were found in that backup.");
     pendingRestore = { data, good };
@@ -965,7 +965,7 @@ function repTradeRowIn(t, dayId, moKey) {
       <td class="num">${cap ? fullINR(cap, true) : "—"}</td>
       <td class="num ${ret !== null ? tone(ret) : "td-muted"}">${ret !== null ? pctTxt(ret) : "—"}</td>
       <td class="c-res">${result}</td>
-      <td class="num fee-col">${fees !== null ? fullINR(fees, true) + (t.feesEst ? ' <span class="t-dim" title="Estimated by TradeMath, not from your broker">est.</span>' : "") : "—"}</td>
+      <td class="num fee-col">${fees !== null ? fullINR(fees, true) + (t.feesEst ? ' <span class="t-dim" title="Estimated by TradingMath, not from your broker">est.</span>' : "") : "—"}</td>
       <td class="c-act">
         ${!closed ? `<button type="button" class="rep-act rep-add-btn" data-id="${t.id}" title="Bought more? Add to this position and see your new average">＋ Add</button><button type="button" class="rep-act rep-close-btn" data-id="${t.id}">Close</button>` : ""}
         <button type="button" class="rep-act rep-edit-btn" data-id="${t.id}" title="Edit market, symbol and notes">✎</button>
@@ -1176,7 +1176,7 @@ $("rc_download").addEventListener("click", () => {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="480" height="300" style="font-family:monospace">
     <rect width="480" height="300" fill="#0f1623" rx="12"/>
     <rect x="1" y="1" width="478" height="298" fill="none" stroke="#1e2d45" stroke-width="2" rx="12"/>
-    <text x="240" y="44" text-anchor="middle" font-size="22" font-weight="bold" fill="${accent}">TradeMath</text>
+    <text x="240" y="44" text-anchor="middle" font-size="22" font-weight="bold" fill="${accent}">TradingMath</text>
     <text x="240" y="68" text-anchor="middle" font-size="14" fill="#94a3b8">${title}</text>
     <line x1="24" y1="80" x2="456" y2="80" stroke="#1e2d45" stroke-width="1"/>
     ${stats.map((s,i) => {
@@ -1186,12 +1186,12 @@ $("rc_download").addEventListener("click", () => {
       return `<text x="${col}" y="${y-2}" font-size="10" fill="#475569" text-transform="uppercase" letter-spacing="1">${s[0].toUpperCase()}</text>
                <text x="${col}" y="${y+22}" font-size="20" font-weight="bold" fill="${s[0]==='Net P&L'?($("rc_pnl").style.color||'#e2e8f0'):'#e2e8f0'}">${s[1]}</text>`;
     }).join("")}
-    <text x="240" y="288" text-anchor="middle" font-size="11" fill="#1e2d45">trademath.in</text>
+    <text x="240" y="288" text-anchor="middle" font-size="11" fill="#1e2d45">castlingtrader.com/tradingmath</text>
   </svg>`;
   const blob = new Blob([svg], { type:"image/svg+xml" });
   const a    = document.createElement("a");
   a.href     = URL.createObjectURL(blob);
-  a.download = `trademath-${title.replace(/\s+/g,"-")}.svg`;
+  a.download = `tradingmath-${title.replace(/\s+/g,"-")}.svg`;
   a.click();
 });
 
@@ -1362,7 +1362,7 @@ function exportTradesCSV() {
   const csv = "﻿" + [head].concat(rows).map(r => r.map(cell).join(",")).join("\r\n");
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-  a.download = "trademath-trades-" + todayStr() + ".csv";
+  a.download = "tradingmath-trades-" + todayStr() + ".csv";
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   showToast("Exported " + list.length + " trade" + (list.length === 1 ? "" : "s"));

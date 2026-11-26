@@ -1,36 +1,36 @@
-# TradeMath
+# TradingMath
 
-> TradeMath is a free position size calculator and trade journal for Indian traders. It works out quantity, margin, stop-loss, targets and estimated charges for NSE stocks, F&O lots, MCX and crypto futures, and keeps a journal with reports. No sign-up is needed; your journal stays in your browser unless you choose to sign in for cloud sync.
+> TradingMath is a free position size calculator and trade journal for Indian traders. It works out quantity, margin, stop-loss, targets and estimated charges for NSE stocks, F&O lots, MCX and crypto futures, and keeps a journal with reports. No sign-up is needed; your journal stays in your browser unless you choose to sign in for cloud sync.
 
 ## Tools
-- [Calculator and journal](https://trademath.in/): position size, risk-reward, margin, trade log and reports
+- [Calculator and journal](https://castlingtrader.com/tradingmath/): position size, risk-reward, margin, trade log and reports
 
 ## Guides
-- [How to calculate position size](https://trademath.in/position-size-calculator-india.html): formula and worked examples for stocks, futures and options in India
-- [Risk-reward ratio explained](https://trademath.in/risk-reward-ratio-explained.html): break-even win rate, expectancy and how to set targets
-- [NSE F&O lot sizes](https://trademath.in/nse-fno-lot-sizes.html): lot sizes and how to use them in position sizing
-- [Trading journal for Indian traders](https://trademath.in/trading-journal-india.html): what to record and how to review
-- [How much should you risk per trade? The 1% rule explained](https://trademath.in/how-much-to-risk-per-trade.html): Risk per trade, the 1% rule and losing streaks
-- [How to place a stop-loss: percentage, structure and ATR methods](https://trademath.in/stop-loss-placement-guide.html): Percentage, structure and ATR stops, with examples
-- [Position size for options and futures in lots](https://trademath.in/option-lot-position-size.html): Sizing options and futures in whole lots
-- [Drawdown and recovery explained: why a 50% loss needs a 100% gain](https://trademath.in/drawdown-and-recovery-explained.html): What drawdown is and the gain needed to recover
-- [MIS vs CNC (intraday vs delivery): margin, leverage and risk](https://trademath.in/mis-vs-cnc-intraday-delivery.html): Intraday vs delivery, leverage and risk
-- [Common trading mistakes and how a journal catches them](https://trademath.in/trading-mistakes-journal.html): Seven common mistakes and what each costs
-- [How many losing trades in a row should you expect?](https://trademath.in/losing-streak-probability.html): The real odds of 5, 8 and 10 losses in a row, with a table and calculator
-- [Risk reward ratio and break-even win rate calculator](https://trademath.in/break-even-win-rate-calculator.html): The win rate your ratio needs, costs included
-- [Stop-loss calculator](https://trademath.in/stop-loss-calculator.html): Stop price, quantity and targets from your entry and risk
-- [Stock average calculator](https://trademath.in/stock-average-calculator.html): Average buy price, and how many shares to bring it down
-- [Free trading journal template for Excel and Google Sheets](https://trademath.in/trading-journal-excel-template.html): A downloadable CSV, the columns and the formulas
-- [Position sizing methods compared](https://trademath.in/position-sizing-methods-explained.html): Fixed risk, ATR and Kelly, worked through on one trade
+- [How to calculate position size](https://castlingtrader.com/tradingmath/position-size-calculator-india.html): formula and worked examples for stocks, futures and options in India
+- [Risk-reward ratio explained](https://castlingtrader.com/tradingmath/risk-reward-ratio-explained.html): break-even win rate, expectancy and how to set targets
+- [NSE F&O lot sizes](https://castlingtrader.com/tradingmath/nse-fno-lot-sizes.html): lot sizes and how to use them in position sizing
+- [Trading journal for Indian traders](https://castlingtrader.com/tradingmath/trading-journal-india.html): what to record and how to review
+- [How much should you risk per trade? The 1% rule explained](https://castlingtrader.com/tradingmath/how-much-to-risk-per-trade.html): Risk per trade, the 1% rule and losing streaks
+- [How to place a stop-loss: percentage, structure and ATR methods](https://castlingtrader.com/tradingmath/stop-loss-placement-guide.html): Percentage, structure and ATR stops, with examples
+- [Position size for options and futures in lots](https://castlingtrader.com/tradingmath/option-lot-position-size.html): Sizing options and futures in whole lots
+- [Drawdown and recovery explained: why a 50% loss needs a 100% gain](https://castlingtrader.com/tradingmath/drawdown-and-recovery-explained.html): What drawdown is and the gain needed to recover
+- [MIS vs CNC (intraday vs delivery): margin, leverage and risk](https://castlingtrader.com/tradingmath/mis-vs-cnc-intraday-delivery.html): Intraday vs delivery, leverage and risk
+- [Common trading mistakes and how a journal catches them](https://castlingtrader.com/tradingmath/trading-mistakes-journal.html): Seven common mistakes and what each costs
+- [How many losing trades in a row should you expect?](https://castlingtrader.com/tradingmath/losing-streak-probability.html): The real odds of 5, 8 and 10 losses in a row, with a table and calculator
+- [Risk reward ratio and break-even win rate calculator](https://castlingtrader.com/tradingmath/break-even-win-rate-calculator.html): The win rate your ratio needs, costs included
+- [Stop-loss calculator](https://castlingtrader.com/tradingmath/stop-loss-calculator.html): Stop price, quantity and targets from your entry and risk
+- [Stock average calculator](https://castlingtrader.com/tradingmath/stock-average-calculator.html): Average buy price, and how many shares to bring it down
+- [Free trading journal template for Excel and Google Sheets](https://castlingtrader.com/tradingmath/trading-journal-excel-template.html): A downloadable CSV, the columns and the formulas
+- [Position sizing methods compared](https://castlingtrader.com/tradingmath/position-sizing-methods-explained.html): Fixed risk, ATR and Kelly, worked through on one trade
 
 ## Guides for US traders
-- [US guides](https://trademath.in/us/): position sizing and risk guides with US dollar examples
-- [How to calculate position size for US stocks](https://trademath.in/us/position-size-calculator.html): formula and long and short examples in dollars
-- [How much to risk per trade: the 1% rule](https://trademath.in/us/risk-per-trade.html): what losing streaks cost at different risk levels
-- [Pattern day trader (PDT) rule and position size](https://trademath.in/us/pattern-day-trader-rule.html): the $25,000 rule, cash accounts and why buying power is not a risk budget
-- [Crypto position size calculator](https://trademath.in/us/crypto-position-size-calculator.html): sizing futures in dollars, leverage and liquidation
+- [US guides](https://castlingtrader.com/tradingmath/us/): position sizing and risk guides with US dollar examples
+- [How to calculate position size for US stocks](https://castlingtrader.com/tradingmath/us/position-size-calculator.html): formula and long and short examples in dollars
+- [How much to risk per trade: the 1% rule](https://castlingtrader.com/tradingmath/us/risk-per-trade.html): what losing streaks cost at different risk levels
+- [Pattern day trader (PDT) rule and position size](https://castlingtrader.com/tradingmath/us/pattern-day-trader-rule.html): the $25,000 rule, cash accounts and why buying power is not a risk budget
+- [Crypto position size calculator](https://castlingtrader.com/tradingmath/us/crypto-position-size-calculator.html): sizing futures in dollars, leverage and liquidation
 
 ## About
-- [About](https://trademath.in/about.html), [Contact](https://trademath.in/contact.html), [Privacy](https://trademath.in/privacy.html), [Terms](https://trademath.in/terms.html)
+- [About](https://castlingtrader.com/tradingmath/about.html), [Contact](https://castlingtrader.com/tradingmath/contact.html), [Privacy](https://castlingtrader.com/tradingmath/privacy.html), [Terms](https://castlingtrader.com/tradingmath/terms.html)
 
-TradeMath is a calculation aid and does not give investment advice. Figures are estimates; confirm with your broker.
+TradingMath is a calculation aid and does not give investment advice. Figures are estimates; confirm with your broker.

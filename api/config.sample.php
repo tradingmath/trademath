@@ -16,7 +16,7 @@ return [
 
     // Sender of the OTP email. Use a mailbox on your own domain so the mail does not land in spam.
     'mail_from'      => 'no-reply@yourdomain.in',
-    'mail_from_name' => 'TradeMath',
+    'mail_from_name' => 'TradingMath',
     'mail_reply_to'  => 'support@yourdomain.in',   // people who reply to a code email reach this mailbox
 
     // "Sign in with Google": your OAuth Web client ID from Google Cloud Console (looks like 123-abc.apps.googleusercontent.com).

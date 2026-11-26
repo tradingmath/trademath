@@ -3,36 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Position Sizing Methods Compared: Fixed Risk, ATR and Kelly | TradeMath</title>
+<title>Position Sizing Methods Compared: Fixed Risk, ATR and Kelly | TradingMath</title>
 <meta name="description" content="Four ways to decide how much to buy, with the same trade worked through each: fixed quantity, fixed percentage risk, ATR and the Kelly criterion. Which one suits you.">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="theme-color" content="#050a1c">
-<link rel="canonical" href="https://trademath.in/position-sizing-methods-explained.html">
+<link rel="canonical" href="https://castlingtrader.com/tradingmath/position-sizing-methods-explained.html">
 <link rel="icon" href="logo-icon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta property="og:type" content="article">
 <meta property="og:locale" content="en_IN">
-<meta property="og:site_name" content="TradeMath">
+<meta property="og:site_name" content="TradingMath">
 <meta property="og:title" content="Position sizing methods compared">
 <meta property="og:description" content="Four ways to decide how much to buy, with the same trade worked through each: fixed quantity, fixed percentage risk, ATR and the Kelly criterion. Which one suits you.">
-<meta property="og:url" content="https://trademath.in/position-sizing-methods-explained.html">
-<meta property="og:image" content="https://trademath.in/og-image.png">
+<meta property="og:url" content="https://castlingtrader.com/tradingmath/position-sizing-methods-explained.html">
+<meta property="og:image" content="https://castlingtrader.com/tradingmath/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
 <script>try{var s=JSON.parse(localStorage.getItem("tm_settings")||"{}");document.documentElement.dataset.theme=s.darkMode===false?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
 <link rel="preload" href="fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="fonts.css?v=140c3a0f">
 <link rel="stylesheet" href="styles.css?v=c2cff879">
 <link rel="stylesheet" href="guide.css?v=4f89a7cb">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Position sizing methods compared", "description": "Four ways to decide how much to buy, with the same trade worked through each: fixed quantity, fixed percentage risk, ATR and the Kelly criterion. Which one suits you.", "mainEntityOfPage": "https://trademath.in/position-sizing-methods-explained.html", "inLanguage": "en-IN", "datePublished": "2026-11-22", "dateModified": "2026-11-22", "author": {"@type": "Organization", "name": "TradeMath", "url": "https://trademath.in/"}, "publisher": {"@type": "Organization", "name": "TradeMath", "logo": {"@type": "ImageObject", "url": "https://trademath.in/logo-512.png"}}}</script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "TradeMath", "item": "https://trademath.in/"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://trademath.in/guides.html"}, {"@type": "ListItem", "position": 3, "name": "Position sizing methods compared", "item": "https://trademath.in/position-sizing-methods-explained.html"}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Position sizing methods compared", "description": "Four ways to decide how much to buy, with the same trade worked through each: fixed quantity, fixed percentage risk, ATR and the Kelly criterion. Which one suits you.", "mainEntityOfPage": "https://castlingtrader.com/tradingmath/position-sizing-methods-explained.html", "inLanguage": "en-IN", "datePublished": "2026-11-22", "dateModified": "2026-11-22", "author": {"@type": "Organization", "name": "TradingMath", "url": "https://castlingtrader.com/tradingmath/"}, "publisher": {"@type": "Organization", "name": "TradingMath", "logo": {"@type": "ImageObject", "url": "https://castlingtrader.com/tradingmath/logo-512.png"}}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "TradingMath", "item": "https://castlingtrader.com/tradingmath/"}, {"@type": "ListItem", "position": 2, "name": "Guides", "item": "https://castlingtrader.com/tradingmath/guides.html"}, {"@type": "ListItem", "position": 3, "name": "Position sizing methods compared", "item": "https://castlingtrader.com/tradingmath/position-sizing-methods-explained.html"}]}</script>
 </head>
 <body>
-<header class="g-head"><a class="g-brand" href="/"><img src="logo-icon.svg" alt="" width="28" height="28"><span>Trade<b>Math</b></span></a>
+<header class="g-head"><a class="g-brand" href="/tradingmath/"><img src="logo-icon.svg" alt="" width="28" height="28"><span>Trading<b>Math</b></span></a>
 <nav class="g-nav" aria-label="Guides"><a href="position-size-calculator-india.html">Position size</a><a href="risk-reward-ratio-explained.html">Risk-reward</a><a href="nse-fno-lot-sizes.html">Lot sizes</a><a href="trading-journal-india.html">Journal</a><a href="guides.html">All guides</a></nav>
-<a class="g-cta" href="/">Open calculator</a></header>
+<a class="g-cta" href="/tradingmath/">Open calculator</a></header>
 <main class="g-doc">
-<p class="g-crumb"><a href="/">TradeMath</a> / <a href="guides.html">Guides</a></p>
+<p class="g-crumb"><a href="/tradingmath/">TradingMath</a> / <a href="guides.html">Guides</a></p>
 <h1>Position sizing methods compared</h1>
 <p class="g-lede">There is more than one way to decide how much to buy. Here are the four you will meet most often, worked through with the same trade so you can see how different the answers are.</p>
 <h2>The trade we will use</h2>
@@ -46,12 +46,12 @@
 <h2>2. Fixed percentage risk</h2>
 <p>Decide the percentage of capital you will lose if the stop is hit, then let the stop distance set the quantity. With 1% risk, your risk is ₹2,000, and ₹2,000 ÷ ₹16 = <b>125 shares</b>. On a ₹40 stop the same rule gives 50 shares. The share count changes, and the rupee risk does not.</p>
 <div class="g-formula">Quantity = (Capital × Risk %) ÷ (Entry − Stop)</div>
-<p>The percentage scales with the account. After a loss you risk a little less in rupees, and after a gain a little more, which slows the damage in a bad run and lets a good run compound. Many risk-focused traders and trading books settle here, and it is what the TradeMath calculator does.</p>
+<p>The percentage scales with the account. After a loss you risk a little less in rupees, and after a gain a little more, which slows the damage in a bad run and lets a good run compound. Many risk-focused traders and trading books settle here, and it is what the TradingMath calculator does.</p>
 <p><b>Good for:</b> almost everyone. <b>Watch out for:</b> picking a percentage that is too large. See <a href="how-much-to-risk-per-trade.html">how much to risk per trade</a>.</p>
 
 <h2>3. Fixed rupee risk</h2>
 <p>The same idea, but with a flat amount: ₹2,000 on every trade, whatever the account size. That gives 125 shares here too.</p>
-<p>Some traders prefer it because the number never moves and is easy to remember. The cost is that it does not shrink when the account does. If you are down 30%, ₹2,000 is now a larger slice of what is left. Revisit the figure every month or so. In the TradeMath calculator, the "Flat ₹" switch next to Risk does this.</p>
+<p>Some traders prefer it because the number never moves and is easy to remember. The cost is that it does not shrink when the account does. If you are down 30%, ₹2,000 is now a larger slice of what is left. Revisit the figure every month or so. In the TradingMath calculator, the "Flat ₹" switch next to Risk does this.</p>
 <p><b>Good for:</b> small accounts that want a simple rule. <b>Watch out for:</b> forgetting to update it.</p>
 
 <h2>4. Volatility (ATR) sizing</h2>
@@ -93,9 +93,9 @@
 <h3>Should I increase position size when I am winning?</h3>
 <p>With a percentage rule, it happens on its own as the account grows. Raising the percentage itself after a hot streak is a common way to give the gains back.</p>
 <h2>Related guides</h2><ul class="g-related"><li><a href="position-size-calculator-india.html">How to calculate position size</a>: the core formula step by step</li><li><a href="how-much-to-risk-per-trade.html">How much to risk per trade</a>: choosing the percentage</li><li><a href="losing-streak-probability.html">Losing streak odds</a>: what your sizing has to survive</li><li><a href="stop-loss-calculator.html">Stop-loss calculator</a>: work out the stop and the quantity</li></ul>
-<aside class="g-box"><b>Try it with your own numbers.</b> The free TradeMath calculator does this sum for you, with charges, lot sizes and a trade journal. No sign-up needed.<br><a class="g-btn" href="/">Open the calculator</a></aside>
+<aside class="g-box"><b>Try it with your own numbers.</b> The free TradingMath calculator does this sum for you, with charges, lot sizes and a trade journal. No sign-up needed.<br><a class="g-btn" href="/tradingmath/">Open the calculator</a></aside>
 <p class="g-fine">Updated 22 November 2026. This page is for education and is not investment advice. Markets carry risk of loss. Examples are hypothetical and use round numbers. Check lot sizes, margins and charges with your broker and the exchange before you trade.</p>
 </main>
-<footer class="g-foot"><a href="/">Calculator</a> · <a href="guides.html">All guides</a> · <a href="position-size-calculator-india.html">Position size</a> · <a href="risk-reward-ratio-explained.html">Risk-reward</a> · <a href="nse-fno-lot-sizes.html">F&amp;O lot sizes</a> · <a href="trading-journal-india.html">Trading journal</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="https://razorpay.me/@trademath" target="_blank" rel="noopener">Support TradeMath</a> · <a href="about.html">About</a> · <a href="contact.html">Contact</a> · <a href="mailto:support@trademath.in">support@trademath.in</a><br>Free tools: <a href="break-even-win-rate-calculator.html">Break-even win rate</a> · <a href="stop-loss-calculator.html">Stop-loss calculator</a> · <a href="stock-average-calculator.html">Stock average calculator</a> · <a href="losing-streak-probability.html">Losing streak odds</a> · <a href="trading-journal-excel-template.html">Journal template</a></footer>
+<footer class="g-foot"><a href="/tradingmath/">Calculator</a> · <a href="guides.html">All guides</a> · <a href="position-size-calculator-india.html">Position size</a> · <a href="risk-reward-ratio-explained.html">Risk-reward</a> · <a href="nse-fno-lot-sizes.html">F&amp;O lot sizes</a> · <a href="trading-journal-india.html">Trading journal</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="https://razorpay.me/@trademath" target="_blank" rel="noopener">Support TradingMath</a> · <a href="about.html">About</a> · <a href="contact.html">Contact</a> · <a href="mailto:support@trademath.in">support@trademath.in</a><br>Free tools: <a href="break-even-win-rate-calculator.html">Break-even win rate</a> · <a href="stop-loss-calculator.html">Stop-loss calculator</a> · <a href="stock-average-calculator.html">Stock average calculator</a> · <a href="losing-streak-probability.html">Losing streak odds</a> · <a href="trading-journal-excel-template.html">Journal template</a></footer>
 </body>
 </html>

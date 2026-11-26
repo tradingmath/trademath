@@ -1,8 +1,58 @@
-# ── One address: www.trademath.in goes to trademath.in (permanent redirect) ──
+# ══ Addresses ══
+# The product lives at https://castlingtrader.com/tradingmath/ . The old address trademath.in sends everyone there.
+# Both domains point at this one folder, so the files exist once and these rules decide what each domain shows.
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteCond %{HTTP_HOST} ^www\.trademath\.in$ [NC]
-  RewriteRule ^(.*)$ https://trademath.in/$1 [R=301,L]
+
+  # certificate checks and robots.txt are never redirected
+  RewriteRule ^(\.well-known/.*|robots\.txt)$ - [L]
+
+  # www.<domain> goes to <domain>
+  RewriteCond %{HTTP_HOST} ^www\.(trademath\.in|castlingtrader\.com)$ [NC]
+  RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
+
+  # ── Old address: trademath.in ──
+  # Fallback: if copying a visitor's saved journal to the new address ever fails, they keep the old site working (cookie set by move.js).
+  RewriteCond %{HTTP_HOST} ^trademath\.in$ [NC]
+  RewriteCond %{HTTP_COOKIE} (^|;\s*)tm_stay=1
+  RewriteRule ^ - [L]
+  # the small "moving your journal" page and its files
+  RewriteCond %{HTTP_HOST} ^trademath\.in$ [NC]
+  RewriteRule ^(move\.html|move\.js|logo-icon\.svg|favicon-32\.png|api/.*)$ - [L]
+  # the app itself: a visitor whose journal has not been copied yet goes through move.html first (it copies, then redirects)
+  RewriteCond %{HTTP_HOST} ^trademath\.in$ [NC]
+  RewriteCond %{HTTP_COOKIE} !(^|;\s*)tm_moved=1
+  RewriteCond %{HTTP_USER_AGENT} !(bot|crawl|spider|slurp|facebookexternalhit|embedly|preview|lighthouse|validator) [NC]
+  RewriteCond %{REQUEST_METHOD} =GET
+  RewriteRule ^(index\.html)?$ move.html [L]
+  # the journal template was renamed with the product
+  RewriteCond %{HTTP_HOST} ^trademath\.in$ [NC]
+  RewriteRule ^trademath-trading-journal-template\.csv$ https://castlingtrader.com/tradingmath/tradingmath-trading-journal-template.csv [R=301,L]
+  # everything else (search engines, guide pages, visitors already moved): permanent redirect to the same page at the new address
+  RewriteCond %{HTTP_HOST} ^trademath\.in$ [NC]
+  RewriteRule ^(index\.html)?$ https://castlingtrader.com/tradingmath/ [R=301,L]
+  RewriteCond %{HTTP_HOST} ^trademath\.in$ [NC]
+  RewriteRule ^(.+)$ https://castlingtrader.com/tradingmath/$1 [R=301,L]
+
+  # ── New address: castlingtrader.com ──
+  RewriteCond %{HTTP_HOST} ^castlingtrader\.com$ [NC]
+  RewriteRule ^$ /tradingmath/ [R=302,L]
+  RewriteCond %{HTTP_HOST} ^castlingtrader\.com$ [NC]
+  RewriteRule ^tradingmath/index\.html$ /tradingmath/ [R=301,L]
+  RewriteCond %{HTTP_HOST} ^castlingtrader\.com$ [NC]
+  RewriteRule ^tradingmath/(journal|planner|settings|profile)/$ /tradingmath/$1 [R=301,L]
+  RewriteCond %{HTTP_HOST} ^castlingtrader\.com$ [NC]
+  RewriteRule ^tradingmath/(journal|planner|settings|profile)$ index.html [L]
+  RewriteCond %{HTTP_HOST} ^castlingtrader\.com$ [NC]
+  RewriteRule ^tradingmath/$ index.html [L]
+  RewriteCond %{HTTP_HOST} ^castlingtrader\.com$ [NC]
+  RewriteRule ^tradingmath/us$ /tradingmath/us/ [R=301,L]
+  RewriteCond %{HTTP_HOST} ^castlingtrader\.com$ [NC]
+  RewriteRule ^tradingmath/(.+)$ $1 [L]
+  # a request for anything outside the folder (the original request line is checked, so the rewrites above are not caught) goes inside it
+  RewriteCond %{HTTP_HOST} ^castlingtrader\.com$ [NC]
+  RewriteCond %{THE_REQUEST} \s/(?!tradingmath(?:/|\s|\?))
+  RewriteRule ^(.+)$ /tradingmath/$1 [R=301,L]
 </IfModule>
 
 # ── Markdown copy of the home page for agents (served as a normal file; the home page points to it) ──
@@ -12,7 +62,7 @@ AddType "text/markdown; charset=UTF-8" .md
     Header set Link '</llms.txt>; rel="describedby"; type="text/plain", </index.md>; rel="alternate"; type="text/markdown"'
   </FilesMatch>
   <FilesMatch "^index\.md$">
-    Header set Link '<https://trademath.in/>; rel="canonical"'
+    Header set Link '<https://castlingtrader.com/tradingmath/>; rel="canonical"'
     Header set X-Robots-Tag "noindex"
   </FilesMatch>
 </IfModule>

@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-/* Shared helpers for the TradeMath API. Every endpoint includes this first. */
+/* Shared helpers for the TradingMath API. Every endpoint includes this first. */
 
 if (!is_file(__DIR__ . '/config.php')) {
     http_response_code(503);
@@ -38,7 +38,7 @@ function db(): PDO {
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             ]);
         } catch (Throwable $e) {
-            error_log('TradeMath DB connect failed: ' . $e->getMessage());
+            error_log('TradingMath DB connect failed: ' . $e->getMessage());
             fail('The server is temporarily unavailable.', 503);
         }
     }

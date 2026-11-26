@@ -108,7 +108,7 @@
     $("onb_dots").innerHTML = Array.from({ length: STEPS }, (_, i) => `<i class="${i === o.step ? "on" : i < o.step ? "done" : ""}"></i>`).join("");
     $("onb_back").hidden = o.step === 0;
     $("onb_next").textContent = o.step === STEPS - 1 ? "Finish" : "Next";
-    if (o.step === 0) b.innerHTML = `<h2 id="onb_title" class="onb-title">Welcome to TradeMath</h2><p class="onb-sub">Let's set it up for you in a few quick questions. What do you trade? Pick all that apply.</p><div class="chips">${chip("stocks", "📈 Stocks", o.stocks)}${chip("fno", "⚡ F&amp;O (options and futures)", o.fno)}${chip("crypto", "₿ Crypto", o.crypto)}</div>`;
+    if (o.step === 0) b.innerHTML = `<h2 id="onb_title" class="onb-title">Welcome to TradingMath</h2><p class="onb-sub">Let's set it up for you in a few quick questions. What do you trade? Pick all that apply.</p><div class="chips">${chip("stocks", "📈 Stocks", o.stocks)}${chip("fno", "⚡ F&amp;O (options and futures)", o.fno)}${chip("crypto", "₿ Crypto", o.crypto)}</div>`;
     if (o.step === 1) b.innerHTML = `<h2 id="onb_title" class="onb-title">Your numbers</h2><p class="onb-sub">These fill the calculator for you each time.</p>
       <div class="field"><label for="o_cap">Trading capital (₹)</label><input type="number" id="o_cap" min="1" step="1000" value="${o.cap}"></div>
       <div class="field-row"><div class="field"><label for="o_risk">Risk per trade (%)</label><input type="number" id="o_risk" min="0.01" max="100" step="0.1" value="${o.risk}"></div>
@@ -128,7 +128,7 @@
       b.querySelectorAll(".sw").forEach(c => c.onclick = () => { l.accent = c.dataset.acc; applyLook(l); paintStep(); });
       return;
     }
-    if (o.step === 4) b.innerHTML = `<h2 id="onb_title" class="onb-title">Daily guardrails</h2><p class="onb-sub">TradeMath warns you when today's trades near these limits. Leave blank to turn a limit off.</p>
+    if (o.step === 4) b.innerHTML = `<h2 id="onb_title" class="onb-title">Daily guardrails</h2><p class="onb-sub">TradingMath warns you when today's trades near these limits. Leave blank to turn a limit off.</p>
       <div class="field-row"><div class="field"><label for="o_ml">Max loss per day (₹)</label><input type="number" id="o_ml" min="0" step="100" value="${o.maxLoss}" placeholder="e.g. 3000"></div>
       <div class="field"><label for="o_mt">Max trades per day</label><input type="number" id="o_mt" min="0" step="1" value="${o.maxTrades}" placeholder="e.g. 5"></div></div>`;
     b.querySelectorAll(".chip").forEach(c => c.onclick = () => {
@@ -240,7 +240,7 @@
   function maybeOfferTour() {
     if (ls.get("tm_tour_done") || ls.get("tm_tour_dismissed") || tour || onbOpen || $("tourNudge") || !$("authModal").hidden) return;
     const n = document.createElement("div"); n.id = "tourNudge"; n.className = "tour-nudge";
-    n.innerHTML = '<b>New to TradeMath?</b><span>Take a one-minute tour of how it works.</span><div><button type="button" class="btn btn-primary btn-sm" id="tn_go">Start tour</button><button type="button" class="btn btn-ghost btn-sm" id="tn_no">No thanks</button></div>';
+    n.innerHTML = '<b>New to TradingMath?</b><span>Take a one-minute tour of how it works.</span><div><button type="button" class="btn btn-primary btn-sm" id="tn_go">Start tour</button><button type="button" class="btn btn-ghost btn-sm" id="tn_no">No thanks</button></div>';
     document.body.appendChild(n);
     $("tn_go").onclick = () => { n.remove(); startTour(); };
     $("tn_no").onclick = () => { n.remove(); ls.set("tm_tour_dismissed", "1"); };
@@ -336,11 +336,11 @@
       '<li>Trading stocks, options, futures and crypto involves a high risk of loss, and many individual traders lose money.</li>' +
       '<li>Leverage magnifies losses as well as gains. With some products you can lose more than you put in.</li>' +
       '<li>Commissions, spreads, fees and funding costs reduce your results.</li>' +
-      '<li>Results shown in TradeMath, including the Planner, are illustrations built from numbers you type in. Past results do not predict future ones.</li>' +
+      '<li>Results shown in TradingMath, including the Planner, are illustrations built from numbers you type in. Past results do not predict future ones.</li>' +
       '</ul>';
     ov.innerHTML = '<div class="modal risk-modal" role="alertdialog" aria-modal="true" aria-labelledby="risk_t">' +
       '<div class="modal-title" id="risk_t"><span aria-hidden="true">⚠️</span> ' + (IND ? 'Risk disclosure on derivatives' : 'Risk disclosure') + '</div>' + body +
-      '<p class="risk-src">TradeMath is a calculation and journal tool. It does not give investment advice, and its figures are estimates. By continuing you agree to the <a href="terms.html" target="_blank" rel="noopener noreferrer">Terms of use</a>.</p>' +
+      '<p class="risk-src">TradingMath is a calculation and journal tool. It does not give investment advice, and its figures are estimates. By continuing you agree to the <a href="terms.html" target="_blank" rel="noopener noreferrer">Terms of use</a>.</p>' +
       '<div class="tm-dialog-actions"><button type="button" class="btn btn-primary" id="risk_ok" style="width:100%">I understand</button></div></div>';
     document.body.appendChild(ov);
     const ok = ov.querySelector("#risk_ok"); ok.focus();
@@ -353,7 +353,7 @@
 })();
 
 /* ══════════════ SUPPORT REQUEST ══════════════
-   A gentle ask, only for people who really use TradeMath: it appears once they have been using it for a week (on at least three
+   A gentle ask, only for people who really use TradingMath: it appears once they have been using it for a week (on at least three
    different days), and then at most once every 15 days. Kept on this device only. Never shown in the pop-out window,
    and never on top of another dialog. */
 (function () {
@@ -371,10 +371,10 @@
     if (document.querySelector(".modal-overlay:not([hidden])")) return setTimeout(show, 30000);   // wait while another dialog is open
     const ov = document.createElement("div"); ov.className = "modal-overlay"; ov.style.zIndex = 390;
     ov.innerHTML = '<div class="modal support-modal" role="dialog" aria-modal="true" aria-labelledby="sup_t">' +
-      '<div class="modal-title" id="sup_t"><span aria-hidden="true">❤️</span> Enjoying TradeMath?</div>' +
-      '<p class="sup-text">TradeMath is free for everyone. If it has helped you size trades better or kept your journal in order, a small donation goes a long way in keeping it running.</p>' +
+      '<div class="modal-title" id="sup_t"><span aria-hidden="true">❤️</span> Enjoying TradingMath?</div>' +
+      '<p class="sup-text">TradingMath is free for everyone. If it has helped you size trades better or kept your journal in order, a small donation goes a long way in keeping it running.</p>' +
       '<div class="tm-dialog-actions"><button type="button" class="btn btn-ghost" id="sup_later">Maybe later</button>' +
-      '<a class="btn btn-primary" id="sup_go" href="' + URL + '" target="_blank" rel="noopener">Support TradeMath</a></div></div>';
+      '<a class="btn btn-primary" id="sup_go" href="' + URL + '" target="_blank" rel="noopener">Support TradingMath</a></div></div>';
     document.body.appendChild(ov);
     const done = () => { st.last = Date.now(); tmSet(KEY, st); ov.remove(); };
     ov.querySelector("#sup_later").onclick = done;

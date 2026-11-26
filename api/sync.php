@@ -11,7 +11,7 @@ if ($method === 'GET') {                       // download the saved copy
     $s->execute([$u['id']]); $row = $s->fetch();
     if (!$row) out(['ok' => true, 'version' => 0, 'updatedAt' => 0, 'data' => null]);
     $plain = unpack_data((string)$row['data']);
-    if ($plain === null) { error_log('TradeMath: could not open a saved copy'); fail('Your saved copy could not be read. Please contact support.', 500); }
+    if ($plain === null) { error_log('TradingMath: could not open a saved copy'); fail('Your saved copy could not be read. Please contact support.', 500); }
     out(['ok' => true, 'version' => (int)$row['version'], 'updatedAt' => (int)$row['updated_at'], 'data' => json_decode($plain, true)]);
 }
 
@@ -20,8 +20,8 @@ $u  = require_user();
 rate_limit('sync:' . $u['id'], 120, 3600);
 
 $data = $in['data'] ?? null;
-if (!is_array($data) || ($data['app'] ?? '') !== 'TradeMath' || !isset($data['trades']) || !is_array($data['trades'])) {
-    fail('That is not a TradeMath backup.');
+if (!is_array($data) || !in_array(($data['app'] ?? ''), ['TradingMath', 'TradeMath'], true) || !isset($data['trades']) || !is_array($data['trades'])) {
+    fail('That is not a TradingMath backup.');
 }
 $json = json_encode($data, JSON_UNESCAPED_UNICODE);
 if ($json === false || strlen($json) > MAX_SYNC_BYTES) fail('Your data is too large to sync (limit 2 MB).', 413);
@@ -42,7 +42,7 @@ try {
     $pdo->commit();
 } catch (Throwable $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();
-    error_log('TradeMath sync failed: ' . $e->getMessage());
+    error_log('TradingMath sync failed: ' . $e->getMessage());
     fail('Could not save to the cloud. Try again.', 500);
 }
 out(['ok' => true, 'version' => $new, 'updatedAt' => $now]);
