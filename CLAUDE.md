@@ -17,7 +17,7 @@ User tests with the local .html file first.
 - `app.js`: on the website the pages have real addresses (`PATH_MODE`); from disk or localhost outside `/tradingmath/` the old `#calc/#journal/#journal/planner/#settings` routes are used. Old `#` links are rewritten to the clean address. Home is `index`, the other screens set `noindex`.
 - **Saved data is per domain** (localStorage). `move.js` (on trademath.in) packs all `tm_*` keys (gzip + base64url, max 100 000 chars) into the redirect to `migrate.html#d=...`; `migrate.js` (on castlingtrader.com) accepts it only if `document.referrer` starts with `https://trademath.in/`, never overwrites existing data, writes `tm_migrated_from`, clears the address and opens the page. A hidden-iframe version does NOT work (browsers partition third-party storage). Too-large journals get a backup-file download instead. Recovery for a user: `https://trademath.in/move.html?recover=1`.
 - Backups are labelled `app: "TradingMath"`; restore and `api/sync.php` still accept the old label `TradeMath`.
-- Still `support@trademath.in` for email (the old domain's mailbox keeps working). `contact@castlingtrader.com` exists.
+- Public contact email is `contact@castlingtrader.com` (shown on every page and in the structured data). The old mailbox on trademath.in still exists.
 - Google sign-in needs `https://castlingtrader.com` added as an Authorized JavaScript origin in the Google Cloud console. Sessions are per domain, so people sign in again once.
 
 ## File Structure
