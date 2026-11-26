@@ -604,6 +604,10 @@ $("detailsModal").addEventListener("click", e => { if (e.target === $("detailsMo
 let closeTradeId  = null;
 let partialMode   = false;
 
+const exitedQty = t => (t.exits || []).reduce((s, ex) => s + (ex.qty || 0), 0);                       // already sold in partial exits
+const openQty   = t => Math.max(0, (t.qty || 0) - exitedQty(t));                                       // what is still open
+const closeDefaultQty = t => (exitedQty(t) > 0 ? openQty(t) : t.qty) || "";                          // closing the rest: offer what is left, not the original total
+const closeQtyLabel   = t => exitedQty(t) > 0 ? `Exit Qty (remaining: ${openQty(t)})` : `Exit Qty (total: ${t.qty})`;
 function openCloseModal(id) {
   const t = trades.find(x => x.id === id); if (!t) return;
   closeTradeId = id;
@@ -611,7 +615,7 @@ function openCloseModal(id) {
   $("cm_info").textContent  = `${t.dir} · ${t.market} · ${t.date}`;
   $("cm_entry").value = t.entry || "";
   $("cm_exit").value  = "";
-  $("cm_qty").value   = t.qty   || "";
+  $("cm_qty").value   = closeDefaultQty(t);
   $("cm_fees").value  = "";
   feesTouched = false;
   $("cm_funding_wrap").hidden = t.instrument !== "crypto";
@@ -624,7 +628,7 @@ function openCloseModal(id) {
   renderPartialExitList(t);
   $("cm_full_btn").classList.add("active");
   $("cm_partial_btn").classList.remove("active");
-  $("cm_partial_label").textContent = `Exit Qty (total: ${t.qty})`;
+  $("cm_partial_label").textContent = closeQtyLabel(t);
   $("cm_hit_sl").onclick = () => { $("cm_exit").value = t.sl     || ""; autoCryptoFees(); $("cm_exit").focus(); };
   $("cm_hit_tp").onclick = () => { $("cm_exit").value = t.target || ""; autoCryptoFees(); $("cm_exit").focus(); };
   $("closeModal").hidden = false;
@@ -665,8 +669,8 @@ $("cm_full_btn").addEventListener("click", () => {
   $("cm_full_btn").classList.add("active");
   $("cm_partial_btn").classList.remove("active");
   const t = trades.find(x => x.id === closeTradeId);
-  if (t) $("cm_partial_label").textContent = `Exit Qty (total: ${t.qty})`;
-  $("cm_qty").value = t ? t.qty : "";
+  if (t) $("cm_partial_label").textContent = closeQtyLabel(t);
+  $("cm_qty").value = t ? closeDefaultQty(t) : "";
 });
 
 $("cm_partial_btn").addEventListener("click", () => {
@@ -700,14 +704,14 @@ $("cm_confirm").addEventListener("click", () => {
     if (t.instrument === "crypto") updated.funding = (t.funding || 0) + funding;
     const realMgn = parseFloat($("cm_margin").value);
     if (!$("cm_margin_wrap").hidden && realMgn >= 0) { if (realMgn !== t.margin) updated.marginActual = true; updated.margin = realMgn; }
-    const partialExit = { price: exit, qty: exitQty || t.qty, fees: exitFees, date: todayStr(), ts: Date.now() };
+    const partialExit = { price: exit, qty: exitQty || stillOpen || t.qty, fees: exitFees, date: todayStr(), ts: Date.now() };
     if (!updated.exits) updated.exits = [];
     updated.exits = [...updated.exits, partialExit];
     if (!partialMode) {
       // Full exit: also set legacy exit field
       updated.exit = exit;
       updated.fees = exitFees;
-      updated.qty  = parseFloat($("cm_qty").value) || t.qty;
+      updated.qty  = exitedQty(t) + (parseFloat($("cm_qty").value) || stillOpen || t.qty);   // earlier partial exits stay part of the position
     }
     return updated;
   });
@@ -1040,7 +1044,7 @@ function renderReportsInner() {
     const moWins   = moClosed.filter(t => (pnlForTrade(t)||0) > 0);
     const moReal   = allTrades.filter(hasRealized);
     const moPnl    = moReal.reduce((s,t) => s + (pnlForTrade(t)||0), 0);
-    const moLabel  = mo === "unknown" ? "Unknown" : new Date(mo+"-01").toLocaleString("default",{month:"long",year:"numeric"});
+    const moLabel  = mo === "unknown" ? "Unknown" : new Date(mo+"-01T00:00:00").toLocaleString("default",{month:"long",year:"numeric"});
     const pnlCls   = moPnl > 0 ? "td-pos" : moPnl < 0 ? "td-neg" : "";
 
     const daysHTML = Object.entries(days).map(([day, dayTrades]) => {
@@ -1052,7 +1056,7 @@ function renderReportsInner() {
       const dayWins   = dayClosed.filter(t => (pnlForTrade(t)||0) > 0);
       const dayLosses = dayClosed.filter(t => (pnlForTrade(t)||0) <= 0);
       const pCls      = dayPnlVal > 0 ? "td-pos" : dayPnlVal < 0 ? "td-neg" : "td-muted";
-      const dayLabel  = day === "unknown" ? "Unknown" : new Date(day).toLocaleDateString("en-IN",{weekday:"short",day:"numeric",month:"short"});
+      const dayLabel  = day === "unknown" ? "Unknown" : new Date(day+"T00:00:00").toLocaleDateString("en-IN",{weekday:"short",day:"numeric",month:"short"});
       const dayId     = `d${mo}${day}`.replace(/[^a-z0-9]/gi,"");
       const wl        = `${dayWins.length}W / ${dayLosses.length}L`;
 
@@ -1145,7 +1149,7 @@ function openReportCard(monthStr) {
   const moWR      = moClosed.length ? Math.round(moWins.length / moClosed.length * 100) : 0;
   const rrs       = moClosed.map(rrActual).filter(r => r !== null);
   const avgRR     = rrs.length ? (rrs.reduce((a,b)=>a+b,0)/rrs.length).toFixed(2) : "—";
-  const label     = new Date(monthStr+"-01").toLocaleString("default",{month:"long",year:"numeric"});
+  const label     = new Date(monthStr+"-01T00:00:00").toLocaleString("default",{month:"long",year:"numeric"});
   const pnlColor  = moPnl >= 0 ? "var(--green)" : "var(--red)";
 
   $("rc_title").textContent  = label;
