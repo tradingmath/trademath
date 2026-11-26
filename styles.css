@@ -1312,3 +1312,9 @@ html[data-country]:not([data-country="IN"]) .toggle-row:has(#tog_fno),
 html[data-country]:not([data-country="IN"]) .fee-group:has(#s_brokerage) { display:none !important; }
 html[data-currency="USD"] #ccy_sw, html[data-currency="USD"] .cry-lbl:has(#i_fx) { display:none !important; }   /* the home currency is already dollars, so there is no rate to enter */
 html[data-country]:not([data-country="IN"]) .toggle-row:has(#alert_hours) { display:none !important; }   /* NSE market hours only */
+
+/* social media icons in the footer */
+.social { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin:14px 0 4px; }
+.social a { display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:50%; border:1px solid var(--border); color:var(--fg3); text-decoration:none; transition:color .15s, border-color .15s, transform .15s; }
+.social a:hover, .social a:focus-visible { color:var(--accent); border-color:var(--accent); transform:translateY(-1px); }
+.social svg { width:16px; height:16px; fill:currentColor; display:block; }

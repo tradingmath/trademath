@@ -30,4 +30,4 @@ TradingMath is a calculation aid. It does not give investment advice. Figures ar
 
 The interactive tool is at https://castlingtrader.com/tradingmath/
 
-Follow Castling Trader: [YouTube](https://www.youtube.com/@castlingtrader) · [Instagram](https://www.instagram.com/castlingtrader) · [LinkedIn](https://www.linkedin.com/company/castlingtrader) · [Facebook](https://www.facebook.com/CastlingTrader) · [X](https://x.com/castlingtrader)
+Follow Castling Trader: [YouTube](https://www.youtube.com/@castlingtrader) · [Instagram](https://www.instagram.com/castlingtrader) · [LinkedIn](https://www.linkedin.com/company/castlingtrader) · [Facebook](https://www.facebook.com/CastlingTrader) · [X](https://x.com/castlingtrader) · [Telegram](https://t.me/CastlingTrader)
