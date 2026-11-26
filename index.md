@@ -29,3 +29,5 @@ TradingMath is a free position size calculator and trade journal. Enter your ent
 TradingMath is a calculation aid. It does not give investment advice. Figures are estimates, so confirm them with your broker before you trade. Trading carries a risk of loss.
 
 The interactive tool is at https://castlingtrader.com/tradingmath/
+
+Follow Castling Trader: [YouTube](https://www.youtube.com/@castlingtrader) · [Instagram](https://www.instagram.com/castlingtrader) · [LinkedIn](https://www.linkedin.com/company/castlingtrader) · [Facebook](https://www.facebook.com/CastlingTrader) · [X](https://x.com/castlingtrader)
